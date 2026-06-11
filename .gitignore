@@ -1,0 +1,32 @@
+# IDEs and Editors
+.idea/
+.vscode/
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+
+# System Files
+.DS_Store
+Thumbs.db
+
+# Frontend (Vue.js)
+**/node_modules/
+**/dist/
+**/.env.local
+**/.env.*.local
+
+# Backend (Spring Boot)
+**/target/
+**/build/
+**/.gradle/
+**/bin/
+**/out/
+**/*.class
+**/*.jar
+**/*.war
+
+# OS & Temp Files
+*.log
+*.tmp
