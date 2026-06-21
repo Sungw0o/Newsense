@@ -2,10 +2,10 @@
 > **청년층과 학생의 금융·경제 문해력 향상을 위한 뉴스 기반 자기주도 경제 학습 플랫폼**
 
 <p align="center">
-  <img src="https://img.shields.io/badge/Java-17-orange?style=flat-square&logo=openjdk&logoColor=white" alt="Java 17" />
-  <img src="https://img.shields.io/badge/Spring_Boot-3.x-brightgreen?style=flat-square&logo=springboot&logoColor=white" alt="Spring Boot 3" />
+  <img src="https://img.shields.io/badge/Java-21-orange?style=flat-square&logo=openjdk&logoColor=white" alt="Java 21" />
+  <img src="https://img.shields.io/badge/Spring_Boot-4.1.0-brightgreen?style=flat-square&logo=springboot&logoColor=white" alt="Spring Boot 4.1.0" />
   <img src="https://img.shields.io/badge/Vue-3-4FC08D?style=flat-square&logo=vue.js&logoColor=white" alt="Vue 3" />
-  <img src="https://img.shields.io/badge/PostgreSQL-4169E1?style=flat-square&logo=postgresql&logoColor=white" alt="PostgreSQL" />
+  <img src="https://img.shields.io/badge/MySQL-8.0-4479A1?style=flat-square&logo=mysql&logoColor=white" alt="MySQL" />
   <img src="https://img.shields.io/badge/MongoDB-47A248?style=flat-square&logo=mongodb&logoColor=white" alt="MongoDB" />
   <img src="https://img.shields.io/badge/Cloudflare-F38020?style=flat-square&logo=cloudflare&logoColor=white" alt="Cloudflare" />
   <img src="https://img.shields.io/badge/Docker-2496ED?style=flat-square&logo=docker&logoColor=white" alt="Docker" />
@@ -54,13 +54,13 @@ graph TD
 
     %% 백엔드 및 인프라 레이어
     subgraph Server["AWS EC2 (Docker Compose 환경)"]
-        Backend["☕ Spring Boot 3 (Java 17 / Spring AI)"]
-        PostgreSQL[("🐘 PostgreSQL (pgvector)<br>회원/퀴즈/리뷰/학습이력/벡터임베딩")]
+        Backend["☕ Spring Boot 4.1.0 (Java 21)"]
+        MySQL[("🐬 MySQL (RDB)<br>회원/퀴즈/리뷰/학습이력 데이터")]
         MongoDB[("🍃 MongoDB<br>비정형 뉴스 원본 및 청킹 데이터")]
     end
 
     %% 외부 API 및 데이터 소스
-    OpenAI["🤖 OpenAI API<br>(GPT-4o mini / text-embedding-3-small)"]
+    OpenAI["🤖 OpenAI API<br>(GPT-4o mini / 퀴즈 생성 및 피드백)"]
     GovData["🏛️ 공공누리 제1유형 보도자료<br>(기재부, 한국은행 등)"]
 
     %% 흐름 연결
@@ -68,18 +68,18 @@ graph TD
     Client -->|HTTPS 접속| CF
     CF <-->|보안 터널링| CFTunnel
     CFTunnel <--> Backend
-    Backend <--> PostgreSQL
+    Backend <--> MySQL
     Backend <--> MongoDB
     GovData -->|JSoup 정기 크롤링| MongoDB
-    Backend <-->|뉴스 임베딩 & RAG 유사도 검색| OpenAI
+    Backend <-->|AI 분석 및 퀴즈 출제| OpenAI
 ```
 
-### 🔒 RAG 데이터 흐름 및 보안 격리 프로세스
+### 🔒 데이터 흐름 및 보안 격리 프로세스
 > [!NOTE]
 > * **데이터 수집**: 기획재정부, 한국은행 등 공공누리 제1유형 보도자료 전문을 JSoup으로 정기 크롤링하여 **MongoDB**에 적재함으로써 저작권 분쟁 소지를 사전에 전면 차단합니다.
-> * **임베딩 및 인덱싱**: OpenAI의 `text-embedding-3-small` API를 통해 기사를 벡터 데이터로 변환 후 **PostgreSQL의 pgvector 공간 인덱스**에 매핑하여 고속 검색을 가능하게 합니다.
-> * **RAG 기반 질의응답**: 사용자의 오답 피드백이나 경제 질문 시, 해당 기사 본문 조각 및 지표 정보를 유사도 검색(Cosine Similarity)하여 추출하고 이를 **GPT-4o mini**의 프롬프트에 동적 주입하여 정확성 높은 힌트와 개인화 해설을 도출합니다.
-> * **네트워크 보안 격리**: AWS EC2 Docker 환경 내부에서 PostgreSQL과 MongoDB의 외부 호스트 포트 바인딩(Expose)을 배제하여 내부 로컬에서만 통신하도록 격리합니다. 인바운드 트래픽은 오직 Cloudflare Tunnel(SSL)을 통한 특정 웹 포트만 수신하도록 제어하여 DB 스캔 등 외부 사이버 공격을 차단합니다.
+> * **메인 RDB**: 회원 정보, 학습한 뉴스 매핑 데이터, 생성된 퀴즈 정보, 사용자 리뷰 및 오답 노트 등 비즈니스 도메인의 핵심 관계형 데이터는 **MySQL**에서 트랜잭션을 적용해 신뢰성 있게 관리합니다.
+> * **AI 분석 및 퀴즈 출제**: 사용자가 뉴스를 다 읽은 후 이해도를 진단하기 위해, 기사 본문과 용어 정보를 기반으로 **OpenAI GPT-4o mini**를 연동하여 기사 맥락에 맞춘 OX/객관식 퀴즈를 실시간으로 출제하고 리뷰에 대한 피드백을 생성합니다.
+> * **네트워크 보안 격리**: AWS EC2 Docker 환경 내부에서 MySQL과 MongoDB의 외부 호스트 포트 바인딩(Expose)을 배제하여 내부 로컬에서만 통신하도록 격리합니다. 인바운드 트래픽은 오직 Cloudflare Tunnel(SSL)을 통한 특정 웹 포트만 수신하도록 제어하여 DB 스캔 등 외부 사이버 공격을 차단합니다.
 
 ---
 
@@ -88,8 +88,8 @@ graph TD
 
 ```text
 newsense/
-├── backend/                  # Spring Boot 3 + Java 17 백엔드 프로젝트
-│   ├── src/                  # 백엔드 소스 코드 (Spring Data JPA, Querydsl, Spring AI)
+├── backend/                  # Spring Boot 4.1.0 + Java 21 백엔드 프로젝트
+│   ├── src/                  # 백엔드 소스 코드 (Spring Data JPA, MongoDB)
 │   └── build.gradle          # Gradle 의존성 및 빌드 설정
 ├── frontend/                 # Vue 3 + Vite + Pinia + Tailwind CSS 프론트엔드 프로젝트
 │   ├── src/                  # 프론트엔드 컴포넌트, 스토어, 라우터 소스 코드
@@ -102,18 +102,16 @@ newsense/
 
 ## 🚀 로컬 실행 방법
 
-### 1. 백엔드 실행을 위한 사전 준비
-로컬 환경에 **PostgreSQL (pgvector 확장 활성화 필요)** 및 **MongoDB** 인프라가 실행 중이어야 합니다.
-* **PostgreSQL 데이터베이스 생성**:
+### 1. 데이터베이스 준비
+로컬 환경에 **MySQL 8.0** 및 **MongoDB** 인프라가 실행 중이어야 합니다.
+* **MySQL 데이터베이스 생성**:
   ```sql
-  CREATE DATABASE newsense;
-  -- pgvector 확장 활성화 (필수)
-  CREATE EXTENSION IF NOT EXISTS vector;
+  CREATE DATABASE newsense CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
   ```
 * **MongoDB**: `newsense` 데이터베이스 생성 후 기사 적재용 컬렉션을 준비합니다.
 
-### 2. 백엔드 실행 (Spring Boot 3)
-로컬에 **Java 17 JDK**가 설치되어 있어야 합니다.
+### 2. 백엔드 실행 (Spring Boot 4.1.0)
+로컬에 **Java 21 JDK**가 설치되어 있어야 합니다.
 ```bash
 cd backend
 # Gradle 의존성 빌드 및 구동
@@ -190,7 +188,7 @@ body (선택 - 변경 이유나 상세 내용)
 * **레이어드 아키텍처**:
   - `Controller`: 요청/응답 관리 및 데이터 바인딩만 수행 (비즈니스 로직 철저히 배제)
   - `Service`: 핵심 비즈니스 연산 및 `@Transactional` 원자성 관리
-  - `Repository`: 데이터베이스 물리적 접근 (Spring Data JPA, Querydsl 인터페이스)
+  - `Repository`: 데이터베이스 물리적 접근 (Spring Data JPA 인터페이스)
 * **API 공통 응답 구조**: 모든 응답은 `ApiResponse<T>` 형태의 고정 래퍼 규격을 준수합니다.
 ```json
 {

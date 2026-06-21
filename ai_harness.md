@@ -18,7 +18,7 @@ graph TD
     Codex["⚡ Codex (GitHub Copilot)<br>(보일러플레이트 고속 생성)"]
 
     Antigravity -->|전체 구조설계 & DB 연동| Claude
-    ChatGPT -->|프롬프트 규격 & Vector Schema 제공| Antigravity
+    ChatGPT -->|프롬프트 규격 제공| Antigravity
     Codex -->|인라인 코드 보조| Claude
 ```
 
@@ -30,7 +30,7 @@ graph TD
   * **주요 태스크**: Vue 3 Composition API 컴포넌트 마크업, Tailwind CSS 반응형 UI 구현, 백엔드 RAG 프롬프트 파이프라인 리팩토링.
 * **챗지피티 (ChatGPT)**
   * **주요 역할**: AI 프롬프트 엔지니어링 및 RAG 백엔드 기술 아키텍처 자문.
-  * **주요 태스크**: JSON 구조 출력 보장용 System/User 프롬프트 설계, pgvector 및 벡터 유사도 쿼리 최적화 설계 자문.
+  * **주요 태스크**: JSON 구조 출력 보장용 System/User 프롬프트 설계, MySQL 및 MongoDB 쿼리 최적화 설계 자문.
 * **코덱스 (Codex / GitHub Copilot)**
   * **주요 역할**: IDE 내 실시간 인라인 코드 자동완성 및 보일러플레이트 고속 생성.
   * **주요 태스크**: DTO, JPA Repository, Controller 매핑 선언 및 단순 반복 코드의 빠른 생성 지원.
@@ -43,11 +43,11 @@ graph TD
 
 ### 2.1 데이터베이스 분리 정책
 * **MongoDB**: 비정형 뉴스 원본 및 뉴스 청킹(Chunking) 데이터 적재. (공공누리 제1유형 보도자료 JSoup 크롤링 활용)
-* **PostgreSQL with pgvector**: 회원 관리, 퀴즈, 리뷰, 학습 이력 및 OpenAI `text-embedding-3-small`로 생성된 뉴스 벡터 임베딩 저장.
+* **MySQL**: 회원 관리, 퀴즈, 리뷰, 학습 이력 등의 핵심 비즈니스 관계형 데이터 저장.
 
 ### 2.2 RAG 및 보안 프로세스
-* **RAG 파이프라인**: 사용자가 작성한 리뷰/오답에 기반하여 피드백이나 개념 설명 제공 시, PostgreSQL pgvector 유사도 검색을 통해 최적의 기사 조각(Context)을 추출하여 GPT-4o mini 프롬프트에 주입하여 처리함.
-* **네트워크 보안 격리**: AWS EC2 Docker 환경하에서 PostgreSQL 및 MongoDB의 외부 호스트 포트 바인딩(Expose)은 금지함. 오직 Cloudflare Tunnel(SSL)만 외부 인바운드 트래픽을 수신하도록 세팅하고, DB 포트 스캔 및 외부 공격을 원천 차단함.
+* **RAG 및 AI 기능**: 사용자가 작성한 리뷰/오답에 기반하여 피드백이나 개념 설명 제공 시, MongoDB와 MySQL에서 추출한 관련 텍스트 데이터를 프롬프트에 주입하여 OpenAI GPT-4o mini를 통해 동적으로 정답 및 해설을 도출함.
+* **네트워크 보안 격리**: AWS EC2 Docker 환경하에서 MySQL 및 MongoDB의 외부 호스트 포트 바인딩(Expose)은 금지함. 오직 Cloudflare Tunnel(SSL)만 외부 인바운드 트래픽을 수신하도록 세팅하고, DB 포트 스캔 및 외부 공격을 원천 차단함.
 
 ---
 
@@ -73,7 +73,7 @@ graph TD
 
 ## 💻 4. 언어 및 프레임워크 표준 규칙
 
-### 4.1 Java / Spring Boot 3
+### 4.1 Java / Spring Boot 4.1.0 (Java 21)
 * **네이밍**: 클래스는 `PascalCase`, 메서드와 변수는 `camelCase`, 상수는 `UPPER_SNAKE_CASE`를 사용합니다.
 * **의존성 주입**: `@RequiredArgsConstructor`를 활용한 생성자 주입을 필수로 하며, 필드 주입(`@Autowired`)은 금지합니다.
 * **API 공통 응답**: 모든 API 응답은 `ApiResponse<T>` 규격을 준수하여 출력합니다.
