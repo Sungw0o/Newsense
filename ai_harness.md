@@ -54,19 +54,30 @@ graph TD
 ## 🎨 3. Git 및 협업 컨벤션
 
 ### 3.1 브랜치 전략 (Git Flow)
-* 모든 기능 개발은 `develop` 브랜치에서 분기하여 `feature/기능명` 또는 `feature/issue-번호` 포맷으로 브랜치를 만들어 작업합니다.
-* `main` 브랜치에 직접 푸시(push)하는 것은 금지하며, PR을 통한 병합(Squash Merge)만 허용합니다.
+* **브랜치 구조**:
+  - `main`: 배포용 최종 안정 브랜치 (직접 push 금지, develop PR을 통해서만 병합)
+  - `develop`: 개발 통합 브랜치 (기능 개발 PR 대상)
+  - `feature/*`: 기능 단위 개발 브랜치 (반드시 develop에서 분기하고 develop으로 병합)
+* **브랜치 명명**: 영어 소문자 + 하이픈(-) 또는 **한글 기능명** 사용 가능 (예: `feature/로그인`, `feature/user-login`)
+* **관리 방식**: Squash Merge 사용을 적극 권장하며, 작업 완료 후 원격 브랜치 삭제 설정(Merge 시 자동 삭제)을 준수합니다.
 
 ### 3.2 커밋 메시지 규격
 * 커밋 메시지는 반드시 아래 깃모지(Gitmoji) 형식을 엄격하게 준수합니다.
   ```plain text
   :gitmoji: type : subject (#이슈번호)
+  
+  body (선택 - 변경 이유나 상세 내용)
   ```
   * *예시: `✨ feat : RAG 퀴즈 생성 API 구현 (#15)`*
-* 주요 Gitmoji 타입: `✨ feat`, `🐛 fix`, `📝 docs`, `💄 style`, `♻️ refactor`, `✅ test`, `🔧 chore`
+* **중요 커밋 규칙**:
+  - 이모지 바로 뒤에 커밋 타입(feat/fix/docs/style/refactor/test/chore/perf 등)을 **"type : "** (콜론 앞뒤 띄어쓰기) 형식으로 표기합니다.
+  - subject 첫 글자는 소문자, 마침표는 생략하며 50자 이내로 간결하게 작성합니다.
+  - 이슈 번호는 반드시 끝에 포함(`#이슈번호`)하며, WIP(작업중) 커밋도 해당 포맷을 준수합니다.
+* **주요 Gitmoji 타입**: `✨ feat`, `🐛 fix`, `📝 docs`, `💄 style`, `♻️ refactor`, `✅ test`, `🔧 chore`
 
 ### 3.3 PR(Merge Request) 규칙
 * 하나의 PR은 하나의 기능 또는 하나의 버그 수정 단위로 분리하며, 변경 라인은 300줄 이하를 권장합니다.
+* CI 파이프라인(빌드 + 테스트)이 통과한 후 병합을 검토합니다.
 * PR 생성 시 CodeRabbit AI가 자동으로 코드 리뷰를 진행하며, 지적 사항이 반영되거나 합당한 코멘트가 달린 후 병합합니다.
 
 ---
@@ -74,7 +85,14 @@ graph TD
 ## 💻 4. 언어 및 프레임워크 표준 규칙
 
 ### 4.1 Java / Spring Boot 4.1.0 (Java 21)
-* **네이밍**: 클래스는 `PascalCase`, 메서드와 변수는 `camelCase`, 상수는 `UPPER_SNAKE_CASE`를 사용합니다.
+* **네이밍 규칙**: 클래스는 `PascalCase`, 메서드와 변수는 `camelCase`, 상수는 `UPPER_SNAKE_CASE`를 사용합니다. 패키지명은 하이픈 없이 소문자만 사용합니다.
+* **패키지 구조**: `com.newsense.backend`
+  - 하위 패키지: `auth`, `user`, `article`, `quiz`, `review`, `wrongnote`, `learning`, `bookmark`, `term`, `notification`, `ai`, `common`
+* **레이어드 아키텍처**:
+  - `Controller`: 요청/응답 관리 및 데이터 바인딩만 수행 (비즈니스 로직 철저히 배제)
+  - `Service`: 핵심 비즈니스 연산 및 `@Transactional` 원자성 관리
+  - `Repository`: 데이터베이스 물리적 접근 (Spring Data JPA, Querydsl 인터페이스)
+* **객체 가이드**: DTO는 `record` 또는 `@Getter` 전용 클래스를 사용(setter 사용 지양)하며, Entity에서 직접 DTO 변환 메서드(`toDto()`) 제공이 가능합니다.
 * **의존성 주입**: `@RequiredArgsConstructor`를 활용한 생성자 주입을 필수로 하며, 필드 주입(`@Autowired`)은 금지합니다.
 * **API 공통 응답**: 모든 API 응답은 `ApiResponse<T>` 규격을 준수하여 출력합니다.
   ```json
@@ -87,6 +105,30 @@ graph TD
   ```
 
 ### 4.2 Vue 3 / Frontend
-* **컴포넌트**: `PascalCase` 명명법(예: `QuizCard.vue`)을 사용하며, 페이지 컴포넌트는 `View` 접미사를 붙입니다.
-* **API 사용**: Composition API (`<script setup>`)를 명시적으로 사용하며, API 호출 로직은 스토어나 컴포저블로 분리합니다.
-* **상태 관리**: Pinia를 사용하며 `useUserStore`와 같이 `use` 접두사를 사용합니다.
+* **파일 네이밍 규칙**:
+  - 컴포넌트: `PascalCase` 명명법 (예: `QuizCard.vue`, `ArticleFeedList.vue`)
+  - 페이지 컴포넌트: views/ 경로에 `PascalCase` + `View` 접미사 (예: `HomeView.vue`)
+  - 스토어 (Pinia): `camelCase` 명명법 + `use` 접두사 (예: `useUserStore.js`)
+  - API 모듈: `camelCase` 명명법 + `Api` 접미사 (예: `quizApi.js`)
+* **컴포넌트 작성 규칙**:
+  - Composition API (`<script setup>`) 방식을 필수로 사용합니다.
+  - props는 `defineProps()`, emits는 `defineEmits()`로 명시적으로 정의합니다.
+  - 컴포넌트당 역할은 하나만 가지며, 200줄 초과 시 분리를 적극 검토합니다.
+  - `v-for`에는 반드시 `:key` 바인딩을 적용해야 하며, `v-if`와 `v-for`를 동일 요소에 혼용하지 않습니다.
+  - API 호출은 컴포넌트 내부에서 직접 처리하는 것을 지양하고, Pinia 스토어 또는 컴포저블 모듈로 위임합니다.
+
+---
+
+## 🗄️ 5. 데이터베이스 설계 및 네이밍 규칙
+
+* **테이블 및 컬럼 네이밍**:
+  - 테이블명: `snake_case` 형식으로 단수형 명사 사용을 원칙으로 합니다 (복수형 지양).
+    - *예시: `user`, `article_meta`, `quiz`, `quiz_result`, `review`, `wrong_note`*
+  - 컬럼명: `snake_case` 형식을 준수합니다 (예: `user_id`, `created_at`, `is_active`).
+  - PK: `id` (BIGINT) 규격을 원칙으로 합니다.
+  - FK: `{참조 테이블명}_id` 형식을 사용합니다 (예: `user_id`, `article_id`).
+* **Boolean 타입**: Boolean 성격의 컬럼은 접두사로 `is_`를 적용합니다 (예: `is_active`, `is_correct`, `is_resolved`).
+* **공통 규칙**:
+  - 모든 테이블에 `id`, `created_at`은 필수 필드로 생성하며, 변경 추적이 필요한 경우 `updated_at`을 선택적으로 추가합니다.
+  - 데이터 삭제 시 실제 DELETE 쿼리를 날리지 않고, `is_active = FALSE` 처리를 통한 **소프트 딜리트(Soft Delete)** 방식을 적용합니다.
+  - 성능 및 리소스 효율성을 위해 JPA 개발 시 N+1 문제를 경계하고 FETCH JOIN 또는 `@BatchSize`를 사용합니다.
