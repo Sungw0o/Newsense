@@ -1,4 +1,4 @@
-package com.pinup;
+package com.newsense;
 
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
