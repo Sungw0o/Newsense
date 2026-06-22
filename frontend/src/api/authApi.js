@@ -6,7 +6,7 @@ export const authApi = {
    * @param {Object} registerData { email, password, nickname }
    */
   register(registerData) {
-    return axiosInstance.post('/auth/register', registerData)
+    return axiosInstance.post('/auth/signup', registerData)
   },
 
   /**

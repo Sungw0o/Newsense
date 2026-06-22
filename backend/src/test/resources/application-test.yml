@@ -11,6 +11,9 @@ spring:
   data:
     mongodb:
       uri: mongodb://localhost:27017/newsense-test
+    redis:
+      host: localhost
+      port: 6379
 
 jwt:
   secret: newsense-test-jwt-secret-key-at-least-32-bytes
