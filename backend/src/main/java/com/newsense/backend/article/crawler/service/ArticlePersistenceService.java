@@ -21,6 +21,7 @@ import java.util.List;
 public class ArticlePersistenceService {
 
     private static final int SUMMARY_MAX_LENGTH = 500;
+    private static final int CHARACTERS_PER_MINUTE = 500;
 
     private final ArticleMetaRepository articleMetaRepository;
     private final ArticleContentRepository articleContentRepository;
@@ -72,6 +73,7 @@ public class ArticlePersistenceService {
                     article.source(),
                     article.sourceUrl(),
                     article.publishedAt(),
+                    estimateMinutes(cleanText),
                     savedContent.getId(),
                     contentHash
             );
@@ -94,5 +96,9 @@ public class ArticlePersistenceService {
             return cleanText;
         }
         return cleanText.substring(0, SUMMARY_MAX_LENGTH).trim();
+    }
+
+    private int estimateMinutes(String cleanText) {
+        return Math.max(1, (int) Math.ceil((double) cleanText.length() / CHARACTERS_PER_MINUTE));
     }
 }

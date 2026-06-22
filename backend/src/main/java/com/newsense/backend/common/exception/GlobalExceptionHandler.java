@@ -7,6 +7,8 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.validation.FieldError;
 import org.springframework.web.HttpRequestMethodNotSupportedException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
+import org.springframework.web.method.annotation.HandlerMethodValidationException;
+import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 
@@ -32,6 +34,16 @@ public class GlobalExceptionHandler {
         log.warn("Validation failed: {}", message);
         return ResponseEntity.badRequest()
                 .body(ApiResponse.error(HttpStatus.BAD_REQUEST.value(), message));
+    }
+
+    @ExceptionHandler({MethodArgumentTypeMismatchException.class, HandlerMethodValidationException.class})
+    public ResponseEntity<ApiResponse<Void>> handleRequestParameterException(Exception exception) {
+        log.warn("Invalid request parameter: {}", exception.getMessage());
+        return ResponseEntity.badRequest()
+                .body(ApiResponse.error(
+                        HttpStatus.BAD_REQUEST.value(),
+                        ErrorCode.INVALID_INPUT_VALUE.getMessage()
+                ));
     }
 
     @ExceptionHandler(HttpRequestMethodNotSupportedException.class)

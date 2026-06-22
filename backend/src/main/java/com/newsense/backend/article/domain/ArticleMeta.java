@@ -57,6 +57,9 @@ public class ArticleMeta {
     @Column(name = "published_at")
     private LocalDate publishedAt;
 
+    @Column(name = "estimated_minutes", nullable = false)
+    private int estimatedMinutes;
+
     @Column(name = "mongo_document_id", nullable = false, length = 100)
     private String mongoDocumentId;
 
@@ -72,6 +75,7 @@ public class ArticleMeta {
             String source,
             String sourceUrl,
             LocalDate publishedAt,
+            int estimatedMinutes,
             String mongoDocumentId,
             String contentHash
     ) {
@@ -83,6 +87,7 @@ public class ArticleMeta {
         article.category = ArticleCategory.ECONOMY;
         article.difficulty = ArticleDifficulty.BASIC;
         article.publishedAt = publishedAt;
+        article.estimatedMinutes = estimatedMinutes;
         article.mongoDocumentId = mongoDocumentId;
         article.contentHash = contentHash;
         article.collectedAt = LocalDateTime.now();
