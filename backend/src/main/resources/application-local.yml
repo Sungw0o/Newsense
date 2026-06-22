@@ -1,17 +1,23 @@
 spring:
-  application:
-    name: backend
+  config:
+    activate:
+      on-profile: local
   datasource:
     url: ${SPRING_DATASOURCE_URL:jdbc:mysql://localhost:3306/newsense?useSSL=false&serverTimezone=Asia/Seoul&characterEncoding=UTF-8}
     username: ${SPRING_DATASOURCE_USERNAME:root}
-    password: ${SPRING_DATASOURCE_PASSWORD:password}
+    password: ${SPRING_DATASOURCE_PASSWORD:root}
     driver-class-name: com.mysql.cj.jdbc.Driver
   jpa:
     hibernate:
       ddl-auto: ${SPRING_JPA_DDL_AUTO:update}
+    show-sql: true
     properties:
       hibernate:
-        show_sql: true
         format_sql: true
-        use_sql_comments: true
-    open-in-view: fal
+  data:
+    mongodb:
+      uri: ${SPRING_DATA_MONGODB_URI:mongodb://localhost:27017/newsense}
+
+logging:
+  level:
+    com.newsense.backend: DEBUG
