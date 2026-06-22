@@ -21,6 +21,8 @@ public enum ErrorCode {
     ARTICLE_CONTENT_NOT_FOUND(HttpStatus.NOT_FOUND, "기사 본문을 찾을 수 없습니다."),
     AI_SERVICE_UNAVAILABLE(HttpStatus.SERVICE_UNAVAILABLE, "AI 서비스를 사용할 수 없습니다."),
     QUIZ_GENERATION_FAILED(HttpStatus.BAD_GATEWAY, "퀴즈 생성에 실패했습니다."),
+    REVIEW_NOT_FOUND(HttpStatus.NOT_FOUND, "리뷰를 찾을 수 없습니다."),
+    REVIEW_ALREADY_EXISTS(HttpStatus.CONFLICT, "해당 기사에 작성한 리뷰가 이미 있습니다."),
     ENTITY_NOT_FOUND(HttpStatus.NOT_FOUND, "요청한 리소스를 찾을 수 없습니다."),
     INTERNAL_SERVER_ERROR(HttpStatus.INTERNAL_SERVER_ERROR, "서버 내부 오류가 발생했습니다.");
 
