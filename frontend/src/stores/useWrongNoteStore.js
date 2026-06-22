@@ -1,0 +1,62 @@
+import { defineStore } from 'pinia'
+import { wrongNoteApi } from '../api/wrongNoteApi'
+
+export const useWrongNoteStore = defineStore('wrongNote', {
+  state: () => ({
+    wrongNotes: [],
+    isLoading: false,
+    error: null
+  }),
+  actions: {
+    /**
+     * 오답노트 목록 로드
+     */
+    async fetchWrongNotes(params = {}) {
+      this.isLoading = true
+      this.error = null
+      try {
+        const response = await wrongNoteApi.getWrongNotes(params)
+        // 백엔드 응답 규격이 data 래핑을 벗겨서 반환하므로 response가 직접 목록이 됨
+        this.wrongNotes = response.data || response
+      } catch (err) {
+        this.error = err.message || '오답노트를 불러오지 못했습니다.'
+        throw err
+      } finally {
+        this.isLoading = false
+      }
+    },
+
+    /**
+     * 오답 해결 상태 토글
+     */
+    async toggleResolve(id) {
+      try {
+        await wrongNoteApi.toggleResolve(id)
+        // 로컬 상태에서 해당 오답노트의 해결 여부 반전
+        const note = this.wrongNotes.find(n => n.id === id)
+        if (note) {
+          note.isResolved = !note.isResolved
+        }
+      } catch (err) {
+        console.error('Toggle resolve error:', err)
+        throw err
+      }
+    },
+
+    /**
+     * 오답 삭제
+     */
+    async deleteWrongNote(id) {
+      try {
+        await wrongNoteApi.deleteWrongNote(id)
+        // 로컬 상태에서 즉시 제거
+        this.wrongNotes = this.wrongNotes.filter(n => n.id !== id)
+      } catch (err) {
+        console.error('Delete wrong note error:', err)
+        throw err
+      }
+    }
+  }
+})
+
+export default useWrongNoteStore
