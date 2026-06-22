@@ -12,12 +12,12 @@ const badgeClasses = computed(() => {
   const base = 'inline-flex items-center text-xs font-semibold px-2.5 py-1 rounded-lg border transition-colors duration-300'
   
   const themes = {
-    '금융': 'bg-primary-50 border-primary-200 text-primary-700',
-    '부동산': 'bg-amber-50 border-amber-200 text-amber-700',
-    '주식': 'bg-brand-50 border-brand-200 text-brand-700',
-    '환율': 'bg-secondary-50 border-secondary-200 text-secondary-700',
-    '거시경제': 'bg-slate-100 border-slate-300 text-slate-700',
-    'default': 'bg-slate-50 border-slate-200 text-slate-500'
+    '금융': 'bg-primary-500/10 border-primary-500/20 text-primary-400',
+    '부동산': 'bg-amber-500/10 border-amber-500/20 text-amber-400',
+    '주식': 'bg-brand-500/10 border-brand-500/20 text-brand-400',
+    '환율': 'bg-secondary-500/10 border-secondary-500/20 text-secondary-400',
+    '거시경제': 'bg-indigo-500/10 border-indigo-500/20 text-indigo-400',
+    'default': 'bg-slate-500/10 border-slate-500/20 text-slate-400'
   }
 
   return `${base} ${themes[props.value] || themes['default']}`
