@@ -39,12 +39,18 @@ public class OpenAiQuizClient {
     private final OpenAiProperties properties;
     private final ObjectMapper objectMapper;
 
-    public List<GeneratedQuiz> generate(String title, String articleText) {
+    public List<GeneratedQuiz> generate(
+            String title,
+            String articleText,
+            List<EconomicTermContext> economicTerms
+    ) {
         if (properties.apiKey() == null || properties.apiKey().isBlank()) {
             throw new CustomException(ErrorCode.AI_SERVICE_UNAVAILABLE);
         }
 
-        String input = "기사 제목: " + title + "\n\n기사 본문:\n" + truncate(articleText);
+        String input = "기사 제목: " + title
+                + "\n\n기사 본문:\n" + truncate(articleText)
+                + "\n\n기재부 경제 용어 사전:\n" + formatTerms(economicTerms);
         Map<String, Object> request = Map.of(
                 "model", properties.model(),
                 "instructions", INSTRUCTIONS,
@@ -120,6 +126,17 @@ public class OpenAiQuizClient {
         return articleText.length() <= MAX_ARTICLE_LENGTH
                 ? articleText
                 : articleText.substring(0, MAX_ARTICLE_LENGTH);
+    }
+
+    private String formatTerms(List<EconomicTermContext> economicTerms) {
+        if (economicTerms == null || economicTerms.isEmpty()) {
+            return "기사에서 매칭된 경제 용어 없음";
+        }
+        return economicTerms.stream()
+                .limit(20)
+                .map(term -> "- " + term.name() + ": " + term.definition())
+                .reduce((left, right) -> left + "\n" + right)
+                .orElse("기사에서 매칭된 경제 용어 없음");
     }
 
     private Map<String, Object> createResponseFormat() {

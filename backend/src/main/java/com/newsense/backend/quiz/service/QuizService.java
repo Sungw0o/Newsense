@@ -1,6 +1,7 @@
 package com.newsense.backend.quiz.service;
 
 import com.newsense.backend.ai.quiz.GeneratedQuiz;
+import com.newsense.backend.ai.quiz.EconomicTermContext;
 import com.newsense.backend.ai.quiz.OpenAiQuizClient;
 import com.newsense.backend.article.document.ArticleContent;
 import com.newsense.backend.article.domain.ArticleMeta;
@@ -11,6 +12,7 @@ import com.newsense.backend.common.exception.ErrorCode;
 import com.newsense.backend.quiz.domain.Quiz;
 import com.newsense.backend.quiz.dto.QuizResponse;
 import com.newsense.backend.quiz.repository.QuizRepository;
+import com.newsense.backend.term.repository.TermRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -25,6 +27,7 @@ public class QuizService {
     private final QuizRepository quizRepository;
     private final ArticleMetaRepository articleMetaRepository;
     private final ArticleContentRepository articleContentRepository;
+    private final TermRepository termRepository;
     private final OpenAiQuizClient openAiQuizClient;
 
     @Transactional
@@ -55,7 +58,15 @@ public class QuizService {
         ArticleContent content = articleContentRepository.findById(article.getMongoDocumentId())
                 .orElseThrow(() -> new CustomException(ErrorCode.ARTICLE_CONTENT_NOT_FOUND));
 
-        List<GeneratedQuiz> generated = openAiQuizClient.generate(article.getTitle(), content.getCleanText());
+        List<EconomicTermContext> economicTerms = termRepository.findAll().stream()
+                .filter(term -> content.getCleanText().contains(term.getName()))
+                .map(term -> new EconomicTermContext(term.getName(), term.getDefinition()))
+                .toList();
+        List<GeneratedQuiz> generated = openAiQuizClient.generate(
+                article.getTitle(),
+                content.getCleanText(),
+                economicTerms
+        );
         List<Quiz> quizzes = new ArrayList<>(generated.size());
         for (int index = 0; index < generated.size(); index++) {
             GeneratedQuiz item = generated.get(index);
