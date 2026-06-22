@@ -86,18 +86,18 @@ const handleLoadMore = () => {
     <div class="absolute bottom-10 right-1/4 w-80 h-80 bg-brand-500/10 rounded-full blur-[100px] pointer-events-none animate-pulse-glow" style="animation-delay: 2s;"></div>
 
     <!-- Hero Banner -->
-    <header class="relative overflow-hidden mb-12 glass-panel rounded-3xl p-8 md:p-12 text-white shadow-premium border-primary-500/10">
+    <header class="relative overflow-hidden mb-12 glass-panel rounded-3xl p-8 md:p-12 text-slate-800 dark:text-white shadow-premium border-primary-500/10">
       <!-- Glow gradient overlay -->
       <div class="absolute inset-0 bg-gradient-to-r from-primary-500/5 to-secondary-500/5 pointer-events-none"></div>
       
       <div class="relative z-10 md:flex md:items-center md:justify-between">
         <div class="md:max-w-xl">
-          <h1 class="text-3xl md:text-4xl font-extrabold mb-4 leading-tight tracking-tight select-none">
+          <h1 class="text-3xl md:text-4xl font-extrabold mb-4 leading-tight tracking-tight select-none text-slate-800 dark:text-white">
             경제 뉴스를 읽고,<br>
             개념 퀴즈로 문해력을 키우세요!
           </h1>
-          <p class="text-slate-300 text-sm md:text-base font-light mb-6 leading-relaxed select-none">
-            기획재정부 사전을 기반으로 한 AI 용어 매핑과 맞춤형 피드백을 통해 경제 지식을 가장 쉽고 체계적으로 학습할 수 있습니다.
+          <p class="text-slate-600 dark:text-slate-300 text-sm md:text-base font-light mb-6 leading-relaxed select-none">
+            기획재정부 사전을 기반으로 한 AI 용어 매핑 and 맞춤형 피드백을 통해 경제 지식을 가장 쉽고 체계적으로 학습할 수 있습니다.
           </p>
           <BaseButton 
             variant="primary" 
@@ -109,16 +109,16 @@ const handleLoadMore = () => {
         </div>
         
         <!-- Weekly Stats Card -->
-        <div class="hidden md:flex mt-8 md:mt-0 w-72 h-44 glass-panel rounded-2xl border-white/5 p-6 flex-col justify-between shadow-premium">
-          <span class="text-xs uppercase tracking-widest text-primary-400 font-bold select-none">Weekly Stats</span>
-          <div class="text-3xl font-black text-white select-none">3,450명</div>
-          <div class="text-xs text-slate-400 leading-normal select-none">이 뉴스엔스에서 경제 근육을 활발히 키우고 있습니다.</div>
+        <div class="hidden md:flex mt-8 md:mt-0 w-72 h-44 glass-panel rounded-2xl border-slate-200/50 dark:border-white/5 p-6 flex-col justify-between shadow-premium">
+          <span class="text-xs uppercase tracking-widest text-primary-600 dark:text-primary-400 font-bold select-none">Weekly Stats</span>
+          <div class="text-3xl font-black text-slate-800 dark:text-white select-none">3,450명</div>
+          <div class="text-xs text-slate-500 dark:text-slate-400 leading-normal select-none">이 뉴스엔스에서 경제 근육을 활발히 키우고 있습니다.</div>
         </div>
       </div>
     </header>
 
     <!-- Categories Filter Tabs -->
-    <div class="flex flex-wrap items-center gap-2.5 mb-8 border-b border-white/5 pb-4">
+    <div class="flex flex-wrap items-center gap-2.5 mb-8 border-b border-slate-200/60 dark:border-white/5 pb-4">
       <button 
         v-for="cat in categories" 
         :key="cat"
@@ -126,7 +126,7 @@ const handleLoadMore = () => {
         class="px-4 py-2.5 text-xs font-semibold rounded-full border transition-all duration-300 select-none"
         :class="activeCategory === cat 
           ? 'bg-primary-500 border-primary-500/30 text-white shadow-glass-glow' 
-          : 'bg-white/5 border-white/5 text-slate-400 hover:bg-white/10 hover:text-slate-200'"
+          : 'bg-slate-200/40 border-slate-200/50 text-slate-500 hover:bg-slate-200/60 dark:bg-white/5 dark:border-white/5 dark:text-slate-400 dark:hover:bg-white/10 dark:hover:text-slate-200'"
       >
         {{ cat }}
       </button>

@@ -38,7 +38,7 @@ const nicknameFirstLetter = computed(() => {
 </script>
 
 <template>
-  <nav class="sticky top-0 z-50 bg-white/70 backdrop-blur-md border-b border-slate-200/80">
+  <nav class="sticky top-0 z-50 glass-panel border-b border-slate-200/60 dark:border-white/5 bg-white/50 dark:bg-dark-950/50 backdrop-blur-md">
     <div class="max-w-6xl mx-auto px-4">
       <div class="flex items-center justify-between h-16">
         
@@ -52,22 +52,22 @@ const nicknameFirstLetter = computed(() => {
           <div class="hidden md:flex items-center gap-1 text-sm font-semibold">
             <router-link 
               to="/" 
-              class="px-4 py-2 text-slate-600 hover:text-primary-600 hover:bg-slate-50 rounded-xl transition-all duration-200"
-              active-class="text-primary-600 bg-primary-50/50"
+              class="px-4 py-2 text-slate-600 dark:text-slate-300 hover:text-primary-600 dark:hover:text-primary-400 hover:bg-slate-100/50 dark:hover:bg-white/5 rounded-xl transition-all duration-200"
+              active-class="text-primary-600 dark:text-primary-400 bg-primary-50/50 dark:bg-primary-950/20"
             >
               뉴스 피드
             </router-link>
             <router-link 
               to="/history" 
-              class="px-4 py-2 text-slate-600 hover:text-primary-600 hover:bg-slate-50 rounded-xl transition-all duration-200"
-              active-class="text-primary-600 bg-primary-50/50"
+              class="px-4 py-2 text-slate-600 dark:text-slate-300 hover:text-primary-600 dark:hover:text-primary-400 hover:bg-slate-100/50 dark:hover:bg-white/5 rounded-xl transition-all duration-200"
+              active-class="text-primary-600 dark:text-primary-400 bg-primary-50/50 dark:bg-primary-950/20"
             >
               학습 이력
             </router-link>
             <router-link 
               to="/wrong-notes" 
-              class="px-4 py-2 text-slate-600 hover:text-primary-600 hover:bg-slate-50 rounded-xl transition-all duration-200"
-              active-class="text-primary-600 bg-primary-50/50"
+              class="px-4 py-2 text-slate-600 dark:text-slate-300 hover:text-primary-600 dark:hover:text-primary-400 hover:bg-slate-100/50 dark:hover:bg-white/5 rounded-xl transition-all duration-200"
+              active-class="text-primary-600 dark:text-primary-400 bg-primary-50/50 dark:bg-primary-950/20"
             >
               오답노트
             </router-link>
@@ -80,34 +80,34 @@ const nicknameFirstLetter = computed(() => {
           <div v-if="isAuthenticated" class="relative">
             <button 
               @click="toggleDropdown"
-              class="flex items-center gap-2 px-3 py-1.5 rounded-xl border border-slate-200 bg-white hover:border-slate-300 hover:bg-slate-50 transition-all duration-200"
+              class="flex items-center gap-2 px-3 py-1.5 rounded-xl border border-slate-200 dark:border-white/5 bg-white dark:bg-white/5 hover:border-slate-300 dark:hover:border-white/10 hover:bg-slate-50 dark:hover:bg-white/10 text-slate-700 dark:text-slate-300 transition-all duration-200"
             >
               <span class="w-6 h-6 bg-gradient-to-tr from-primary-500 to-secondary-500 rounded-full flex items-center justify-center text-white text-xs font-bold">
                 {{ nicknameFirstLetter }}
               </span>
-              <span class="text-xs font-bold text-slate-700 hidden sm:inline">{{ userInfo?.nickname || '회원' }}</span>
-              <span class="text-slate-400 text-xxs hidden sm:inline">&darr;</span>
+              <span class="text-xs font-bold text-slate-700 dark:text-slate-300 hidden sm:inline">{{ userInfo?.nickname || '회원' }}</span>
+              <span class="text-slate-400 dark:text-slate-500 text-xxs hidden sm:inline">&darr;</span>
             </button>
 
             <!-- Dropdown menu -->
             <div 
               v-if="showDropdown"
-              class="absolute right-0 mt-2 w-48 bg-white border border-slate-200 rounded-2xl shadow-lg py-2 z-50 animate-[slideDown_0.2s_ease-out]"
+              class="absolute right-0 mt-2 w-48 glass-panel rounded-2xl shadow-lg py-2 z-50 animate-[slideDown_0.2s_ease-out]"
             >
-              <div class="px-4 py-2 border-b border-slate-100 mb-1">
-                <p class="text-xs text-slate-400 font-light">로그인 계정</p>
-                <p class="text-sm font-bold text-slate-700 truncate">{{ userInfo?.email }}</p>
+              <div class="px-4 py-2 border-b border-slate-100 dark:border-white/10 mb-1">
+                <p class="text-xs text-slate-400 dark:text-slate-500 font-light">로그인 계정</p>
+                <p class="text-sm font-bold text-slate-700 dark:text-slate-300 truncate">{{ userInfo?.email }}</p>
               </div>
               <router-link 
                 to="/mypage" 
                 @click="showDropdown = false"
-                class="block px-4 py-2 text-sm text-slate-600 hover:bg-slate-50 hover:text-primary-600 font-medium"
+                class="block px-4 py-2 text-sm text-slate-600 dark:text-slate-300 hover:bg-slate-100/50 dark:hover:bg-white/5 hover:text-primary-600 dark:hover:text-primary-400 font-medium"
               >
                 마이페이지 / 설정
               </router-link>
               <button 
                 @click="handleLogout"
-                class="w-full text-left px-4 py-2 text-sm text-accent-600 hover:bg-slate-50 font-medium"
+                class="w-full text-left px-4 py-2 text-sm text-accent-600 dark:text-accent-400 hover:bg-slate-100/50 dark:hover:bg-white/5 font-medium"
               >
                 로그아웃
               </button>
@@ -118,7 +118,7 @@ const nicknameFirstLetter = computed(() => {
           <div v-else class="flex items-center gap-2">
             <router-link 
               to="/login" 
-              class="px-4 py-2 text-sm font-semibold text-slate-600 hover:text-primary-600 transition-colors duration-200"
+              class="px-4 py-2 text-sm font-semibold text-slate-600 dark:text-slate-300 hover:text-primary-600 dark:hover:text-primary-400 transition-colors duration-200"
             >
               로그인
             </router-link>
@@ -133,7 +133,7 @@ const nicknameFirstLetter = computed(() => {
           <!-- Mobile Menu Toggle Button -->
           <button 
             @click="toggleMobileMenu" 
-            class="md:hidden p-2 rounded-xl text-slate-500 hover:text-slate-700 hover:bg-slate-100 transition-colors duration-200"
+            class="md:hidden p-2 rounded-xl text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 hover:bg-slate-100/50 dark:hover:bg-white/5 transition-colors duration-200"
             aria-label="Toggle mobile menu"
           >
             <span class="text-xl">{{ showMobileMenu ? '✕' : '☰' }}</span>
@@ -145,29 +145,29 @@ const nicknameFirstLetter = computed(() => {
       <!-- Mobile Nav Menu (Collapsible) -->
       <div 
         v-if="showMobileMenu" 
-        class="md:hidden py-4 border-t border-slate-100 animate-[slideDown_0.2s_ease-out] flex flex-col gap-1 text-sm font-semibold"
+        class="md:hidden py-4 border-t border-slate-100 dark:border-white/10 animate-[slideDown_0.2s_ease-out] flex flex-col gap-1 text-sm font-semibold"
       >
         <router-link 
           to="/" 
           @click="showMobileMenu = false"
-          class="px-4 py-2 text-slate-600 hover:text-primary-600 hover:bg-slate-50 rounded-xl transition-all duration-200"
-          active-class="text-primary-600 bg-primary-50/50"
+          class="px-4 py-2 text-slate-600 dark:text-slate-300 hover:text-primary-600 dark:hover:text-primary-400 hover:bg-slate-100/50 dark:hover:bg-white/5 rounded-xl transition-all duration-200"
+          active-class="text-primary-600 dark:text-primary-400 bg-primary-50/50 dark:bg-primary-950/20"
         >
           뉴스 피드
         </router-link>
         <router-link 
           to="/history" 
           @click="showMobileMenu = false"
-          class="px-4 py-2 text-slate-600 hover:text-primary-600 hover:bg-slate-50 rounded-xl transition-all duration-200"
-          active-class="text-primary-600 bg-primary-50/50"
+          class="px-4 py-2 text-slate-600 dark:text-slate-300 hover:text-primary-600 dark:hover:text-primary-400 hover:bg-slate-100/50 dark:hover:bg-white/5 rounded-xl transition-all duration-200"
+          active-class="text-primary-600 dark:text-primary-400 bg-primary-50/50 dark:bg-primary-950/20"
         >
           학습 이력
         </router-link>
         <router-link 
           to="/wrong-notes" 
           @click="showMobileMenu = false"
-          class="px-4 py-2 text-slate-600 hover:text-primary-600 hover:bg-slate-50 rounded-xl transition-all duration-200"
-          active-class="text-primary-600 bg-primary-50/50"
+          class="px-4 py-2 text-slate-600 dark:text-slate-300 hover:text-primary-600 dark:hover:text-primary-400 hover:bg-slate-100/50 dark:hover:bg-white/5 rounded-xl transition-all duration-200"
+          active-class="text-primary-600 dark:text-primary-400 bg-primary-50/50 dark:bg-primary-950/20"
         >
           오답노트
         </router-link>
