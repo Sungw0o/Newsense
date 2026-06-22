@@ -1,5 +1,5 @@
 <script setup>
-import { ref, onMounted } from 'vue'
+import { ref, computed } from 'vue'
 import { useRouter } from 'vue-router'
 import BaseBadge from '../components/common/BaseBadge.vue'
 import BaseButton from '../components/common/BaseButton.vue'
@@ -38,6 +38,13 @@ const mockArticles = ref([
     readTime: '7분'
   }
 ])
+
+const filteredArticles = computed(() => {
+  if (selectedCategory.value === '전체') {
+    return mockArticles.value
+  }
+  return mockArticles.value.filter(article => article.category === selectedCategory.value)
+})
 
 const filterByCategory = (category) => {
   selectedCategory.value = category
@@ -89,7 +96,7 @@ const navigateToDetail = (id) => {
     <!-- Articles Grid List -->
     <div class="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
       <div 
-        v-for="article in mockArticles" 
+        v-for="article in filteredArticles" 
         :key="article.id"
         @click="navigateToDetail(article.id)"
         class="group bg-white rounded-2xl border border-slate-200/80 p-6 flex flex-col justify-between cursor-pointer transition-all duration-300 hover:shadow-premium-hover hover:border-primary-300 hover:scale-102"

@@ -1,6 +1,9 @@
 <script setup>
 import { ref } from 'vue'
+import { useRouter } from 'vue-router'
 import BaseBadge from '../components/common/BaseBadge.vue'
+
+const router = useRouter()
 
 // 모의 통계 데이터
 const stats = ref({
@@ -39,6 +42,9 @@ const historyList = ref([
     hasReview: true,
   }
 ])
+const navigateToDetail = (id) => {
+  router.push(`/articles/${id}`)
+}
 </script>
 
 <template>
@@ -101,7 +107,10 @@ const historyList = ref([
               <BaseBadge :value="item.category" />
               <span class="text-xs text-slate-400">{{ item.date }}</span>
             </div>
-            <h3 class="text-base font-bold text-slate-800 hover:text-primary-600 cursor-pointer">
+            <h3 
+              @click="navigateToDetail(item.id)"
+              class="text-base font-bold text-slate-800 hover:text-primary-600 cursor-pointer"
+            >
               {{ item.title }}
             </h3>
           </div>

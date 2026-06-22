@@ -6,6 +6,7 @@ export const useArticleStore = defineStore('article', {
     articles: [],
     selectedArticle: null,
     selectedArticleTerms: [],
+    currentRequestId: 0, // 레이스 컨디션 방지용 요청 ID
     filters: {
       category: '',
       difficulty: '',
@@ -55,6 +56,7 @@ export const useArticleStore = defineStore('article', {
     async fetchArticles() {
       if (this.isLoading || !this.hasMore) return
       this.isLoading = true
+      const requestId = ++this.currentRequestId // 요청 번호 생성
 
       try {
         const { category, difficulty, page, size } = this.filters
@@ -65,6 +67,10 @@ export const useArticleStore = defineStore('article', {
         queryParams.append('size', size)
 
         const response = await axiosInstance.get(`/articles?${queryParams.toString()}`)
+        
+        // 최신 요청이 아닌 경우 무시 (Race Condition 방지)
+        if (requestId !== this.currentRequestId) return
+
         // 백엔드 응답 규격 data: { content: [...], last: true/false, ... }
         const data = response.data || response
         const content = data.content || []
@@ -82,7 +88,9 @@ export const useArticleStore = defineStore('article', {
       } catch (error) {
         console.error('Fetch articles error:', error)
       } finally {
-        this.isLoading = false
+        if (requestId === this.currentRequestId) {
+          this.isLoading = false
+        }
       }
     },
 
@@ -90,6 +98,8 @@ export const useArticleStore = defineStore('article', {
      * 특정 기사 상세조회
      */
     async fetchArticleDetail(articleId) {
+      this.selectedArticle = null
+      this.selectedArticleTerms = [] // 상세조회 시작 시 이전 데이터 클리어
       this.isLoading = true
       try {
         const response = await axiosInstance.get(`/articles/${articleId}`)
@@ -112,6 +122,8 @@ export const useArticleStore = defineStore('article', {
         this.selectedArticleTerms = response.data || response
       } catch (error) {
         console.error('Fetch article terms error:', error)
+        this.selectedArticleTerms = [] // 에러 발생 시 클리어
+        throw error
       }
     },
 
@@ -123,6 +135,7 @@ export const useArticleStore = defineStore('article', {
         return await axiosInstance.post(`/articles/${articleId}/read`)
       } catch (error) {
         console.error('Mark article as read error:', error)
+        throw error // 에러 전파
       }
     },
 
@@ -139,6 +152,7 @@ export const useArticleStore = defineStore('article', {
         return response
       } catch (error) {
         console.error('Toggle bookmark error:', error)
+        throw error // 에러 전파
       }
     }
   }

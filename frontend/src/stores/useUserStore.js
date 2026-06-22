@@ -29,6 +29,8 @@ export const useUserStore = defineStore('user', {
           localStorage.setItem('accessToken', token)
           this.isAuthenticated = true
           await this.fetchUserProfile()
+        } else {
+          throw new Error('로그인 응답에 Access Token이 누락되었습니다.')
         }
         return response
       } catch (error) {
@@ -71,6 +73,7 @@ export const useUserStore = defineStore('user', {
      */
     clearAuth() {
       localStorage.removeItem('accessToken')
+      delete axiosInstance.defaults.headers.common['Authorization']
       this.isAuthenticated = false
       this.userInfo = null
     },

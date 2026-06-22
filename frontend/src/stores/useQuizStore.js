@@ -75,6 +75,7 @@ export const useQuizStore = defineStore('quiz', {
      * 퀴즈 정답 제출 및 채점 API 호출
      */
     async submitAnswers() {
+      if (this.isLoading) return
       this.isLoading = true
       try {
         // 모든 퀴즈에 대한 정답 제출을 하나씩 보내거나 벌크로 보냄.
@@ -84,7 +85,7 @@ export const useQuizStore = defineStore('quiz', {
         let correctCount = 0
 
         for (const quiz of this.quizzes) {
-          const userAns = this.answers[quiz.id] || ''
+          const userAns = this.answers[quiz.id] ?? ''
           const response = await axiosInstance.post(`/quiz/${quiz.id}/answer`, { userAns })
           // response.data: { isCorrect, actualAnswer, explanation }
           const grading = response.data || response

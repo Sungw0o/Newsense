@@ -1,5 +1,5 @@
 <script setup>
-import { ref } from 'vue'
+import { ref, computed } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import BaseButton from '../components/common/BaseButton.vue'
 
@@ -8,9 +8,6 @@ const router = useRouter()
 const articleId = route.params.id
 
 // 모의 퀴즈 결과 데이터
-const score = ref(2)
-const total = ref(2)
-
 const results = ref([
   {
     id: 101,
@@ -29,6 +26,9 @@ const results = ref([
     explanation: '한국은행의 이번 금리 인하 배경은 소비자물가 안정을 기반으로 한 실물 내수 경제 활성화이며, 인위적인 부동산 거래 폭증 유도는 정부의 공식 목적이 아닙니다.'
   }
 ])
+
+const score = computed(() => results.value.filter(res => res.isCorrect).length)
+const total = computed(() => results.value.length)
 </script>
 
 <template>

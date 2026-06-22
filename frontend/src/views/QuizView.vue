@@ -32,7 +32,10 @@ const quizzes = ref([
 ])
 
 const currentQuiz = computed(() => quizzes.value[currentIdx.value] || null)
-const progress = computed(() => Math.round(((currentIdx.value + 1) / quizzes.value.length) * 100))
+const progress = computed(() => {
+  if (quizzes.value.length === 0) return 0
+  return Math.round(((currentIdx.value + 1) / quizzes.value.length) * 100)
+})
 
 const selectAnswer = (answer) => {
   selectedAnswers.value[currentQuiz.value.id] = answer

@@ -38,13 +38,16 @@ const handleSaveReview = async () => {
 
   try {
     // API Call Mock
-    setTimeout(() => {
-      alert('성공적으로 리뷰를 등록했습니다!')
-      router.push(`/articles/${articleId}`)
-      isLoading.value = false
-    }, 1000)
+    await new Promise((resolve) => {
+      setTimeout(() => {
+        resolve()
+      }, 1000)
+    })
+    alert('성공적으로 리뷰를 등록했습니다!')
+    router.push(`/articles/${articleId}`)
   } catch (err) {
     errorMsg.value = '리뷰 저장에 실패했습니다. 다시 시도해 주세요.'
+  } finally {
     isLoading.value = false
   }
 }

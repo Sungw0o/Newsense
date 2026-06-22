@@ -29,8 +29,15 @@ const handleLogin = async () => {
       password: password.value
     })
     
-    // Redirect to the originally requested route, or home '/'
-    const redirectPath = route.query.redirect || '/'
+    // Redirect to the originally requested route, or home '/' after validating it's a safe internal relative path
+    let redirectPath = '/'
+    const rawRedirect = route.query.redirect
+    const target = Array.isArray(rawRedirect) ? rawRedirect[0] : rawRedirect
+
+    if (typeof target === 'string' && target.startsWith('/') && !target.startsWith('//') && !target.startsWith('/\\')) {
+      redirectPath = target
+    }
+
     router.push(redirectPath)
   } catch (err) {
     errorMsg.value = err.response?.data?.message || '로그인 중 오류가 발생했습니다. 다시 시도해 주세요.'

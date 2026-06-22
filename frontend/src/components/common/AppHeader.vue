@@ -9,6 +9,15 @@ const userStore = useUserStore()
 const { isAuthenticated, userInfo } = storeToRefs(userStore)
 
 const showDropdown = ref(false)
+const showMobileMenu = ref(false)
+
+const toggleDropdown = () => {
+  showDropdown.value = !showDropdown.value
+}
+
+const toggleMobileMenu = () => {
+  showMobileMenu.value = !showMobileMenu.value
+}
 
 const handleLogout = async () => {
   if (confirm('정말로 로그아웃 하시겠습니까?')) {
@@ -18,9 +27,7 @@ const handleLogout = async () => {
   }
 }
 
-const toggleDropdown = () => {
-  showDropdown.value = !showDropdown.value
-}
+// removed duplicate toggleDropdown
 
 const nicknameFirstLetter = computed(() => {
   if (userInfo.value?.nickname) {
@@ -122,8 +129,48 @@ const nicknameFirstLetter = computed(() => {
               회원가입
             </router-link>
           </div>
+
+          <!-- Mobile Menu Toggle Button -->
+          <button 
+            @click="toggleMobileMenu" 
+            class="md:hidden p-2 rounded-xl text-slate-500 hover:text-slate-700 hover:bg-slate-100 transition-colors duration-200"
+            aria-label="Toggle mobile menu"
+          >
+            <span class="text-xl">{{ showMobileMenu ? '✕' : '☰' }}</span>
+          </button>
         </div>
 
+      </div>
+
+      <!-- Mobile Nav Menu (Collapsible) -->
+      <div 
+        v-if="showMobileMenu" 
+        class="md:hidden py-4 border-t border-slate-100 animate-[slideDown_0.2s_ease-out] flex flex-col gap-1 text-sm font-semibold"
+      >
+        <router-link 
+          to="/" 
+          @click="showMobileMenu = false"
+          class="px-4 py-2 text-slate-600 hover:text-primary-600 hover:bg-slate-50 rounded-xl transition-all duration-200"
+          active-class="text-primary-600 bg-primary-50/50"
+        >
+          뉴스 피드
+        </router-link>
+        <router-link 
+          to="/history" 
+          @click="showMobileMenu = false"
+          class="px-4 py-2 text-slate-600 hover:text-primary-600 hover:bg-slate-50 rounded-xl transition-all duration-200"
+          active-class="text-primary-600 bg-primary-50/50"
+        >
+          학습 이력
+        </router-link>
+        <router-link 
+          to="/wrong-notes" 
+          @click="showMobileMenu = false"
+          class="px-4 py-2 text-slate-600 hover:text-primary-600 hover:bg-slate-50 rounded-xl transition-all duration-200"
+          active-class="text-primary-600 bg-primary-50/50"
+        >
+          오답노트
+        </router-link>
       </div>
     </div>
   </nav>

@@ -4,6 +4,7 @@ const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8080
 
 const axiosInstance = axios.create({
   baseURL: API_BASE_URL,
+  timeout: 10000, // 10초 타임아웃 설정
   withCredentials: true, // 필수: HttpOnly 쿠키(Refresh Token) 송수신용
   headers: {
     'Content-Type': 'application/json',
@@ -49,7 +50,14 @@ axiosInstance.interceptors.response.use(
     const originalRequest = error.config
 
     // 401 Unauthorized 에러 발생 시 토큰 갱신 시도
-    if (error.response?.status === 401 && !originalRequest._retry) {
+    // 단, 로그인/회원가입/토큰재발급 등 인증 엔드포인트 자체에서 401이 나면 갱신 시도를 하지 않음
+    const isAuthRequest = originalRequest.url && (
+      originalRequest.url.includes('/auth/login') ||
+      originalRequest.url.includes('/auth/register') ||
+      originalRequest.url.includes('/auth/refresh')
+    )
+
+    if (error.response?.status === 401 && !originalRequest._retry && !isAuthRequest) {
       if (isRefreshing) {
         return new Promise((resolve, reject) => {
           failedQueue.push({ resolve, reject })
@@ -68,6 +76,7 @@ axiosInstance.interceptors.response.use(
         // Refresh Token은 HttpOnly 쿠키로 오기 때문에 빈 Body로 POST 요청 전송
         const response = await axios.post(`${API_BASE_URL}/auth/refresh`, {}, {
           withCredentials: true,
+          timeout: 10000, // 갱신 요청에도 10초 타임아웃 지정
         })
         
         // 백엔드 응답 규격에 맞춰 새로운 Access Token 추출

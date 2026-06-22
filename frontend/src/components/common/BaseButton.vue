@@ -25,7 +25,7 @@ const props = defineProps({
 })
 
 const buttonClasses = computed(() => {
-  const base = 'inline-flex items-center justify-center rounded-xl font-bold transition-all duration-300 active:scale-95 outline-none'
+  const base = 'inline-flex items-center justify-center rounded-xl font-bold transition-all duration-300 active:scale-95 outline-none focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:ring-offset-2'
   
   const sizes = {
     sm: 'px-3 py-1.5 text-xs',

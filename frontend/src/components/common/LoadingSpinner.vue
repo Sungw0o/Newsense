@@ -1,5 +1,10 @@
 <template>
-  <div class="flex flex-col items-center justify-center py-12">
+  <div 
+    class="flex flex-col items-center justify-center py-12"
+    role="status"
+    aria-live="polite"
+    aria-busy="true"
+  >
     <!-- Spinning rings -->
     <div class="relative w-12 h-12">
       <div class="absolute w-full h-full border-4 border-slate-100 rounded-full"></div>

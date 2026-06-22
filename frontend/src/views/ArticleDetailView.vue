@@ -1,15 +1,25 @@
 <script setup>
-import { ref, onMounted } from 'vue'
+import { ref, computed, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
+import { useArticleStore } from '../stores/useArticleStore'
 import BaseButton from '../components/common/BaseButton.vue'
 import BaseBadge from '../components/common/BaseBadge.vue'
 
 const route = useRoute()
 const router = useRouter()
-const articleId = ref(route.params.id)
+const articleStore = useArticleStore()
 
-const isBookmarked = ref(false)
+const articleId = computed(() => route.params.id)
 const selectedTerm = ref(null)
+
+const isBookmarked = computed({
+  get: () => articleStore.selectedArticle?.isBookmarked ?? false,
+  set: (val) => {
+    if (articleStore.selectedArticle) {
+      articleStore.selectedArticle.isBookmarked = val
+    }
+  }
+})
 
 // 모의 기사 상세 데이터
 const article = ref({
@@ -54,7 +64,6 @@ const processContent = () => {
   formattedParagraphs.value = paragraphs.map(p => {
     // [용어]를 감지하여 파싱
     const parts = []
-    let remaining = p
     const regex = /\[(.*?)\]/g
     let match
 
@@ -99,8 +108,12 @@ const showTermDefinition = (termName) => {
   }
 }
 
-const toggleBookmark = () => {
-  isBookmarked.value = !isBookmarked.value
+const toggleBookmark = async () => {
+  try {
+    await articleStore.toggleBookmark(articleId.value)
+  } catch (err) {
+    alert('북마크 처리에 실패했습니다.')
+  }
 }
 
 const startQuiz = () => {
@@ -112,6 +125,12 @@ const writeReview = () => {
 }
 
 onMounted(() => {
+  // 모의 데이터를 스토어의 selectedArticle에 세팅
+  articleStore.selectedArticle = {
+    id: articleId.value,
+    ...article.value,
+    isBookmarked: false
+  }
   processContent()
 })
 </script>
