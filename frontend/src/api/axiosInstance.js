@@ -1,6 +1,6 @@
 import axios from 'axios'
 
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8080/api'
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8080/api/v1'
 
 const axiosInstance = axios.create({
   baseURL: API_BASE_URL,
@@ -53,7 +53,7 @@ axiosInstance.interceptors.response.use(
     // 단, 로그인/회원가입/토큰재발급 등 인증 엔드포인트 자체에서 401이 나면 갱신 시도를 하지 않음
     const isAuthRequest = originalRequest.url && (
       originalRequest.url.includes('/auth/login') ||
-      originalRequest.url.includes('/auth/register') ||
+      originalRequest.url.includes('/auth/signup') ||
       originalRequest.url.includes('/auth/refresh')
     )
 
