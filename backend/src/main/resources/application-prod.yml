@@ -14,6 +14,7 @@ spring:
   data:
     mongodb:
       uri: ${SPRING_DATA_MONGODB_URI}
+      auto-index-creation: true
     redis:
       host: ${SPRING_DATA_REDIS_HOST}
       port: ${SPRING_DATA_REDIS_PORT:6379}
@@ -23,6 +24,38 @@ jwt:
   access-expiration: ${JWT_ACCESS_EXPIRATION:1800000}
   refresh-expiration: ${JWT_REFRESH_EXPIRATION:1209600000}
   secure-cookie: true
+
+crawler:
+  enabled: ${CRAWLER_ENABLED:true}
+  initial-delay: ${CRAWLER_INITIAL_DELAY:60000}
+  fixed-delay: ${CRAWLER_FIXED_DELAY:3600000}
+  connection-timeout: ${CRAWLER_CONNECTION_TIMEOUT:10000}
+  max-items-per-source: ${CRAWLER_MAX_ITEMS:20}
+  max-retries: ${CRAWLER_MAX_RETRIES:3}
+  retry-delay: ${CRAWLER_RETRY_DELAY:1000}
+  request-delay: ${CRAWLER_REQUEST_DELAY:500}
+  chunk-size: ${CRAWLER_CHUNK_SIZE:800}
+  sources:
+    - key: bok
+      name: 한국은행
+      base-url: https://www.bok.or.kr
+      list-url: ${BOK_CRAWLER_LIST_URL}
+      item-selector: ${BOK_CRAWLER_ITEM_SELECTOR:li.bbsRowCls}
+      link-selector: ${BOK_CRAWLER_LINK_SELECTOR:a.title}
+      date-selector: ${BOK_CRAWLER_DATE_SELECTOR:.dataInfo .date}
+      body-selector: ${BOK_CRAWLER_BODY_SELECTOR:meta[property=description]}
+      body-attribute: ${BOK_CRAWLER_BODY_ATTRIBUTE:content}
+      enabled: ${BOK_CRAWLER_ENABLED:true}
+    - key: moef
+      name: 기획재정부
+      base-url: https://www.moef.go.kr
+      list-url: ${MOEF_CRAWLER_LIST_URL}
+      item-selector: ${MOEF_CRAWLER_ITEM_SELECTOR:.board_list tbody tr}
+      link-selector: ${MOEF_CRAWLER_LINK_SELECTOR:a}
+      date-selector: ${MOEF_CRAWLER_DATE_SELECTOR:.date}
+      body-selector: ${MOEF_CRAWLER_BODY_SELECTOR:.view_cont}
+      body-attribute: ${MOEF_CRAWLER_BODY_ATTRIBUTE:}
+      enabled: ${MOEF_CRAWLER_ENABLED:true}
 
 logging:
   level:
