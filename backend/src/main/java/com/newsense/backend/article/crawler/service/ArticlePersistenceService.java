@@ -7,9 +7,11 @@ import com.newsense.backend.article.crawler.util.ContentHasher;
 import com.newsense.backend.article.crawler.util.SentenceChunker;
 import com.newsense.backend.article.document.ArticleContent;
 import com.newsense.backend.article.domain.ArticleMeta;
+import com.newsense.backend.article.event.ArticleStoredEvent;
 import com.newsense.backend.article.repository.ArticleContentRepository;
 import com.newsense.backend.article.repository.ArticleMetaRepository;
 import lombok.RequiredArgsConstructor;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.dao.DuplicateKeyException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -29,6 +31,7 @@ public class ArticlePersistenceService {
     private final SentenceChunker sentenceChunker;
     private final ContentHasher contentHasher;
     private final CrawlerProperties properties;
+    private final ApplicationEventPublisher eventPublisher;
 
     @Transactional
     public boolean saveIfNew(CrawledArticle article) {
@@ -77,7 +80,8 @@ public class ArticlePersistenceService {
                     savedContent.getId(),
                     contentHash
             );
-            articleMetaRepository.save(meta);
+            ArticleMeta savedMeta = articleMetaRepository.save(meta);
+            eventPublisher.publishEvent(new ArticleStoredEvent(savedMeta.getId()));
             return true;
         } catch (RuntimeException exception) {
             articleContentRepository.deleteById(savedContent.getId());
