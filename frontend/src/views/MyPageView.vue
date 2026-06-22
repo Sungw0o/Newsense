@@ -1,0 +1,133 @@
+<script setup>
+import { ref } from 'vue'
+import { useRouter } from 'vue-router'
+import { useUserStore } from '../stores/useUserStore'
+import BaseButton from '../components/common/BaseButton.vue'
+
+const router = useRouter()
+const userStore = useUserStore()
+
+const nickname = ref(userStore.userInfo?.nickname || '경제어린이')
+const email = ref(userStore.userInfo?.email || 'user@example.com')
+const subPlan = ref('Standard Plan (Free)')
+
+const categories = ref([
+  { id: 'finance', name: '금융', selected: true },
+  { id: 'estate', name: '부동산', selected: true },
+  { id: 'stock', name: '주식', selected: false },
+  { id: 'exchange', name: '환율', selected: false },
+  { id: 'macro', name: '거시경제', selected: true }
+])
+
+const isSaving = ref(false)
+
+const handleUpdateProfile = () => {
+  isSaving.value = true
+  
+  // API Call Mock
+  setTimeout(() => {
+    isSaving.value = false
+    alert('프로필 및 환경 설정이 저장되었습니다!')
+  }, 1000)
+}
+
+const handleLogout = async () => {
+  if (confirm('정말로 로그아웃 하시겠습니까?')) {
+    await userStore.logout()
+    router.push('/login')
+  }
+}
+</script>
+
+<template>
+  <div class="max-w-4xl mx-auto px-4 py-8">
+    <header class="mb-8">
+      <h1 class="text-3xl font-extrabold text-slate-900 mb-2">마이페이지</h1>
+      <p class="text-slate-500 font-light">내 계정 정보와 관심 경제 카테고리 등 학습 맞춤 환경을 커스텀해 보세요.</p>
+    </header>
+
+    <div class="grid md:grid-cols-3 gap-8">
+      <!-- Left side: Profile brief -->
+      <div class="md:col-span-1 bg-white rounded-3xl border border-slate-200 p-6 text-center shadow-sm flex flex-col justify-between min-h-[300px]">
+        <div>
+          <!-- Avatar mockup -->
+          <div class="w-20 h-20 bg-gradient-to-tr from-primary-500 to-secondary-500 rounded-full mx-auto flex items-center justify-center text-white text-3xl font-bold mb-4 shadow-md">
+            {{ nickname.substring(0, 1) }}
+          </div>
+          <h2 class="text-lg font-bold text-slate-800">{{ nickname }}</h2>
+          <p class="text-slate-400 text-xs mt-1 font-light">{{ email }}</p>
+          
+          <div class="mt-6 pt-6 border-t border-slate-100">
+            <span class="text-slate-400 text-xs font-semibold uppercase tracking-wider block mb-1">구독 플랜</span>
+            <span class="text-sm font-bold text-primary-600 bg-primary-50 px-3 py-1 rounded-full border border-primary-200/50 inline-block">
+              {{ subPlan }}
+            </span>
+          </div>
+        </div>
+
+        <BaseButton 
+          variant="outline" 
+          @click="handleLogout"
+          class="w-full py-2.5 rounded-xl font-bold border-accent-200 text-accent-600 hover:bg-accent-50"
+        >
+          로그아웃
+        </BaseButton>
+      </div>
+
+      <!-- Right side: Profile Form -->
+      <div class="md:col-span-2 bg-white rounded-3xl border border-slate-200/80 p-8 shadow-premium space-y-6">
+        <h3 class="text-sm text-slate-400 font-semibold uppercase tracking-wider mb-2">
+          ⚙️ PROFILE & PREFERENCES
+        </h3>
+
+        <!-- Nickname Edit -->
+        <div>
+          <label for="nickname" class="block text-sm font-bold text-slate-700 mb-2">닉네임 변경</label>
+          <input 
+            id="nickname"
+            type="text" 
+            v-model="nickname"
+            class="w-full px-4 py-3 rounded-xl border border-slate-200 focus:border-primary-500 focus:ring-2 focus:ring-primary-100 outline-none transition-all duration-300 text-slate-800 text-sm"
+          />
+        </div>
+
+        <!-- Interest Topics checkbox list -->
+        <div>
+          <label class="block text-sm font-bold text-slate-700 mb-2">관심 경제 카테고리</label>
+          <p class="text-slate-400 text-xs mb-3 font-light">선택한 주제 위주로 추천 피드가 구성됩니다. (중복 선택 가능)</p>
+          
+          <div class="grid grid-cols-2 gap-3">
+            <label 
+              v-for="cat in categories" 
+              :key="cat.id"
+              class="border-2 rounded-xl p-3 flex items-center cursor-pointer select-none transition-all duration-200"
+              :class="cat.selected 
+                ? 'bg-primary-50 border-primary-500 text-primary-700 font-semibold' 
+                : 'bg-white border-slate-100 text-slate-500 hover:border-slate-200'"
+            >
+              <input 
+                type="checkbox" 
+                v-model="cat.selected"
+                class="sr-only"
+              />
+              <span class="mr-2">{{ cat.selected ? '✓' : '○' }}</span>
+              <span class="text-sm">{{ cat.name }}</span>
+            </label>
+          </div>
+        </div>
+
+        <!-- Save button -->
+        <div class="border-t border-slate-100 pt-6 flex justify-end">
+          <BaseButton 
+            variant="primary" 
+            :loading="isSaving"
+            @click="handleUpdateProfile"
+            class="py-3 px-8 rounded-xl font-bold bg-primary-600 hover:bg-primary-700 text-white shadow-md shadow-primary-100"
+          >
+            설정 저장하기
+          </BaseButton>
+        </div>
+      </div>
+    </div>
+  </div>
+</template>
