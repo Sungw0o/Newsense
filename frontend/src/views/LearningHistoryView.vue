@@ -11,9 +11,15 @@ const historyStore = useHistoryStore()
 // storeToRefs를 사용하여 Pinia 상태의 반응성을 유지하며 추출
 const { history, stats, isLoading, error } = storeToRefs(historyStore)
 
-onMounted(() => {
-  historyStore.fetchHistory()
-  historyStore.fetchStats()
+onMounted(async () => {
+  try {
+    await Promise.all([
+      historyStore.fetchHistory(),
+      historyStore.fetchStats()
+    ])
+  } catch (err) {
+    console.error('Failed to load history or stats:', err)
+  }
 })
 
 const navigateToDetail = (id) => {

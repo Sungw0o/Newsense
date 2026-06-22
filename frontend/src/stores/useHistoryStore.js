@@ -32,11 +32,16 @@ export const useHistoryStore = defineStore('history', {
      * 종합 학습 통계 로드
      */
     async fetchStats() {
+      this.isLoading = true
+      this.error = null
       try {
         const response = await learningApi.getStats()
         this.stats = response.data || response
       } catch (err) {
-        console.error('Fetch stats error:', err)
+        this.error = err.message || '학습 통계를 불러오지 못했습니다.'
+        throw err
+      } finally {
+        this.isLoading = false
       }
     }
   }

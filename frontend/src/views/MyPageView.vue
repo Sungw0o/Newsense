@@ -66,7 +66,7 @@ const handleUpdateProfile = async () => {
 
   try {
     await userStore.updateUserProfile({
-      nickname: nickname.value,
+      nickname: nickname.value.trim(),
       interests: selectedInterests
     })
     alert('프로필 및 환경 설정이 저장되었습니다!')

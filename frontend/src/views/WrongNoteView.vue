@@ -8,8 +8,12 @@ const { wrongNotes, isLoading, error } = storeToRefs(wrongNoteStore)
 
 const activeTab = ref('unresolved')
 
-onMounted(() => {
-  wrongNoteStore.fetchWrongNotes()
+onMounted(async () => {
+  try {
+    await wrongNoteStore.fetchWrongNotes()
+  } catch (err) {
+    console.error('Failed to load wrong notes:', err)
+  }
 })
 
 // computed를 사용하여 탭에 따른 필터링을 동적으로 처리
