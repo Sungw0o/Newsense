@@ -1,34 +1,80 @@
 <script setup>
-import { ref } from 'vue'
+import { ref, watch, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
+import { storeToRefs } from 'pinia'
 import { useUserStore } from '../stores/useUserStore'
 import BaseButton from '../components/common/BaseButton.vue'
 
 const router = useRouter()
 const userStore = useUserStore()
+const { userInfo } = storeToRefs(userStore)
 
-const nickname = ref(userStore.userInfo?.nickname || '경제어린이')
-const email = ref(userStore.userInfo?.email || 'user@example.com')
+const nickname = ref('')
+const email = ref('')
 const subPlan = ref('Standard Plan (Free)')
 
 const categories = ref([
-  { id: 'finance', name: '금융', selected: true },
-  { id: 'estate', name: '부동산', selected: true },
+  { id: 'finance', name: '금융', selected: false },
+  { id: 'estate', name: '부동산', selected: false },
   { id: 'stock', name: '주식', selected: false },
   { id: 'exchange', name: '환율', selected: false },
-  { id: 'macro', name: '거시경제', selected: true }
+  { id: 'macro', name: '거시경제', selected: false }
 ])
 
 const isSaving = ref(false)
 
-const handleUpdateProfile = () => {
+// 스토어에서 사용자 정보 로드 시 입력값 초기화
+const initFormData = () => {
+  if (userInfo.value) {
+    nickname.value = userInfo.value.nickname || ''
+    email.value = userInfo.value.email || ''
+    subPlan.value = userInfo.value.subPlan || 'Standard Plan (Free)'
+    
+    const interests = userInfo.value.interests || []
+    categories.value.forEach(cat => {
+      cat.selected = interests.includes(cat.id)
+    })
+  }
+}
+
+onMounted(async () => {
+  try {
+    await userStore.fetchUserProfile()
+    initFormData()
+  } catch (err) {
+    console.error('Failed to load profile on mount')
+  }
+})
+
+// userInfo가 변경될 때도 폼 데이터를 동기화해 줍니다.
+watch(userInfo, () => {
+  initFormData()
+}, { deep: true })
+
+const handleUpdateProfile = async () => {
+  if (!nickname.value.trim()) {
+    alert('닉네임을 입력해 주세요.')
+    return
+  }
+
   isSaving.value = true
   
-  // API Call Mock
-  setTimeout(() => {
-    isSaving.value = false
+  // 선택된 관심 카테고리 ID 배열 추출
+  const selectedInterests = categories.value
+    .filter(cat => cat.selected)
+    .map(cat => cat.id)
+
+  try {
+    await userStore.updateUserProfile({
+      nickname: nickname.value.trim(),
+      interests: selectedInterests
+    })
     alert('프로필 및 환경 설정이 저장되었습니다!')
-  }, 1000)
+  } catch (err) {
+    alert('프로필 저장에 실패했습니다.')
+  } finally {
+    isSaving.value = false
+  }
 }
 
 const handleLogout = async () => {
