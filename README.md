@@ -118,6 +118,7 @@ docker compose up -d --build
 * **Nginx 진입 주소**: `http://127.0.0.1:8080`
 * **헬스 체크**: `http://127.0.0.1:8080/api/v1/health`
 * MySQL, MongoDB, Redis는 외부 호스트 포트에 바인딩하지 않고 Compose 내부 네트워크에서만 접근합니다.
+* 운영 안정성을 위해 JPA 스키마 검증은 기본 `SPRING_JPA_DDL_AUTO=validate`로 실행합니다. 빈 DB 최초 기동 시에만 일시적으로 `update`를 사용한 뒤 다시 `validate`로 되돌립니다.
 * 상세 절차는 [`docs/docker-compose.md`](docs/docker-compose.md)를 참고합니다.
 
 ### 1. 데이터베이스 준비

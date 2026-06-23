@@ -22,6 +22,25 @@ cp .env.example .env
 - `JWT_SECRET`
 - `OPENAI_API_KEY`
 
+### 운영 DB 스키마 전략
+
+`SPRING_JPA_DDL_AUTO`의 기본값은 `validate`입니다. 안정 운영에서는 애플리케이션이 DB 스키마를 임의로 변경하지 않도록 `validate`를 유지합니다.
+
+초기 MVP 서버처럼 빈 MySQL 볼륨에 최초 스키마를 만들어야 하는 경우에만 `.env`에서 일시적으로 다음 값을 사용할 수 있습니다.
+
+```bash
+SPRING_JPA_DDL_AUTO=update
+```
+
+최초 기동 후 테이블 생성이 확인되면 반드시 다시 `validate`로 되돌린 뒤 재기동합니다.
+
+```bash
+SPRING_JPA_DDL_AUTO=validate
+docker compose up -d --build
+```
+
+장기 운영 단계에서는 `update` 대신 Flyway 또는 Liquibase 같은 마이그레이션 도구로 스키마 변경 이력을 관리하는 것을 권장합니다.
+
 ## 실행
 
 ```bash
