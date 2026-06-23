@@ -1,5 +1,5 @@
 import { defineStore } from 'pinia'
-import axiosInstance from '../api/axiosInstance'
+import articleApi from '../api/articleApi'
 
 export const useArticleStore = defineStore('article', {
   state: () => ({
@@ -60,13 +60,7 @@ export const useArticleStore = defineStore('article', {
 
       try {
         const { category, difficulty, page, size } = this.filters
-        const queryParams = new URLSearchParams()
-        if (category) queryParams.append('category', category)
-        if (difficulty) queryParams.append('difficulty', difficulty)
-        queryParams.append('page', page)
-        queryParams.append('size', size)
-
-        const response = await axiosInstance.get(`/articles?${queryParams.toString()}`)
+        const response = await articleApi.getArticles({ category, difficulty, page, size })
         
         // 최신 요청이 아닌 경우 무시 (Race Condition 방지)
         if (requestId !== this.currentRequestId) return
@@ -102,7 +96,7 @@ export const useArticleStore = defineStore('article', {
       this.selectedArticleTerms = [] // 상세조회 시작 시 이전 데이터 클리어
       this.isLoading = true
       try {
-        const response = await axiosInstance.get(`/articles/${articleId}`)
+        const response = await articleApi.getArticleDetail(articleId)
         this.selectedArticle = response.data || response
         await this.fetchArticleTerms(articleId)
       } catch (error) {
@@ -118,7 +112,7 @@ export const useArticleStore = defineStore('article', {
      */
     async fetchArticleTerms(articleId) {
       try {
-        const response = await axiosInstance.get(`/articles/${articleId}/terms`)
+        const response = await articleApi.getArticleTerms(articleId)
         this.selectedArticleTerms = response.data || response
       } catch (error) {
         console.error('Fetch article terms error:', error)
@@ -132,7 +126,7 @@ export const useArticleStore = defineStore('article', {
      */
     async markArticleAsRead(articleId) {
       try {
-        return await axiosInstance.post(`/articles/${articleId}/read`)
+        return await articleApi.markAsRead(articleId)
       } catch (error) {
         console.error('Mark article as read error:', error)
         throw error // 에러 전파
@@ -144,7 +138,7 @@ export const useArticleStore = defineStore('article', {
      */
     async toggleBookmark(articleId) {
       try {
-        const response = await axiosInstance.post(`/articles/${articleId}/bookmark`)
+        const response = await articleApi.toggleBookmark(articleId)
         if (this.selectedArticle && this.selectedArticle.id === articleId) {
           // 로컬 상태 동기화
           this.selectedArticle.isBookmarked = !this.selectedArticle.isBookmarked

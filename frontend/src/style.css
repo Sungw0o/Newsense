@@ -6,35 +6,70 @@
 @tailwind components;
 @tailwind utilities;
 
+/* Light & Dark Theme CSS Variables */
+:root {
+  --bg-base: #f8fafc; /* slate-50 */
+  --text-base: #0f172a; /* slate-900 */
+  --glass-bg: rgba(255, 255, 255, 0.45);
+  --glass-border: rgba(15, 23, 42, 0.08);
+  --glass-shadow: rgba(0, 132, 255, 0.08);
+  --glass-blur: 20px;
+  --input-bg: rgba(255, 255, 255, 0.35);
+  --input-border: rgba(15, 23, 42, 0.08);
+  --scrollbar-track: #f1f5f9;
+  --scrollbar-thumb: #cbd5e1;
+  --scrollbar-thumb-hover: #94a3b8;
+}
+
+.dark {
+  --bg-base: #07090f; /* dark-950 */
+  --text-base: #f1f5f9; /* slate-100 */
+  --glass-bg: rgba(12, 15, 25, 0.55);
+  --glass-border: rgba(255, 255, 255, 0.08);
+  --glass-shadow: rgba(0, 132, 255, 0.15);
+  --glass-blur: 24px;
+  --input-bg: rgba(12, 15, 25, 0.45);
+  --input-border: rgba(255, 255, 255, 0.08);
+  --scrollbar-track: #07090f;
+  --scrollbar-thumb: #1e293b;
+  --scrollbar-thumb-hover: #334155;
+}
+
 @layer base {
   body {
     font-family: 'Pretendard', 'Noto Sans KR', -apple-system, BlinkMacSystemFont, system-ui, Roboto, 'Segoe UI', 'Apple SD Gothic Neo', sans-serif;
-    @apply bg-dark-950 text-slate-100 antialiased min-h-screen selection:bg-primary-500/30 selection:text-primary-200;
+    background-color: var(--bg-base);
+    color: var(--text-base);
+    @apply antialiased min-h-screen transition-colors duration-300 selection:bg-primary-500/30 selection:text-primary-200;
   }
 
-  /* Custom dark-themed scrollbar */
+  /* Webkit Scrollbar */
   ::-webkit-scrollbar {
     width: 8px;
     height: 8px;
   }
   ::-webkit-scrollbar-track {
-    background: #07090f;
+    background: var(--scrollbar-track);
+    transition: background 0.3s;
   }
   ::-webkit-scrollbar-thumb {
-    background: #1e293b;
+    background: var(--scrollbar-thumb);
     border-radius: 9999px;
+    transition: background 0.3s;
   }
   ::-webkit-scrollbar-thumb:hover {
-    background: #334155;
+    background: var(--scrollbar-thumb-hover);
   }
 }
 
-/* Glassmorphism Surface Panel */
+/* Glassmorphism Surface Panel (Liquid Glass style) */
 .glass-panel {
-  background: rgba(15, 23, 42, 0.45);
-  backdrop-filter: blur(16px);
-  -webkit-backdrop-filter: blur(16px);
-  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: var(--glass-bg);
+  backdrop-filter: blur(var(--glass-blur));
+  -webkit-backdrop-filter: blur(var(--glass-blur));
+  border: 1px solid var(--glass-border);
+  box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.05);
+  @apply transition-colors duration-300;
 }
 
 /* Glassmorphism Interactive Panel with Hover Glow & Animation */
@@ -42,16 +77,70 @@
   @apply transition-all duration-300;
 }
 .glass-panel-hover:hover {
-  background: rgba(15, 23, 42, 0.6);
-  border-color: rgba(0, 132, 255, 0.25);
-  box-shadow: 0 0 25px rgba(0, 132, 255, 0.15);
+  background: var(--glass-bg);
+  border-color: rgba(0, 132, 255, 0.3);
+  box-shadow: 0 10px 30px 0 var(--glass-shadow);
   transform: translateY(-2px);
 }
 
 /* Glassmorphism Form Inputs */
 .glass-input {
-  background: rgba(15, 23, 42, 0.35);
-  border: 1px solid rgba(255, 255, 255, 0.08);
-  @apply text-white placeholder-slate-500 rounded-xl px-4 py-3 outline-none transition-all duration-300 focus:border-primary-500/50 focus:bg-dark-900/50 focus:ring-1 focus:ring-primary-500/30;
+  background: var(--input-bg);
+  border: 1px solid var(--input-border);
+  color: var(--text-base);
+  @apply placeholder-slate-400 dark:placeholder-slate-500 rounded-xl px-4 py-3 outline-none transition-all duration-300 focus:border-primary-500/50 focus:ring-1 focus:ring-primary-500/30;
 }
 
+/* Liquid Glass Background Orbs */
+.liquid-orb {
+  position: absolute;
+  border-radius: 50%;
+  filter: blur(80px);
+  opacity: 0.45;
+  mix-blend-mode: multiply;
+  @apply pointer-events-none;
+}
+
+.dark .liquid-orb {
+  opacity: 0.3;
+  mix-blend-mode: screen;
+}
+
+.liquid-orb-primary {
+  background: linear-gradient(135deg, #0084ff 0%, #0ea5e9 100%);
+  width: 500px;
+  height: 500px;
+  animation: liquid-animation-1 25s ease-in-out infinite alternate;
+}
+
+.liquid-orb-secondary {
+  background: linear-gradient(135deg, #3ad07b 0%, #0284c7 100%);
+  width: 600px;
+  height: 600px;
+  animation: liquid-animation-2 30s ease-in-out infinite alternate;
+}
+
+.liquid-orb-accent {
+  background: linear-gradient(135deg, #f55252 0%, #a21caf 100%);
+  width: 450px;
+  height: 450px;
+  animation: liquid-animation-3 20s ease-in-out infinite alternate;
+}
+
+@keyframes liquid-animation-1 {
+  0% { transform: translate(0, 0) scale(1); }
+  50% { transform: translate(120px, 80px) scale(1.15); }
+  100% { transform: translate(-50px, 150px) scale(0.9); }
+}
+
+@keyframes liquid-animation-2 {
+  0% { transform: translate(0, 0) scale(1.1); }
+  50% { transform: translate(-100px, -120px) scale(0.85); }
+  100% { transform: translate(80px, 60px) scale(1.05); }
+}
+
+@keyframes liquid-animation-3 {
+  0% { transform: translate(0, 0) scale(0.95); }
+  50% { transform: translate(70px, -90px) scale(1.1); }
+  100% { transform: translate(-120px, 40px) scale(0.8); }
+}

@@ -94,6 +94,21 @@ export const useUserStore = defineStore('user', {
       } else {
         this.clearAuth()
       }
+    },
+
+    /**
+     * 사용자 정보(프로필) 업데이트
+     * @param {Object} profileData { nickname, interests }
+     */
+    async updateUserProfile(profileData) {
+      try {
+        const response = await axiosInstance.put('/users/me', profileData)
+        this.userInfo = response.data || response
+        return this.userInfo
+      } catch (error) {
+        console.error('Update profile error:', error)
+        throw error
+      }
     }
   }
 })

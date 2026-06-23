@@ -1,15 +1,30 @@
-<template>
-  <slot v-if="isAuthenticated" />
-</template>
-
 <script setup>
-import { useUserStore } from '../../stores/useUserStore'
 import { computed } from 'vue'
 import { useRouter } from 'vue-router'
+import { useUserStore } from '@/stores/useUserStore'
+import { storeToRefs } from 'pinia'
 
-const userStore = useUserStore()
+const props = defineProps({
+  /** true이면 미인증 시 /login으로 리다이렉트 */
+  requiresAuth: { type: Boolean, default: true },
+  /** 리다이렉트 대상 경로 (미설정 시 /login) */
+  redirectTo: { type: String, default: '/login' }
+})
+
 const router = useRouter()
-const isAuthenticated = computed(() => userStore.isAuthenticated)
+const userStore = useUserStore()
+const { isAuthenticated } = storeToRefs(userStore)
 
-// Optional: redirect to login if not authenticated (router guard already handles)
+const canRender = computed(() => {
+  if (props.requiresAuth && !isAuthenticated.value) {
+    router.replace(props.redirectTo)
+    return false
+  }
+  return true
+})
 </script>
+
+<template>
+  <slot v-if="canRender" />
+</template>
+

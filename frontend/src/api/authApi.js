@@ -6,7 +6,7 @@ export const authApi = {
    * @param {Object} registerData { email, password, nickname }
    */
   register(registerData) {
-    return axiosInstance.post('/auth/register', registerData)
+    return axiosInstance.post('/auth/signup', registerData)
   },
 
   /**
@@ -18,6 +18,13 @@ export const authApi = {
   },
 
   /**
+   * Access Token 재발급 API (Refresh Token은 HttpOnly Cookie로 전송)
+   */
+  refresh() {
+    return axiosInstance.post('/auth/refresh')
+  },
+
+  /**
    * 로그아웃 API
    */
   logout() {
@@ -26,3 +33,4 @@ export const authApi = {
 }
 
 export default authApi
+
