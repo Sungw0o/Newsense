@@ -40,12 +40,12 @@ const handleClick = () => {
       </div>
 
       <!-- Title -->
-      <h3 class="text-lg font-bold text-white mb-3 group-hover:text-primary-400 transition-colors duration-300 leading-snug">
+      <h3 class="text-lg font-bold text-slate-800 dark:text-white mb-3 group-hover:text-primary-400 transition-colors duration-300 leading-snug">
         {{ article.title }}
       </h3>
 
       <!-- Preview Description -->
-      <p class="text-slate-400 text-sm font-light mb-6 line-clamp-3 leading-relaxed">
+      <p class="text-slate-600 dark:text-slate-400 text-sm font-light mb-6 line-clamp-3 leading-relaxed">
         {{ article.preview }}
       </p>
     </div>

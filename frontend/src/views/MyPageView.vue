@@ -14,11 +14,12 @@ const email = ref('')
 const subPlan = ref('Standard Plan (Free)')
 
 const categories = ref([
-  { id: 'finance', name: '금융', selected: false },
-  { id: 'estate', name: '부동산', selected: false },
-  { id: 'stock', name: '주식', selected: false },
-  { id: 'exchange', name: '환율', selected: false },
-  { id: 'macro', name: '거시경제', selected: false }
+  { id: 'FINANCE', name: '금융', selected: false },
+  { id: 'REAL_ESTATE', name: '부동산', selected: false },
+  { id: 'STOCK', name: '주식', selected: false },
+  { id: 'EXCHANGE_RATE', name: '환율', selected: false },
+  { id: 'ECONOMY', name: '거시경제', selected: false },
+  { id: 'MONETARY_POLICY', name: '통화정책', selected: false }
 ])
 
 const isSaving = ref(false)

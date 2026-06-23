@@ -49,10 +49,14 @@ const displayArticles = computed(() => {
     return articles.value
   }
   // 필터링 적용된 mock 기사 반환
+  let res = mockArticles.value
   if (filters.value.category) {
-    return mockArticles.value.filter(a => a.category === filters.value.category)
+    res = res.filter(a => a.category === filters.value.category)
   }
-  return mockArticles.value
+  if (filters.value.difficulty) {
+    res = res.filter(a => a.difficulty === filters.value.difficulty)
+  }
+  return res
 })
 
 const activeCategory = computed(() => {
@@ -68,6 +72,11 @@ onMounted(() => {
 const filterByCategory = async (category) => {
   const categoryParam = category === '전체' ? '' : category
   await articleStore.setCategory(categoryParam)
+}
+
+const filterByDifficulty = async (difficulty) => {
+  const diffParam = difficulty === '전체' ? '' : difficulty
+  await articleStore.setDifficulty(diffParam)
 }
 
 const navigateToDetail = (id) => {
@@ -117,19 +126,38 @@ const handleLoadMore = () => {
       </div>
     </header>
 
-    <!-- Categories Filter Tabs -->
-    <div class="flex flex-wrap items-center gap-2.5 mb-8 border-b border-slate-200/60 dark:border-white/5 pb-4">
-      <button 
-        v-for="cat in categories" 
-        :key="cat"
-        @click="filterByCategory(cat)"
-        class="px-4 py-2.5 text-xs font-semibold rounded-full border transition-all duration-300 select-none"
-        :class="activeCategory === cat 
-          ? 'bg-primary-500 border-primary-500/30 text-white shadow-glass-glow' 
-          : 'bg-slate-200/40 border-slate-200/50 text-slate-500 hover:bg-slate-200/60 dark:bg-white/5 dark:border-white/5 dark:text-slate-400 dark:hover:bg-white/10 dark:hover:text-slate-200'"
-      >
-        {{ cat }}
-      </button>
+    <!-- Categories and Difficulties Filter Tabs -->
+    <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-8 border-b border-slate-200/60 dark:border-white/5 pb-4">
+      <!-- Categories -->
+      <div class="flex flex-wrap items-center gap-2.5">
+        <button 
+          v-for="cat in categories" 
+          :key="cat"
+          @click="filterByCategory(cat)"
+          class="px-4 py-2.5 text-xs font-semibold rounded-full border transition-all duration-300 select-none"
+          :class="activeCategory === cat 
+            ? 'bg-primary-500 border-primary-500/30 text-white shadow-glass-glow' 
+            : 'bg-slate-200/40 border-slate-200/50 text-slate-500 hover:bg-slate-200/60 dark:bg-white/5 dark:border-white/5 dark:text-slate-400 dark:hover:bg-white/10 dark:hover:text-slate-200'"
+        >
+          {{ cat }}
+        </button>
+      </div>
+
+      <!-- Difficulty Filter -->
+      <div class="flex items-center gap-2">
+        <span class="text-xs text-slate-400 dark:text-slate-500 font-semibold select-none mr-1">난이도:</span>
+        <button 
+          v-for="diff in ['전체', '초급', '중급', '고급']" 
+          :key="diff"
+          @click="filterByDifficulty(diff)"
+          class="px-3 py-1.5 text-xs font-semibold rounded-lg border transition-all duration-300 select-none"
+          :class="(filters.difficulty || '전체') === diff || (diff === '전체' && !filters.difficulty)
+            ? 'bg-secondary-500 border-secondary-500/30 text-white' 
+            : 'bg-slate-200/40 border-slate-200/50 text-slate-500 hover:bg-slate-200/60 dark:bg-white/5 dark:border-white/5 dark:text-slate-400 dark:hover:bg-white/10'"
+        >
+          {{ diff }}
+        </button>
+      </div>
     </div>
 
     <!-- Articles Feed List Component -->

@@ -1,34 +1,25 @@
 <script setup>
-import { ref, computed } from 'vue'
+import { computed } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
+import { storeToRefs } from 'pinia'
+import { useQuizStore } from '../stores/useQuizStore'
 import BaseButton from '../components/common/BaseButton.vue'
 
 const route = useRoute()
 const router = useRouter()
 const articleId = route.params.id
 
-// 모의 퀴즈 결과 데이터
-const results = ref([
-  {
-    id: 101,
-    question: '기준금리가 인하되면 일반적으로 시중 은행의 대출 금리도 하락하는 경향이 있다.',
-    userAns: 'O',
-    correctAns: 'O',
-    isCorrect: true,
-    explanation: '시중 은행의 대출 금리는 한국은행의 기준금리와 시장 금리(코픽스 등)에 직접 연동되어 움직이므로 기준금리 인하 시 하락하는 경향을 띱니다.'
-  },
-  {
-    id: 102,
-    question: '이번 본문에서 설명한 한국은행 금리 인하의 직접적인 배경으로 올바르지 않은 것은 무엇인가요?',
-    userAns: '소비자물가 상승률의 안정세',
-    correctAns: '부동산 거래량 폭증을 유도하기 위한 정책적 목적',
-    isCorrect: false,
-    explanation: '한국은행의 이번 금리 인하 배경은 소비자물가 안정을 기반으로 한 실물 내수 경제 활성화이며, 인위적인 부동산 거래 폭증 유도는 정부의 공식 목적이 아닙니다.'
-  }
-])
+const quizStore = useQuizStore()
+const { quizResults } = storeToRefs(quizStore)
 
-const score = computed(() => results.value.filter(res => res.isCorrect).length)
-const total = computed(() => results.value.length)
+// 만약 퀴즈 결과가 없으면 (새로고침 등), 기사 본문으로 돌려보냅니다.
+if (!quizResults.value) {
+  router.replace(`/articles/${articleId}`)
+}
+
+const results = computed(() => quizResults.value?.results || [])
+const score = computed(() => quizResults.value?.score || 0)
+const total = computed(() => quizResults.value?.totalQuestions || 0)
 </script>
 
 <template>
@@ -49,7 +40,7 @@ const total = computed(() => results.value.length)
     <div class="space-y-6 mb-8">
       <div 
         v-for="(res, idx) in results" 
-        :key="res.id"
+        :key="res.quizId"
         class="bg-white rounded-2xl border p-6 shadow-sm transition-all duration-300 hover:border-slate-300"
         :class="res.isCorrect ? 'border-brand-200' : 'border-accent-200'"
       >

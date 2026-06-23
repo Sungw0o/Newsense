@@ -50,7 +50,7 @@ const navigateToDetail = (id) => {
               <span class="inline-block w-12 h-8 bg-slate-100 dark:bg-slate-800 animate-pulse rounded"></span>
             </template>
             <template v-else>
-              {{ stats?.totalRead || 0 }}
+              {{ stats?.totalReadArticleCount || 0 }}
             </template>
             <span class="text-lg font-light text-slate-400 dark:text-slate-500 ml-1">개</span>
           </span>
@@ -69,7 +69,7 @@ const navigateToDetail = (id) => {
               <span class="inline-block w-12 h-8 bg-slate-100 dark:bg-slate-800 animate-pulse rounded"></span>
             </template>
             <template v-else>
-              {{ stats?.quizAccuracy || 0 }}
+              {{ stats?.quizAccuracyRate || 0 }}
             </template>
             <span class="text-lg font-light text-slate-400 dark:text-slate-500 ml-1">%</span>
           </span>
@@ -88,7 +88,7 @@ const navigateToDetail = (id) => {
               <span class="inline-block w-12 h-8 bg-slate-100 dark:bg-slate-800 animate-pulse rounded"></span>
             </template>
             <template v-else>
-              {{ stats?.streak || 0 }}
+              {{ stats?.consecutiveLearningDays || 0 }}
             </template>
             <span class="text-lg font-light text-slate-400 dark:text-slate-500 ml-1">일째</span>
           </span>
@@ -117,51 +117,70 @@ const navigateToDetail = (id) => {
       </div>
 
       <!-- Empty state -->
-      <div v-else-if="!history || history.length === 0" class="text-center py-16">
+      <div v-else-if="!history || !history.days || history.days.length === 0" class="text-center py-16">
         <div class="text-4xl mb-4">📚</div>
         <p class="text-slate-400 dark:text-slate-500 font-light">아직 학습한 뉴스 이력이 없습니다.</p>
         <p class="text-slate-400 dark:text-slate-500 text-sm font-light mt-1">관심 경제 뉴스를 읽고 학습을 시작해 보세요!</p>
       </div>
 
       <!-- Real Data List -->
-      <div v-else class="divide-y divide-slate-100 dark:divide-white/10">
+      <div v-else class="space-y-8">
         <div 
-          v-for="item in history" 
-          :key="item.id"
-          class="py-5 flex flex-col sm:flex-row sm:items-center justify-between gap-4 first:pt-0 last:pb-0"
+          v-for="day in history.days" 
+          :key="day.date"
+          class="space-y-4"
         >
-          <div>
-            <div class="flex items-center gap-2 mb-2">
-              <BaseBadge :value="item.category" />
-              <span class="text-xs text-slate-400 dark:text-slate-500">{{ item.date }}</span>
-            </div>
-            <h3 
-              @click="navigateToDetail(item.id)"
-              class="text-base font-bold text-slate-800 dark:text-slate-200 hover:text-primary-600 dark:hover:text-primary-400 cursor-pointer"
-            >
-              {{ item.title }}
-            </h3>
+          <!-- Date Header -->
+          <div class="flex items-center gap-3">
+            <span class="text-sm font-bold text-slate-800 dark:text-slate-200">{{ day.date }}</span>
+            <div class="h-px bg-slate-100 dark:bg-white/10 flex-1"></div>
+            <span class="text-xs text-slate-400 dark:text-slate-500 font-light">
+              기사 {{ day.articleReadCount }} • 퀴즈 {{ day.quizCount }} • 리뷰 {{ day.reviewCount }}
+            </span>
           </div>
 
-          <div class="flex items-center gap-2">
-            <!-- Quiz Badge -->
-            <span 
-              class="text-xs px-2.5 py-1 rounded-lg border font-medium transition-colors"
-              :class="item.hasQuiz 
-                ? 'bg-brand-50 border-brand-200 text-brand-700 dark:bg-brand-950/40 dark:border-brand-800 dark:text-brand-400' 
-                : 'bg-slate-50 border-slate-200 text-slate-400 dark:bg-white/5 dark:border-white/5 dark:text-slate-500'"
+          <!-- Timeline Items for this Day -->
+          <div class="divide-y divide-slate-100 dark:divide-white/10 pl-2">
+            <div 
+              v-for="item in day.timeline" 
+              :key="item.historyId"
+              class="py-4 flex flex-col sm:flex-row sm:items-center justify-between gap-4 first:pt-0 last:pb-0"
             >
-              🧩 퀴즈 풀기 {{ item.hasQuiz ? '완료' : '미진행' }}
-            </span>
-            <!-- Review Badge -->
-            <span 
-              class="text-xs px-2.5 py-1 rounded-lg border font-medium transition-colors"
-              :class="item.hasReview 
-                ? 'bg-primary-50 border-primary-200 text-primary-700 dark:bg-primary-950/40 dark:border-primary-800 dark:text-primary-400' 
-                : 'bg-slate-50 border-slate-200 text-slate-400 dark:bg-white/5 dark:border-white/5 dark:text-slate-500'"
-            >
-              ✏️ 요약 리뷰 {{ item.hasReview ? '완료' : '미작성' }}
-            </span>
+              <div>
+                <div class="flex items-center gap-2 mb-1.5">
+                  <span 
+                    class="text-xxs px-2 py-0.5 rounded font-bold uppercase tracking-wider"
+                    :class="{
+                      'bg-primary-100 text-primary-800 dark:bg-primary-950/40 dark:text-primary-400': item.type === 'ARTICLE_READ',
+                      'bg-brand-100 text-brand-800 dark:bg-brand-950/40 dark:text-brand-400': item.type === 'QUIZ',
+                      'bg-secondary-100 text-secondary-800 dark:bg-secondary-950/40 dark:text-secondary-400': item.type === 'REVIEW'
+                    }"
+                  >
+                    {{ item.typeName }}
+                  </span>
+                  <BaseBadge :value="item.articleCategory" />
+                  <span class="text-xs text-slate-400 font-light">{{ item.learnedAt && typeof item.learnedAt === 'string' && item.learnedAt.length >= 16 ? item.learnedAt.substring(11, 16) : '' }}</span>
+                </div>
+                <h3 
+                  @click="navigateToDetail(item.articleId)"
+                  class="text-base font-bold text-slate-800 dark:text-slate-200 hover:text-primary-600 dark:hover:text-primary-400 cursor-pointer leading-snug"
+                >
+                  {{ item.articleTitle }}
+                </h3>
+              </div>
+
+              <!-- Extra meta / status -->
+              <div v-if="item.type === 'QUIZ'" class="flex items-center">
+                <span 
+                  class="text-xs px-2.5 py-1 rounded-lg border font-semibold"
+                  :class="item.quizCorrect 
+                    ? 'bg-brand-50 border-brand-200 text-brand-700 dark:bg-brand-950/40 dark:border-brand-800 dark:text-brand-400' 
+                    : 'bg-accent-50 border-accent-200 text-accent-700 dark:bg-accent-950/40 dark:border-accent-800 dark:text-accent-400'"
+                >
+                  {{ item.quizCorrect ? '🎯 정답' : '❌ 오답' }}
+                </span>
+              </div>
+            </div>
           </div>
         </div>
       </div>
