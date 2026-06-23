@@ -26,6 +26,7 @@ public class SecurityConfig {
             "/api/v1/health",
             "/api/v1/articles",
             "/api/v1/categories",
+            "/api/v1/rag/search",
             "/swagger-ui/**",
             "/v3/api-docs/**"
     };
