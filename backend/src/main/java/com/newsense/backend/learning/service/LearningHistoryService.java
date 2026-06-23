@@ -17,6 +17,8 @@ import com.newsense.backend.review.event.ReviewCompletedEvent;
 import com.newsense.backend.user.domain.User;
 import com.newsense.backend.user.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -28,7 +30,9 @@ import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.function.Supplier;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class LearningHistoryService {
@@ -41,53 +45,50 @@ public class LearningHistoryService {
 
     @Transactional
     public void recordArticleRead(ArticleReadCompletedEvent event) {
-        if (learningHistoryRepository.existsByUserIdAndTypeAndReferenceId(
+        saveIfAbsent(
                 event.userId(),
                 LearningHistoryType.ARTICLE_READ,
-                event.articleId()
-        )) {
-            return;
-        }
-
-        User user = getUser(event.userId());
-        ArticleMeta article = getArticle(event.articleId());
-        learningHistoryRepository.save(LearningHistory.articleRead(user, article, event.articleId(), event.readAt()));
+                event.articleId(),
+                () -> {
+                    User user = getUser(event.userId());
+                    ArticleMeta article = getArticle(event.articleId());
+                    return LearningHistory.articleRead(user, article, event.articleId(), event.readAt());
+                }
+        );
     }
 
     @Transactional
     public void recordReview(ReviewCompletedEvent event) {
-        if (learningHistoryRepository.existsByUserIdAndTypeAndReferenceId(
+        saveIfAbsent(
                 event.userId(),
                 LearningHistoryType.REVIEW,
-                event.reviewId()
-        )) {
-            return;
-        }
-
-        User user = getUser(event.userId());
-        ArticleMeta article = getArticle(event.articleId());
-        learningHistoryRepository.save(LearningHistory.review(user, article, event.reviewId(), event.completedAt()));
+                event.reviewId(),
+                () -> {
+                    User user = getUser(event.userId());
+                    ArticleMeta article = getArticle(event.articleId());
+                    return LearningHistory.review(user, article, event.reviewId(), event.completedAt());
+                }
+        );
     }
 
     @Transactional
     public void recordQuiz(QuizCompletedEvent event) {
-        if (learningHistoryRepository.existsByUserIdAndTypeAndReferenceId(
+        saveIfAbsent(
                 event.userId(),
                 LearningHistoryType.QUIZ,
-                event.quizId()
-        )) {
-            return;
-        }
-
-        User user = getUser(event.userId());
-        ArticleMeta article = getArticle(event.articleId());
-        learningHistoryRepository.save(LearningHistory.quiz(
-                user,
-                article,
                 event.quizId(),
-                event.correct(),
-                event.completedAt()
-        ));
+                () -> {
+                    User user = getUser(event.userId());
+                    ArticleMeta article = getArticle(event.articleId());
+                    return LearningHistory.quiz(
+                            user,
+                            article,
+                            event.quizId(),
+                            event.correct(),
+                            event.completedAt()
+                    );
+                }
+        );
     }
 
     @Transactional(readOnly = true)
@@ -179,6 +180,32 @@ public class LearningHistoryService {
     private void validateDateRange(LocalDate startDate, LocalDate endDate) {
         if (startDate.isAfter(endDate)) {
             throw new CustomException(ErrorCode.INVALID_INPUT_VALUE);
+        }
+    }
+
+    private void saveIfAbsent(
+            Long userId,
+            LearningHistoryType type,
+            Long referenceId,
+            Supplier<LearningHistory> historySupplier
+    ) {
+        if (learningHistoryRepository.existsByUserIdAndTypeAndReferenceId(userId, type, referenceId)) {
+            return;
+        }
+
+        try {
+            learningHistoryRepository.saveAndFlush(historySupplier.get());
+        } catch (DataIntegrityViolationException exception) {
+            if (learningHistoryRepository.existsByUserIdAndTypeAndReferenceId(userId, type, referenceId)) {
+                log.info(
+                        "Learning history already exists. userId={}, type={}, referenceId={}",
+                        userId,
+                        type,
+                        referenceId
+                );
+                return;
+            }
+            throw exception;
         }
     }
 
