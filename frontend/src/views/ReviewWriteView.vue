@@ -1,6 +1,7 @@
 <script setup>
-import { ref } from 'vue'
+import { ref, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
+import { reviewApi } from '../api/reviewApi'
 import BaseButton from '../components/common/BaseButton.vue'
 import ErrorMessage from '../components/common/ErrorMessage.vue'
 
@@ -11,9 +12,11 @@ const articleId = route.params.id
 const summary = ref('')
 const learnings = ref('')
 const newTerm = ref('')
-const termsList = ref(['기준금리', '버팀목전세대출'])
+const termsList = ref([])
 const isLoading = ref(false)
 const errorMsg = ref('')
+const reviewId = ref(null)
+const isEditMode = ref(false)
 
 const addTerm = () => {
   const trimmed = newTerm.value.trim()
@@ -36,21 +39,51 @@ const handleSaveReview = async () => {
   errorMsg.value = ''
   isLoading.value = true
 
+  const payload = {
+    articleId: Number(articleId),
+    summary: summary.value.trim(),
+    learned: learnings.value.trim(),
+    difficultTerms: termsList.value
+  }
+
   try {
-    // API Call Mock
-    await new Promise((resolve) => {
-      setTimeout(() => {
-        resolve()
-      }, 1000)
-    })
-    alert('성공적으로 리뷰를 등록했습니다!')
+    if (isEditMode.value && reviewId.value) {
+      await reviewApi.updateReview(reviewId.value, {
+        summary: payload.summary,
+        learned: payload.learned,
+        difficultTerms: payload.difficultTerms
+      })
+      alert('성공적으로 리뷰를 수정했습니다!')
+    } else {
+      await reviewApi.createReview(payload)
+      alert('성공적으로 리뷰를 등록했습니다!')
+    }
     router.push(`/articles/${articleId}`)
   } catch (err) {
-    errorMsg.value = '리뷰 저장에 실패했습니다. 다시 시도해 주세요.'
+    errorMsg.value = err.response?.data?.message || '리뷰 저장에 실패했습니다. 다시 시도해 주세요.'
   } finally {
     isLoading.value = false
   }
 }
+
+onMounted(async () => {
+  isLoading.value = true
+  try {
+    const response = await reviewApi.getReview(articleId)
+    const data = response.data || response
+    if (data) {
+      reviewId.value = data.id
+      summary.value = data.summary || ''
+      learnings.value = data.learned || ''
+      termsList.value = data.difficultTerms || []
+      isEditMode.value = true
+    }
+  } catch (err) {
+    console.log('No existing review found. Ready to create a new one.')
+  } finally {
+    isLoading.value = false
+  }
+})
 </script>
 
 <template>

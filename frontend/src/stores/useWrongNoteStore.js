@@ -16,8 +16,8 @@ export const useWrongNoteStore = defineStore('wrongNote', {
       this.error = null
       try {
         const response = await wrongNoteApi.getWrongNotes(params)
-        // 백엔드 응답 규격이 data 래핑을 벗겨서 반환하므로 response가 직접 목록이 됨
-        this.wrongNotes = response.data || response
+        const data = response.data || response
+        this.wrongNotes = data.content || (Array.isArray(data) ? data : [])
       } catch (err) {
         this.error = err.message || '오답노트를 불러오지 못했습니다.'
         throw err
