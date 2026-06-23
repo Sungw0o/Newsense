@@ -159,7 +159,7 @@ const navigateToDetail = (id) => {
                     {{ item.typeName }}
                   </span>
                   <BaseBadge :value="item.articleCategory" />
-                  <span class="text-xs text-slate-400 font-light">{{ item.learnedAt.substring(11, 16) }}</span>
+                  <span class="text-xs text-slate-400 font-light">{{ item.learnedAt && typeof item.learnedAt === 'string' && item.learnedAt.length >= 16 ? item.learnedAt.substring(11, 16) : '' }}</span>
                 </div>
                 <h3 
                   @click="navigateToDetail(item.articleId)"

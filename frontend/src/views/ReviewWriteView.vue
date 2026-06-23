@@ -68,6 +68,7 @@ const handleSaveReview = async () => {
 
 onMounted(async () => {
   isLoading.value = true
+  errorMsg.value = ''
   try {
     const response = await reviewApi.getReview(articleId)
     const data = response.data || response
@@ -79,7 +80,11 @@ onMounted(async () => {
       isEditMode.value = true
     }
   } catch (err) {
-    console.log('No existing review found. Ready to create a new one.')
+    if (err.response?.status === 404) {
+      console.log('No existing review found. Ready to create a new one.')
+    } else {
+      errorMsg.value = err.response?.data?.message || '기존 리뷰 정보를 확인하는 중 오류가 발생했습니다.'
+    }
   } finally {
     isLoading.value = false
   }

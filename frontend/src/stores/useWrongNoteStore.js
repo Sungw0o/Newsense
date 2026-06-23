@@ -17,7 +17,7 @@ export const useWrongNoteStore = defineStore('wrongNote', {
       try {
         const response = await wrongNoteApi.getWrongNotes(params)
         const data = response.data || response
-        this.wrongNotes = data.content || (Array.isArray(data) ? data : [])
+        this.wrongNotes = Array.isArray(data.content) ? data.content : (Array.isArray(data) ? data : [])
       } catch (err) {
         this.error = err.message || '오답노트를 불러오지 못했습니다.'
         throw err

@@ -1,5 +1,5 @@
 <script setup>
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { storeToRefs } from 'pinia'
 import { useArticleStore } from '../stores/useArticleStore'
@@ -87,15 +87,17 @@ const writeReview = () => {
   router.push(`/articles/${articleId.value}/review`)
 }
 
-onMounted(async () => {
+watch(articleId, async (newId) => {
+  if (!newId) return
+  selectedTerm.value = null
   try {
-    await articleStore.fetchArticleDetail(articleId.value)
+    await articleStore.fetchArticleDetail(newId)
     // 기사 읽음 완료 처리 API 호출
-    await articleStore.markArticleAsRead(articleId.value)
+    await articleStore.markArticleAsRead(newId)
   } catch (err) {
-    console.error('Failed to load article detail on mount:', err)
+    console.error('Failed to load article detail:', err)
   }
-})
+}, { immediate: true })
 </script>
 
 <template>

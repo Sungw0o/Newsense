@@ -30,7 +30,11 @@ const prevQuiz = () => {
   quizStore.prevQuiz()
 }
 
+const isSubmitting = ref(false)
+
 const submitQuiz = async () => {
+  if (isSubmitting.value) return
+
   // 답변 미선택 시 경고
   const unansweredCount = quizzes.value.filter(q => !answers.value[q.id]).length
   if (unansweredCount > 0) {
@@ -39,12 +43,15 @@ const submitQuiz = async () => {
     }
   }
 
+  isSubmitting.value = true
   try {
     await quizStore.submitAnswers()
     // 채점 처리 후 결과 페이지 이동
     router.push(`/quiz/${articleId}/result`)
   } catch (err) {
     alert('퀴즈 정답 제출에 실패했습니다. 다시 시도해 주세요.')
+  } finally {
+    isSubmitting.value = false
   }
 }
 
@@ -171,9 +178,10 @@ onMounted(async () => {
             v-else
             variant="primary" 
             @click="submitQuiz" 
+            :disabled="isSubmitting"
             class="py-2.5 px-6 rounded-xl font-bold text-sm bg-primary-600 hover:bg-primary-700 text-white shadow-md shadow-primary-100"
           >
-            답안 제출하기
+            {{ isSubmitting ? '제출 중...' : '답안 제출하기' }}
           </BaseButton>
         </div>
       </div>

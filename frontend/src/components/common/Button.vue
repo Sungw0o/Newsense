@@ -1,5 +1,6 @@
 <template>
   <button
+    :type="type"
     :class="[baseClass, variantClass]"
     @click="$emit('click')"
   >
@@ -12,6 +13,7 @@ import { computed } from 'vue'
 
 const props = defineProps({
   variant: { type: String, default: 'primary' }, // primary, secondary, outline
+  type: { type: String, default: 'button' },
 })
 
 const baseClass = 'px-4 py-2 rounded-md font-medium transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-offset-2'
