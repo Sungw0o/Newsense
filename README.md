@@ -89,11 +89,16 @@ graph TD
 ```text
 newsense/
 ├── backend/                  # Spring Boot 4.1.0 + Java 21 백엔드 프로젝트
+│   ├── Dockerfile            # 백엔드 컨테이너 멀티 스테이지 빌드 설정
 │   ├── src/                  # 백엔드 소스 코드 (Spring Data JPA, MongoDB)
 │   └── build.gradle          # Gradle 의존성 및 빌드 설정
+├── docs/                     # 운영 및 실행 문서
 ├── frontend/                 # Vue 3 + Vite + Pinia + Tailwind CSS 프론트엔드 프로젝트
 │   ├── src/                  # 프론트엔드 컴포넌트, 스토어, 라우터 소스 코드
 │   └── package.json          # 프론트엔드 npm 패키지 의존성 설정
+├── infra/                    # Nginx 등 배포 인프라 설정
+├── docker-compose.yml        # 백엔드, DB, 캐시, Nginx 통합 실행 구성
+├── .env.example              # Docker Compose 환경변수 예시
 ├── .gitignore                # Git 제외 대상 설정 파일
 └── README.md                 # 프로젝트 통합 가이드 (본 문서)
 ```
@@ -101,6 +106,19 @@ newsense/
 ---
 
 ## 🚀 로컬 실행 방법
+
+### 0. Docker Compose 통합 실행
+백엔드 애플리케이션, MySQL 8.0, MongoDB, Redis, Nginx를 한 번에 실행할 수 있습니다.
+
+```bash
+cp .env.example .env
+docker compose up -d --build
+```
+
+* **Nginx 진입 주소**: `http://127.0.0.1:8080`
+* **헬스 체크**: `http://127.0.0.1:8080/api/v1/health`
+* MySQL, MongoDB, Redis는 외부 호스트 포트에 바인딩하지 않고 Compose 내부 네트워크에서만 접근합니다.
+* 상세 절차는 [`docs/docker-compose.md`](docs/docker-compose.md)를 참고합니다.
 
 ### 1. 데이터베이스 준비
 로컬 환경에 **MySQL 8.0** 및 **MongoDB** 인프라가 실행 중이어야 합니다.
