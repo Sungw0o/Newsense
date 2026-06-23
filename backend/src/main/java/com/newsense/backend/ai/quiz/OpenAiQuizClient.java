@@ -25,9 +25,11 @@ import java.util.Map;
 public class OpenAiQuizClient {
 
     private static final int MAX_ARTICLE_LENGTH = 12_000;
+    private static final int MAX_EVIDENCE_CHUNKS = 5;
     private static final String INSTRUCTIONS = """
             당신은 한국 청년층의 경제 문해력을 돕는 교육용 퀴즈 출제자입니다.
             제공된 기사에 명시된 사실만 사용해 한국어 퀴즈 3문항을 만드세요.
+            우선 '검색된 근거 청크'에 포함된 핵심 사실을 중심으로 출제하세요.
             정확히 OX 1문항과 객관식(MULTIPLE) 2문항을 작성하세요.
             OX 선택지는 반드시 [\"O\", \"X\"]이고 정답도 O 또는 X여야 합니다.
             객관식은 서로 중복되지 않는 선택지 4개를 제공하고 정답은 선택지 중 하나여야 합니다.
@@ -42,13 +44,15 @@ public class OpenAiQuizClient {
     public List<GeneratedQuiz> generate(
             String title,
             String articleText,
-            List<EconomicTermContext> economicTerms
+            List<EconomicTermContext> economicTerms,
+            List<String> evidenceChunks
     ) {
         if (properties.apiKey() == null || properties.apiKey().isBlank()) {
             throw new CustomException(ErrorCode.AI_SERVICE_UNAVAILABLE);
         }
 
         String input = "기사 제목: " + title
+                + "\n\n검색된 근거 청크:\n" + formatEvidenceChunks(evidenceChunks)
                 + "\n\n기사 본문:\n" + truncate(articleText)
                 + "\n\n기재부 경제 용어 사전:\n" + formatTerms(economicTerms);
         Map<String, Object> request = Map.of(
@@ -137,6 +141,20 @@ public class OpenAiQuizClient {
                 .map(term -> "- " + term.name() + ": " + term.definition())
                 .reduce((left, right) -> left + "\n" + right)
                 .orElse("기사에서 매칭된 경제 용어 없음");
+    }
+
+    private String formatEvidenceChunks(List<String> evidenceChunks) {
+        if (evidenceChunks == null || evidenceChunks.isEmpty()) {
+            return "검색된 근거 청크 없음";
+        }
+        StringBuilder builder = new StringBuilder();
+        for (int index = 0; index < Math.min(evidenceChunks.size(), MAX_EVIDENCE_CHUNKS); index++) {
+            builder.append(index + 1)
+                    .append(". ")
+                    .append(evidenceChunks.get(index))
+                    .append('\n');
+        }
+        return builder.toString().trim();
     }
 
     private Map<String, Object> createResponseFormat() {

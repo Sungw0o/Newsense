@@ -17,6 +17,7 @@ import com.newsense.backend.quiz.dto.QuizResponse;
 import com.newsense.backend.quiz.event.QuizCompletedEvent;
 import com.newsense.backend.quiz.repository.QuizAnswerRepository;
 import com.newsense.backend.quiz.repository.QuizRepository;
+import com.newsense.backend.rag.service.RagRetrievalService;
 import com.newsense.backend.term.domain.ArticleTerm;
 import com.newsense.backend.term.repository.ArticleTermRepository;
 import com.newsense.backend.term.repository.TermRepository;
@@ -46,6 +47,7 @@ public class QuizService {
     private final UserRepository userRepository;
     private final OpenAiQuizClient openAiQuizClient;
     private final WrongNoteRecorder wrongNoteRecorder;
+    private final RagRetrievalService ragRetrievalService;
     private final ApplicationEventPublisher eventPublisher;
 
     @Transactional
@@ -110,7 +112,8 @@ public class QuizService {
         List<GeneratedQuiz> generated = openAiQuizClient.generate(
                 article.getTitle(),
                 content.getCleanText(),
-                economicTerms
+                economicTerms,
+                ragRetrievalService.retrieveQuizEvidence(article.getTitle(), content, economicTerms)
         );
         List<Quiz> quizzes = new ArrayList<>(generated.size());
         for (int index = 0; index < generated.size(); index++) {
