@@ -10,25 +10,43 @@ import com.newsense.backend.article.repository.ArticleMetaRepository;
 import com.newsense.backend.common.exception.CustomException;
 import com.newsense.backend.common.exception.ErrorCode;
 import com.newsense.backend.quiz.domain.Quiz;
+import com.newsense.backend.quiz.domain.QuizAnswer;
+import com.newsense.backend.quiz.dto.QuizAnswerRequest;
+import com.newsense.backend.quiz.dto.QuizAnswerResponse;
 import com.newsense.backend.quiz.dto.QuizResponse;
+import com.newsense.backend.quiz.event.QuizCompletedEvent;
+import com.newsense.backend.quiz.repository.QuizAnswerRepository;
 import com.newsense.backend.quiz.repository.QuizRepository;
+import com.newsense.backend.term.domain.ArticleTerm;
+import com.newsense.backend.term.repository.ArticleTermRepository;
 import com.newsense.backend.term.repository.TermRepository;
+import com.newsense.backend.user.domain.User;
+import com.newsense.backend.user.repository.UserRepository;
+import com.newsense.backend.wrongnote.service.WrongNoteRecorder;
 import lombok.RequiredArgsConstructor;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.text.Normalizer;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Locale;
 
 @Service
 @RequiredArgsConstructor
 public class QuizService {
 
     private final QuizRepository quizRepository;
+    private final QuizAnswerRepository quizAnswerRepository;
     private final ArticleMetaRepository articleMetaRepository;
     private final ArticleContentRepository articleContentRepository;
+    private final ArticleTermRepository articleTermRepository;
     private final TermRepository termRepository;
+    private final UserRepository userRepository;
     private final OpenAiQuizClient openAiQuizClient;
+    private final WrongNoteRecorder wrongNoteRecorder;
+    private final ApplicationEventPublisher eventPublisher;
 
     @Transactional
     public List<QuizResponse> getArticleQuizzes(Long articleId) {
@@ -50,6 +68,33 @@ public class QuizService {
     public List<Quiz> generateIfAbsent(Long articleId) {
         List<Quiz> existing = quizRepository.findByArticleIdAndIsActiveTrueOrderByDisplayOrder(articleId);
         return existing.isEmpty() ? generateQuizzes(articleId) : existing;
+    }
+
+    @Transactional
+    public QuizAnswerResponse submitAnswer(Long quizId, Long userId, QuizAnswerRequest request) {
+        Quiz quiz = quizRepository.findByIdAndIsActiveTrue(quizId)
+                .orElseThrow(() -> new CustomException(ErrorCode.QUIZ_NOT_FOUND));
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new CustomException(ErrorCode.ENTITY_NOT_FOUND));
+
+        String userAnswer = request.answer().trim();
+        boolean correct = isCorrect(userAnswer, quiz.getCorrectAnswer());
+        QuizAnswer answer = quizAnswerRepository.save(QuizAnswer.create(user, quiz, userAnswer, correct));
+
+        boolean wrongNoteRecorded = false;
+        if (!correct) {
+            wrongNoteRecorder.record(userId, quiz, userAnswer, getRelatedTermNames(quiz.getArticle().getId()));
+            wrongNoteRecorded = true;
+        }
+
+        eventPublisher.publishEvent(new QuizCompletedEvent(
+                userId,
+                quiz.getArticle().getId(),
+                quiz.getId(),
+                correct,
+                answer.getSubmittedAt()
+        ));
+        return QuizAnswerResponse.of(answer, quiz, wrongNoteRecorded);
     }
 
     private List<Quiz> generateQuizzes(Long articleId) {
@@ -81,5 +126,22 @@ public class QuizService {
             ));
         }
         return quizRepository.saveAll(quizzes);
+    }
+
+    private boolean isCorrect(String userAnswer, String correctAnswer) {
+        return normalizeAnswer(userAnswer).equals(normalizeAnswer(correctAnswer));
+    }
+
+    private String normalizeAnswer(String answer) {
+        return Normalizer.normalize(answer.trim(), Normalizer.Form.NFKC)
+                .replaceAll("\\s+", " ")
+                .toUpperCase(Locale.ROOT);
+    }
+
+    private List<String> getRelatedTermNames(Long articleId) {
+        return articleTermRepository.findAllByArticleIdWithTerm(articleId).stream()
+                .map(ArticleTerm::getTerm)
+                .map(term -> term.getName())
+                .toList();
     }
 }
