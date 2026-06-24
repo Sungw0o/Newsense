@@ -1,5 +1,5 @@
 <script setup>
-import { ref, computed, onMounted } from 'vue'
+import { computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { storeToRefs } from 'pinia'
 import { useArticleStore } from '../stores/useArticleStore'
@@ -7,70 +7,11 @@ import ArticleCard from '../components/article/ArticleCard.vue'
 
 const router = useRouter()
 const articleStore = useArticleStore()
-const { articles, isLoading, hasMore, filters } = storeToRefs(articleStore)
+const { articles, isLoading, hasMore, filters, error } = storeToRefs(articleStore)
 
 const categories = ['전체', '거시경제', '금융/투자', '정책/제도', '기업/산업', '글로벌경제']
 
-const mockArticles = ref([
-  {
-    articleId: 1,
-    title: '기준금리 인하가 청년 전세대출에 미치는 영향',
-    summary: '한국은행 금융통화위원회가 이번 달 기준금리를 0.25%p 인하했습니다. 시중 은행의 전세자금대출 금리도 하락세를 보일 것으로 예상되는데, 청년들이 주목해야 할 핵심 포인트를 정리했습니다.',
-    category: '금융/투자',
-    difficulty: '초급',
-    publishedAt: '2026-06-22',
-    estimatedMinutes: 3,
-    quizCount: 3,
-  },
-  {
-    articleId: 2,
-    title: 'LTV와 DSR 규제 완화, 무엇이 달라지나?',
-    summary: '정부가 주택담보대출 비율(LTV)과 총부채원리금상환비율(DSR)의 한도를 조정했습니다. 부동산 시장과 실수요자들에게 미칠 파급력을 상세히 분석합니다.',
-    category: '정책/제도',
-    difficulty: '중급',
-    publishedAt: '2026-06-21',
-    estimatedMinutes: 5,
-    quizCount: 4,
-  },
-  {
-    articleId: 3,
-    title: '미국 연준(Fed)의 테이퍼링 종료와 한국 주식시장',
-    summary: '미국 연방준비제도가 테이퍼링 정책 종료 및 금리 인상 사이클 진입을 예고했습니다. 원달러 환율 급변동 상황에서 개인 투자자가 취해야 할 방어적 포트폴리오 전략을 소개합니다.',
-    category: '금융/투자',
-    difficulty: '고급',
-    publishedAt: '2026-06-20',
-    estimatedMinutes: 7,
-    quizCount: 5,
-  },
-  {
-    articleId: 4,
-    title: '소비자물가지수(CPI) 상승률 둔화의 의미',
-    summary: '최근 발표된 소비자물가지수 상승률이 예상치를 하회하며 인플레이션 압력이 완화되는 신호를 보내고 있습니다. 금리 정책에 미치는 영향을 살펴봅니다.',
-    category: '거시경제',
-    difficulty: '중급',
-    publishedAt: '2026-06-19',
-    estimatedMinutes: 4,
-    quizCount: 3,
-  },
-  {
-    articleId: 5,
-    title: '원달러 환율 1,400원 돌파 — 수출입 기업 영향',
-    summary: '원달러 환율이 주요 지지선인 1,400원을 넘어서면서 수출 기업과 수입 의존 업종에 미치는 영향이 엇갈리고 있습니다.',
-    category: '글로벌경제',
-    difficulty: '중급',
-    publishedAt: '2026-06-18',
-    estimatedMinutes: 4,
-    quizCount: 3,
-  },
-])
-
-const displayArticles = computed(() => {
-  if (articles.value.length > 0) return articles.value
-  let res = mockArticles.value
-  if (filters.value.category) res = res.filter(a => a.category === filters.value.category)
-  if (filters.value.difficulty) res = res.filter(a => a.difficulty === filters.value.difficulty)
-  return res
-})
+const displayArticles = computed(() => articles.value)
 
 const activeCategory = computed(() => filters.value.category || '전체')
 
@@ -129,6 +70,21 @@ const handleLoadMore = () => articleStore.fetchArticles()
     <div v-if="isLoading && displayArticles.length === 0" class="loading-state">
       <div class="spinner"></div>
       <p class="eyebrow" style="margin-top:16px;">기사를 불러오는 중</p>
+    </div>
+
+    <!-- Error -->
+    <div v-else-if="error" class="empty-state">
+      <p class="empty-icon">⚠️</p>
+      <p class="empty-title">기사를 불러오지 못했습니다</p>
+      <p class="empty-desc">{{ error }}</p>
+      <button class="btn-primary" style="margin-top:16px;" @click="articleStore.fetchArticles()">다시 시도</button>
+    </div>
+
+    <!-- Empty -->
+    <div v-else-if="!isLoading && displayArticles.length === 0" class="empty-state">
+      <p class="empty-icon">📭</p>
+      <p class="empty-title">표시할 기사가 없습니다</p>
+      <p class="empty-desc">다른 카테고리를 선택하거나 잠시 후 다시 확인해 주세요.</p>
     </div>
 
     <!-- Feed grid -->
@@ -319,6 +275,29 @@ const handleLoadMore = () => articleStore.fetchArticles()
   justify-content: center;
   font-size: 11px;
   font-weight: 700;
+}
+
+/* Empty / Error */
+.empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 80px 0;
+  text-align: center;
+}
+.empty-icon { font-size: 40px; margin: 0 0 16px; }
+.empty-title {
+  font-family: 'Fustat', sans-serif;
+  font-size: 18px;
+  font-weight: 700;
+  color: var(--ink, #0a0d12);
+  margin: 0 0 8px;
+}
+.dark .empty-title { color: #f4f6fa; }
+.empty-desc {
+  font-size: 13.5px;
+  color: var(--ink-3, #8a93a3);
+  margin: 0;
 }
 
 /* Spinner */

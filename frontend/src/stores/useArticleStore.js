@@ -11,10 +11,11 @@ export const useArticleStore = defineStore('article', {
       category: '',
       difficulty: '',
       page: 0,
-      size: 10,
+      size: 20,
     },
     hasMore: true,
     isLoading: false,
+    error: null,
   }),
   actions: {
     resetFilters() {
@@ -23,6 +24,7 @@ export const useArticleStore = defineStore('article', {
       this.filters.page = 0
       this.articles = []
       this.hasMore = true
+      this.error = null
     },
 
     setCategory(category) {
@@ -30,6 +32,7 @@ export const useArticleStore = defineStore('article', {
       this.filters.page = 0
       this.articles = []
       this.hasMore = true
+      this.error = null
       return this.fetchArticles()
     },
 
@@ -38,12 +41,14 @@ export const useArticleStore = defineStore('article', {
       this.filters.page = 0
       this.articles = []
       this.hasMore = true
+      this.error = null
       return this.fetchArticles()
     },
 
     async fetchArticles() {
       if (this.isLoading || !this.hasMore) return
       this.isLoading = true
+      this.error = null
       const requestId = ++this.currentRequestId
 
       try {
@@ -67,6 +72,9 @@ export const useArticleStore = defineStore('article', {
         }
       } catch (error) {
         console.error('Fetch articles error:', error)
+        if (requestId === this.currentRequestId) {
+          this.error = error?.response?.data?.message ?? '기사를 불러오지 못했습니다.'
+        }
       } finally {
         if (requestId === this.currentRequestId) {
           this.isLoading = false
