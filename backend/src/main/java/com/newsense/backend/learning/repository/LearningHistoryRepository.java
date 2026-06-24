@@ -21,13 +21,32 @@ public interface LearningHistoryRepository extends JpaRepository<LearningHistory
             LocalDate endDate
     );
 
-    long countDistinctArticleIdByUserIdAndType(Long userId, LearningHistoryType type);
+    @Query("""
+            select count(distinct history.article.id)
+            from LearningHistory history
+            where history.user.id = :userId
+              and history.type = :type
+            """)
+    long countDistinctArticleIdByUserIdAndType(
+            @Param("userId") Long userId,
+            @Param("type") LearningHistoryType type
+    );
 
     long countByUserIdAndType(Long userId, LearningHistoryType type);
 
     long countByUserIdAndTypeAndQuizCorrectTrue(Long userId, LearningHistoryType type);
 
-    long countDistinctLearningDateByUserIdAndLearningDateBetween(Long userId, LocalDate startDate, LocalDate endDate);
+    @Query("""
+            select count(distinct history.learningDate)
+            from LearningHistory history
+            where history.user.id = :userId
+              and history.learningDate between :startDate and :endDate
+            """)
+    long countDistinctLearningDateByUserIdAndLearningDateBetween(
+            @Param("userId") Long userId,
+            @Param("startDate") LocalDate startDate,
+            @Param("endDate") LocalDate endDate
+    );
 
     @Query("""
             select distinct history.learningDate

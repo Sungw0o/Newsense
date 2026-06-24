@@ -1,8 +1,10 @@
 package com.newsense.backend.learning.service;
 
 import com.newsense.backend.article.domain.ArticleMeta;
+import com.newsense.backend.article.domain.ArticleRead;
 import com.newsense.backend.article.event.ArticleReadCompletedEvent;
 import com.newsense.backend.article.repository.ArticleMetaRepository;
+import com.newsense.backend.article.repository.ArticleReadRepository;
 import com.newsense.backend.common.exception.CustomException;
 import com.newsense.backend.common.exception.ErrorCode;
 import com.newsense.backend.learning.domain.LearningHistory;
@@ -12,8 +14,12 @@ import com.newsense.backend.learning.dto.LearningHistoryResponse;
 import com.newsense.backend.learning.dto.LearningStatsResponse;
 import com.newsense.backend.learning.dto.LearningTimelineItemResponse;
 import com.newsense.backend.learning.repository.LearningHistoryRepository;
+import com.newsense.backend.quiz.domain.QuizAnswer;
 import com.newsense.backend.quiz.event.QuizCompletedEvent;
+import com.newsense.backend.quiz.repository.QuizAnswerRepository;
+import com.newsense.backend.review.domain.Review;
 import com.newsense.backend.review.event.ReviewCompletedEvent;
+import com.newsense.backend.review.repository.ReviewRepository;
 import com.newsense.backend.user.domain.User;
 import com.newsense.backend.user.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
@@ -41,6 +47,9 @@ public class LearningHistoryService {
 
     private final LearningHistoryRepository learningHistoryRepository;
     private final ArticleMetaRepository articleMetaRepository;
+    private final ArticleReadRepository articleReadRepository;
+    private final ReviewRepository reviewRepository;
+    private final QuizAnswerRepository quizAnswerRepository;
     private final UserRepository userRepository;
 
     @Transactional
@@ -91,8 +100,10 @@ public class LearningHistoryService {
         );
     }
 
-    @Transactional(readOnly = true)
+    @Transactional
     public LearningHistoryResponse getHistory(Long userId, LocalDate startDate, LocalDate endDate) {
+        syncMissingHistories(userId);
+
         LocalDate resolvedEndDate = endDate == null ? LocalDate.now() : endDate;
         LocalDate resolvedStartDate = startDate == null
                 ? resolvedEndDate.minusDays(DEFAULT_HISTORY_DAYS - 1L)
@@ -108,7 +119,7 @@ public class LearningHistoryService {
         Map<LocalDate, List<LearningTimelineItemResponse>> grouped = new LinkedHashMap<>();
         histories.forEach(history -> grouped
                 .computeIfAbsent(history.getLearningDate(), key -> new ArrayList<>())
-                .add(LearningTimelineItemResponse.from(history)));
+                .add(LearningTimelineItemResponse.from(history, findReviewForHistory(history, userId))));
 
         List<LearningDailyHistoryResponse> days = grouped.entrySet().stream()
                 .map(entry -> LearningDailyHistoryResponse.of(entry.getKey(), entry.getValue()))
@@ -117,8 +128,10 @@ public class LearningHistoryService {
         return LearningHistoryResponse.of(resolvedStartDate, resolvedEndDate, days);
     }
 
-    @Transactional(readOnly = true)
+    @Transactional
     public LearningStatsResponse getStats(Long userId) {
+        syncMissingHistories(userId);
+
         long totalReadArticleCount = learningHistoryRepository.countDistinctArticleIdByUserIdAndType(
                 userId,
                 LearningHistoryType.ARTICLE_READ
@@ -148,6 +161,62 @@ public class LearningHistoryService {
                 calculateConsecutiveLearningDays(userId),
                 weeklyLearningDays
         );
+    }
+
+    private void syncMissingHistories(Long userId) {
+        User user = getUser(userId);
+        syncArticleReadHistories(user);
+        syncReviewHistories(user);
+        syncQuizHistories(user);
+    }
+
+    private void syncArticleReadHistories(User user) {
+        List<ArticleRead> articleReads = articleReadRepository.findAllByUserId(user.getId());
+        articleReads.forEach(articleRead -> saveIfAbsent(
+                user.getId(),
+                LearningHistoryType.ARTICLE_READ,
+                articleRead.getArticle().getId(),
+                () -> LearningHistory.articleRead(
+                        user,
+                        articleRead.getArticle(),
+                        articleRead.getArticle().getId(),
+                        articleRead.getReadAt()
+                )
+        ));
+    }
+
+    private void syncReviewHistories(User user) {
+        List<Review> reviews = reviewRepository.findAllByUserIdAndIsActiveTrue(user.getId());
+        reviews.forEach(review -> saveIfAbsent(
+                user.getId(),
+                LearningHistoryType.REVIEW,
+                review.getId(),
+                () -> LearningHistory.review(user, review.getArticle(), review.getId(), review.getUpdatedAt())
+        ));
+    }
+
+    private void syncQuizHistories(User user) {
+        List<QuizAnswer> quizAnswers = quizAnswerRepository.findAllByUserId(user.getId());
+        quizAnswers.forEach(quizAnswer -> saveIfAbsent(
+                user.getId(),
+                LearningHistoryType.QUIZ,
+                quizAnswer.getQuiz().getId(),
+                () -> LearningHistory.quiz(
+                        user,
+                        quizAnswer.getArticle(),
+                        quizAnswer.getQuiz().getId(),
+                        quizAnswer.isCorrect(),
+                        quizAnswer.getSubmittedAt()
+                )
+        ));
+    }
+
+    private Review findReviewForHistory(LearningHistory history, Long userId) {
+        if (history.getType() != LearningHistoryType.REVIEW) {
+            return null;
+        }
+        return reviewRepository.findByIdAndUserIdAndIsActiveTrue(history.getReferenceId(), userId)
+                .orElse(null);
     }
 
     private double calculateAccuracyRate(long totalQuizCount, long correctQuizCount) {
