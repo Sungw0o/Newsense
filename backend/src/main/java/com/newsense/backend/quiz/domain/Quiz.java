@@ -11,6 +11,7 @@ import jakarta.persistence.FetchType;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
+import jakarta.persistence.Index;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.OrderColumn;
@@ -25,7 +26,10 @@ import java.util.List;
 
 @Getter
 @Entity
-@Table(name = "quiz")
+@Table(
+        name = "quiz",
+        indexes = @Index(name = "idx_quiz_article_active", columnList = "article_id,is_active")
+)
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 public class Quiz {
 

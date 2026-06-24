@@ -13,6 +13,7 @@ import jakarta.persistence.FetchType;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
+import jakarta.persistence.Index;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.OrderColumn;
@@ -33,7 +34,8 @@ import java.util.List;
         uniqueConstraints = @UniqueConstraint(
                 name = "uk_wrong_note_user_quiz",
                 columnNames = {"user_id", "quiz_id"}
-        )
+        ),
+        indexes = @Index(name = "idx_wrong_note_user_active_resolved", columnList = "user_id,is_active,is_resolved")
 )
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 public class WrongNote {
