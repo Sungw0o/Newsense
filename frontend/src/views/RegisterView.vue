@@ -49,7 +49,29 @@ watch(email, (val) => {
   checkEmail(val)
 })
 
-const canSubmit = computed(() => emailStatus.value === 'available' && !isLoading.value)
+const isPasswordTouched = computed(() => password.value.length > 0)
+const isPasswordConfirmTouched = computed(() => passwordConfirm.value.length > 0)
+const isPasswordLengthValid = computed(() => password.value.length >= 8 && password.value.length <= 72)
+const isPasswordMatch = computed(() => password.value === passwordConfirm.value)
+const isPasswordValid = computed(() => isPasswordLengthValid.value && isPasswordMatch.value)
+
+const passwordInputClass = computed(() => ({
+  'input-ok': isPasswordTouched.value && isPasswordLengthValid.value,
+  'input-err': isPasswordTouched.value && !isPasswordLengthValid.value,
+}))
+
+const passwordConfirmInputClass = computed(() => ({
+  'input-ok': isPasswordConfirmTouched.value && isPasswordMatch.value,
+  'input-err': isPasswordConfirmTouched.value && !isPasswordMatch.value,
+}))
+
+const canSubmit = computed(() =>
+  email.value.trim()
+  && nickname.value.trim()
+  && emailStatus.value === 'available'
+  && isPasswordValid.value
+  && !isLoading.value
+)
 
 const handleRegister = async () => {
   if (!email.value || !nickname.value || !password.value || !passwordConfirm.value) {
@@ -157,12 +179,32 @@ const handleRegister = async () => {
 
         <div class="field">
           <label for="password">비밀번호 <span class="field-hint">(8자 이상)</span></label>
-          <input id="password" type="password" v-model="password" placeholder="••••••••" autocomplete="new-password" required />
+          <input
+            id="password"
+            type="password"
+            v-model="password"
+            placeholder="••••••••"
+            autocomplete="new-password"
+            required
+            :class="passwordInputClass"
+          />
+          <p v-if="isPasswordTouched && isPasswordLengthValid" class="field-feedback ok">사용 가능한 비밀번호입니다.</p>
+          <p v-else-if="isPasswordTouched" class="field-feedback err">비밀번호는 8자 이상 72자 이하여야 합니다.</p>
         </div>
 
         <div class="field">
           <label for="passwordConfirm">비밀번호 확인</label>
-          <input id="passwordConfirm" type="password" v-model="passwordConfirm" placeholder="••••••••" autocomplete="new-password" required />
+          <input
+            id="passwordConfirm"
+            type="password"
+            v-model="passwordConfirm"
+            placeholder="••••••••"
+            autocomplete="new-password"
+            required
+            :class="passwordConfirmInputClass"
+          />
+          <p v-if="isPasswordConfirmTouched && isPasswordMatch" class="field-feedback ok">비밀번호가 일치합니다.</p>
+          <p v-else-if="isPasswordConfirmTouched" class="field-feedback err">비밀번호가 일치하지 않습니다.</p>
         </div>
 
         <div v-if="errorMsg" class="error-msg">
