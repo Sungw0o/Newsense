@@ -147,8 +147,8 @@ class PostServiceTest {
             PostReactionResponse response = postService.toggleLike(1L, 7L);
 
             assertThat(response.likes()).isEqualTo(1);
-            assertThat(response.isLiked()).isTrue();
-            assertThat(response.isDisliked()).isFalse();
+            assertThat(response.liked()).isTrue();
+            assertThat(response.disliked()).isFalse();
         }
 
         @Test
@@ -167,7 +167,7 @@ class PostServiceTest {
             PostReactionResponse response = postService.toggleLike(1L, 7L);
 
             assertThat(response.likes()).isEqualTo(0);
-            assertThat(response.isLiked()).isFalse();
+            assertThat(response.liked()).isFalse();
             then(postReactionRepository).should().delete(reaction);
         }
     }
