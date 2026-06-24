@@ -33,10 +33,10 @@ public class PostController implements PostApiDocs {
     }
 
     @Override
-    public ResponseEntity<ApiResponse<Page<PostResponse>>> getPosts(Pageable pageable, PostSort sort) {
+    public ResponseEntity<ApiResponse<Page<PostResponse>>> getPosts(Pageable pageable, PostSort sort, String keyword) {
         return ResponseEntity.ok(ApiResponse.success(
                 "게시글 목록 조회에 성공했습니다.",
-                postService.getPosts(pageable, sort)
+                postService.getPosts(pageable, sort, keyword)
         ));
     }
 

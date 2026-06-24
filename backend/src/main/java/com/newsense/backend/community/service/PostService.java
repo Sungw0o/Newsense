@@ -54,8 +54,18 @@ public class PostService {
     }
 
     @Transactional(readOnly = true)
-    public Page<PostResponse> getPosts(Pageable pageable, PostSort sort) {
+    public Page<PostResponse> getPosts(Pageable pageable, PostSort sort, String keyword) {
         PageRequest pageRequest = PageRequest.of(pageable.getPageNumber(), pageable.getPageSize(), sort.toSort());
+        if (keyword != null && !keyword.isBlank()) {
+            String pattern = "%" + keyword.toLowerCase() + "%";
+            return postRepository.findAll(
+                    (root, query, cb) -> cb.or(
+                            cb.like(cb.lower(root.get("title")), pattern),
+                            cb.like(cb.lower(root.get("content")), pattern)
+                    ),
+                    pageRequest
+            ).map(this::toResponse);
+        }
         return postRepository.findAll(pageRequest).map(this::toResponse);
     }
 

@@ -1,5 +1,5 @@
 <script setup>
-import { computed, onMounted } from 'vue'
+import { computed, onMounted, ref, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import { storeToRefs } from 'pinia'
 import { useArticleStore } from '../stores/useArticleStore'
@@ -10,10 +10,12 @@ const articleStore = useArticleStore()
 const { articles, isLoading, hasMore, filters, error } = storeToRefs(articleStore)
 
 const categories = ['전체', '거시경제', '금융/투자', '정책/제도', '기업/산업', '글로벌경제']
+const searchInput = ref('')
+let searchDebounce = null
 
 const displayArticles = computed(() => articles.value)
-
 const activeCategory = computed(() => filters.value.category || '전체')
+const hasKeyword = computed(() => !!filters.value.keyword)
 
 onMounted(() => {
   if (articles.value.length === 0) articleStore.fetchArticles()
@@ -26,6 +28,18 @@ const filterByCategory = async (category) => {
 const navigateToDetail = (id) => router.push(`/articles/${id}`)
 
 const handleLoadMore = () => articleStore.fetchArticles()
+
+const handleSearch = () => {
+  clearTimeout(searchDebounce)
+  searchDebounce = setTimeout(() => {
+    articleStore.setKeyword(searchInput.value.trim())
+  }, 350)
+}
+
+const clearSearch = () => {
+  searchInput.value = ''
+  articleStore.setKeyword('')
+}
 </script>
 
 <template>
@@ -47,6 +61,22 @@ const handleLoadMore = () => articleStore.fetchArticles()
         뉴스 <span>{{ displayArticles.length }}</span>건 업데이트됨
       </div>
     </header>
+
+    <!-- Search bar -->
+    <div class="search-row">
+      <div class="search-wrap">
+        <span class="search-icon">🔎</span>
+        <input
+          v-model="searchInput"
+          type="text"
+          class="search-input"
+          placeholder="기사 제목·요약 검색"
+          @input="handleSearch"
+          @keydown.enter="handleSearch"
+        />
+        <button v-if="hasKeyword" class="search-clear" @click="clearSearch" aria-label="검색어 지우기">✕</button>
+      </div>
+    </div>
 
     <!-- Category filter chips -->
     <div class="filters-row">
@@ -189,6 +219,68 @@ const handleLoadMore = () => articleStore.fetchArticles()
 .dark .feed-meta { color: #a4adbf; }
 .dark .feed-meta b { color: #f4f6fa; }
 .feed-meta span { color: #0084ff; font-weight: 600; }
+
+/* Search */
+.search-row {
+  margin-bottom: 16px;
+}
+
+.search-wrap {
+  position: relative;
+  display: flex;
+  align-items: center;
+  max-width: 520px;
+}
+
+.search-icon {
+  position: absolute;
+  left: 14px;
+  font-size: 15px;
+  pointer-events: none;
+  line-height: 1;
+}
+
+.search-input {
+  width: 100%;
+  padding: 10px 40px 10px 40px;
+  background: rgba(255, 255, 255, 0.6);
+  border: 1px solid rgba(0, 0, 0, 0.10);
+  border-radius: 12px;
+  font-size: 14px;
+  color: var(--ink);
+  outline: none;
+  transition: border-color .15s, box-shadow .15s;
+}
+.search-input::placeholder { color: var(--ink-3); }
+.search-input:focus {
+  border-color: #0084ff;
+  box-shadow: 0 0 0 3px rgba(0, 132, 255, 0.14);
+}
+
+.dark .search-input {
+  background: rgba(20, 24, 34, 0.55);
+  border-color: rgba(255,255,255,0.12);
+  color: #f4f6fa;
+}
+.dark .search-input:focus {
+  border-color: #4FB3FF;
+  box-shadow: 0 0 0 3px rgba(79, 179, 255, 0.14);
+}
+
+.search-clear {
+  position: absolute;
+  right: 10px;
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-size: 12px;
+  color: var(--ink-3);
+  padding: 4px 6px;
+  border-radius: 6px;
+  transition: background .12s, color .12s;
+}
+.search-clear:hover { background: rgba(0,0,0,0.06); color: var(--ink); }
+.dark .search-clear:hover { background: rgba(255,255,255,0.08); color: #f4f6fa; }
 
 /* Filters */
 .filters-row {

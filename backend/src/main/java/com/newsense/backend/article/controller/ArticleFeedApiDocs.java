@@ -20,13 +20,15 @@ import java.util.List;
 @Tag(name = "Article Feed", description = "Economic news feed")
 public interface ArticleFeedApiDocs {
 
-    @Operation(summary = "Get article feed", description = "Returns articles filtered by category and difficulty.")
+    @Operation(summary = "Get article feed", description = "Returns articles filtered by category, difficulty, and keyword.")
     @GetMapping("/api/v1/articles")
     ResponseEntity<ApiResponse<ArticleFeedPageResponse>> getArticles(
             @Parameter(description = "Article category")
             @RequestParam(required = false) ArticleCategory category,
             @Parameter(description = "Article difficulty")
             @RequestParam(required = false) ArticleDifficulty difficulty,
+            @Parameter(description = "Keyword search in title and summary")
+            @RequestParam(required = false) String keyword,
             @Parameter(description = "Zero-based page number")
             @RequestParam(defaultValue = "0") @Min(0) int page,
             @Parameter(description = "Page size (1-100)")

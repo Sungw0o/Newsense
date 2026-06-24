@@ -14,11 +14,28 @@ const sortOptions = [
   { label: '좋아요순', value: 'LIKES' },
   { label: '조회순', value: 'VIEWS' },
 ]
+const searchInput = ref('')
+const activeKeyword = ref('')
+let searchDebounce = null
 
-const fetchPosts = () => store.fetchPosts({ sort: activeSort.value })
+const fetchPosts = () => store.fetchPosts({ sort: activeSort.value, keyword: activeKeyword.value || undefined })
 
 const changeSort = (sort) => {
   activeSort.value = sort
+  fetchPosts()
+}
+
+const handleSearch = () => {
+  clearTimeout(searchDebounce)
+  searchDebounce = setTimeout(() => {
+    activeKeyword.value = searchInput.value.trim()
+    fetchPosts()
+  }, 350)
+}
+
+const clearSearch = () => {
+  searchInput.value = ''
+  activeKeyword.value = ''
   fetchPosts()
 }
 
@@ -56,6 +73,22 @@ const categoryColor = {
         글쓰기
       </button>
     </header>
+
+    <!-- Search bar -->
+    <div class="search-row">
+      <div class="search-wrap">
+        <span class="search-icon">🔎</span>
+        <input
+          v-model="searchInput"
+          type="text"
+          class="search-input"
+          placeholder="게시글 제목·내용 검색"
+          @input="handleSearch"
+          @keydown.enter="handleSearch"
+        />
+        <button v-if="activeKeyword" class="search-clear" @click="clearSearch" aria-label="검색어 지우기">✕</button>
+      </div>
+    </div>
 
     <!-- Filter chips -->
     <div class="filter-row">
@@ -193,6 +226,65 @@ const categoryColor = {
   font-size: 14px;
   flex-shrink: 0;
 }
+
+.search-row {
+  margin-bottom: 16px;
+}
+
+.search-wrap {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.search-icon {
+  position: absolute;
+  left: 14px;
+  font-size: 15px;
+  pointer-events: none;
+  line-height: 1;
+}
+
+.search-input {
+  width: 100%;
+  padding: 10px 40px 10px 40px;
+  background: rgba(255, 255, 255, 0.6);
+  border: 1px solid rgba(0, 0, 0, 0.10);
+  border-radius: 12px;
+  font-size: 14px;
+  color: var(--ink);
+  outline: none;
+  transition: border-color .15s, box-shadow .15s;
+}
+.search-input::placeholder { color: var(--ink-3); }
+.search-input:focus {
+  border-color: #0084ff;
+  box-shadow: 0 0 0 3px rgba(0, 132, 255, 0.14);
+}
+.dark .search-input {
+  background: rgba(20, 24, 34, 0.55);
+  border-color: rgba(255,255,255,0.12);
+  color: #f4f6fa;
+}
+.dark .search-input:focus {
+  border-color: #4FB3FF;
+  box-shadow: 0 0 0 3px rgba(79, 179, 255, 0.14);
+}
+
+.search-clear {
+  position: absolute;
+  right: 10px;
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-size: 12px;
+  color: var(--ink-3);
+  padding: 4px 6px;
+  border-radius: 6px;
+  transition: background .12s, color .12s;
+}
+.search-clear:hover { background: rgba(0,0,0,0.06); color: var(--ink); }
+.dark .search-clear:hover { background: rgba(255,255,255,0.08); color: #f4f6fa; }
 
 .filter-row {
   display: flex;

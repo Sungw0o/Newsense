@@ -10,6 +10,7 @@ export const useArticleStore = defineStore('article', {
     filters: {
       category: '',
       difficulty: '',
+      keyword: '',
       page: 0,
       size: 20,
     },
@@ -21,6 +22,7 @@ export const useArticleStore = defineStore('article', {
     resetFilters() {
       this.filters.category = ''
       this.filters.difficulty = ''
+      this.filters.keyword = ''
       this.filters.page = 0
       this.articles = []
       this.hasMore = true
@@ -45,6 +47,15 @@ export const useArticleStore = defineStore('article', {
       return this.fetchArticles()
     },
 
+    setKeyword(keyword) {
+      this.filters.keyword = keyword
+      this.filters.page = 0
+      this.articles = []
+      this.hasMore = true
+      this.error = null
+      return this.fetchArticles()
+    },
+
     async fetchArticles() {
       if (this.isLoading || !this.hasMore) return
       this.isLoading = true
@@ -52,8 +63,8 @@ export const useArticleStore = defineStore('article', {
       const requestId = ++this.currentRequestId
 
       try {
-        const { category, difficulty, page, size } = this.filters
-        const response = await articleApi.getArticles({ category, difficulty, page, size })
+        const { category, difficulty, keyword, page, size } = this.filters
+        const response = await articleApi.getArticles({ category, difficulty, keyword: keyword || undefined, page, size })
 
         if (requestId !== this.currentRequestId) return
 

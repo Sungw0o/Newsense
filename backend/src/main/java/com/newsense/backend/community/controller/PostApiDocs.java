@@ -35,11 +35,12 @@ public interface PostApiDocs {
             @Valid @RequestBody PostCreateRequest request
     );
 
-    @Operation(summary = "전체 게시글 페이징 조회")
+    @Operation(summary = "전체 게시글 페이징 조회 (키워드 검색 포함)")
     @GetMapping("/api/v1/posts")
     ResponseEntity<ApiResponse<Page<PostResponse>>> getPosts(
             @PageableDefault(size = 20) Pageable pageable,
-            @RequestParam(defaultValue = "LATEST") PostSort sort
+            @RequestParam(defaultValue = "LATEST") PostSort sort,
+            @RequestParam(required = false) String keyword
     );
 
     @Operation(summary = "게시글 단건 조회")

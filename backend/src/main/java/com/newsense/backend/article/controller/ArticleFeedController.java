@@ -23,12 +23,13 @@ public class ArticleFeedController implements ArticleFeedApiDocs {
     public ResponseEntity<ApiResponse<ArticleFeedPageResponse>> getArticles(
             ArticleCategory category,
             ArticleDifficulty difficulty,
+            String keyword,
             int page,
             int size,
             ArticleFeedSort sort
     ) {
         return ResponseEntity.ok(ApiResponse.success(
-                articleFeedService.getArticles(category, difficulty, page, size, sort)
+                articleFeedService.getArticles(category, difficulty, keyword, page, size, sort)
         ));
     }
 

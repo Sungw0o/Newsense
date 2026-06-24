@@ -43,13 +43,14 @@ public class ArticleFeedService {
     public ArticleFeedPageResponse getArticles(
             ArticleCategory category,
             ArticleDifficulty difficulty,
+            String keyword,
             int page,
             int size,
             ArticleFeedSort sort
     ) {
         PageRequest pageRequest = PageRequest.of(page, size, sort.toSort());
         Page<ArticleCardResponse> articles = articleMetaRepository
-                .findAll(createSpecification(category, difficulty), pageRequest)
+                .findAll(createSpecification(category, difficulty, keyword), pageRequest)
                 .map(ArticleCardResponse::from);
         return ArticleFeedPageResponse.from(articles);
     }
@@ -70,7 +71,8 @@ public class ArticleFeedService {
 
     private Specification<ArticleMeta> createSpecification(
             ArticleCategory category,
-            ArticleDifficulty difficulty
+            ArticleDifficulty difficulty,
+            String keyword
     ) {
         return (root, query, criteriaBuilder) -> {
             var predicate = criteriaBuilder.conjunction();
@@ -80,10 +82,17 @@ public class ArticleFeedService {
             if (difficulty != null) {
                 predicate = criteriaBuilder.and(predicate, criteriaBuilder.equal(root.get("difficulty"), difficulty));
             }
-            for (String keyword : EXCLUDED_TITLE_KEYWORDS) {
+            if (keyword != null && !keyword.isBlank()) {
+                String pattern = "%" + keyword.toLowerCase() + "%";
+                predicate = criteriaBuilder.and(predicate, criteriaBuilder.or(
+                        criteriaBuilder.like(criteriaBuilder.lower(root.get("title")), pattern),
+                        criteriaBuilder.like(criteriaBuilder.lower(root.get("summary")), pattern)
+                ));
+            }
+            for (String excludedKeyword : EXCLUDED_TITLE_KEYWORDS) {
                 predicate = criteriaBuilder.and(
                         predicate,
-                        criteriaBuilder.notLike(criteriaBuilder.lower(root.get("title")), "%" + keyword + "%")
+                        criteriaBuilder.notLike(criteriaBuilder.lower(root.get("title")), "%" + excludedKeyword + "%")
                 );
             }
             return predicate;
