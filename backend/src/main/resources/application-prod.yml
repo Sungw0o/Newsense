@@ -68,6 +68,18 @@ crawler:
       body-attribute: ${MOEF_CRAWLER_BODY_ATTRIBUTE:}
       enabled: ${MOEF_CRAWLER_ENABLED:true}
 
+rag:
+  vector-search:
+    # 프로덕션에서는 Atlas Vector Search 사용
+    enabled: ${RAG_VECTOR_SEARCH_ENABLED:true}
+    mode: ${RAG_VECTOR_SEARCH_MODE:atlas}
+    index-name: ${RAG_VECTOR_SEARCH_INDEX_NAME:article_embedding_index}
+    num-candidates: ${RAG_VECTOR_SEARCH_NUM_CANDIDATES:200}
+    dimensions: ${RAG_VECTOR_SEARCH_DIMENSIONS:3072}
+  embedding:
+    backfill:
+      enabled: ${RAG_EMBEDDING_BACKFILL_ENABLED:false}
+
 logging:
   level:
     com.newsense.backend: INFO

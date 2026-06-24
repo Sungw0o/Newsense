@@ -71,6 +71,19 @@ crawler:
       body-attribute:
       enabled: true
 
+rag:
+  vector-search:
+    # 로컬에서는 Java 코사인 유사도 사용 (Atlas 불필요)
+    enabled: ${RAG_VECTOR_SEARCH_ENABLED:true}
+    mode: local
+    index-name: article_embedding_index
+    num-candidates: 200
+    dimensions: 3072
+  embedding:
+    backfill:
+      # 로컬 개발 시 필요하면 true로 변경
+      enabled: ${RAG_EMBEDDING_BACKFILL_ENABLED:false}
+
 logging:
   level:
     com.newsense.backend: DEBUG

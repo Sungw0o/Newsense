@@ -76,3 +76,20 @@ crawler:
   cron:
     public-source: ${SPRING_CRAWLER_CRON_PUBLIC:0 0 11,17 * * MON-FRI}
     portal-source: ${SPRING_CRAWLER_CRON_PORTAL:0 0 8,14,20 * * *}
+
+rag:
+  vector-search:
+    # 벡터 검색 전체 활성화 여부 (false면 키워드 검색만 사용)
+    enabled: ${RAG_VECTOR_SEARCH_ENABLED:false}
+    # "local" = Java 코사인 유사도 (개발용), "atlas" = MongoDB Atlas $vectorSearch (프로덕션)
+    mode: ${RAG_VECTOR_SEARCH_MODE:local}
+    # Atlas Vector Search 인덱스명 (Atlas 모드에서만 사용)
+    index-name: ${RAG_VECTOR_SEARCH_INDEX_NAME:article_embedding_index}
+    # $vectorSearch numCandidates (보통 limit * 10~20)
+    num-candidates: ${RAG_VECTOR_SEARCH_NUM_CANDIDATES:200}
+    # 임베딩 차원 수 (text-embedding-3-large = 3072)
+    dimensions: ${RAG_VECTOR_SEARCH_DIMENSIONS:3072}
+  embedding:
+    backfill:
+      # true면 앱 기동 시 임베딩 없는 기존 기사에 대해 백필 실행
+      enabled: ${RAG_EMBEDDING_BACKFILL_ENABLED:false}
