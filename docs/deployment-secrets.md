@@ -62,6 +62,9 @@ These keys are read directly by GitHub Actions and written into `/opt/newsense/.
 - `SONAR_PROJECT_KEY=Sungw0o_Newsense`
 - `SONAR_PROJECT_NAME=Newsense`
 - `SONAR_ORGANIZATION=sungw0o`
+- `SONAR_CI_ENABLED=false`
+
+Keep `SONAR_CI_ENABLED=false` while SonarCloud Automatic Analysis is enabled. To run `./gradlew sonar` in GitHub Actions, disable Automatic Analysis in SonarCloud first, then set `SONAR_CI_ENABLED=true`.
 
 ### Backend defaults
 
@@ -163,6 +166,7 @@ These values are intentionally not runtime application environment variables.
 - `SONAR_PROJECT_KEY`
 - `SONAR_PROJECT_NAME`
 - `SONAR_ORGANIZATION`
+- `SONAR_CI_ENABLED`
 - `VITE_API_BASE_URL`
 
 ## OAuth provider redirect URIs

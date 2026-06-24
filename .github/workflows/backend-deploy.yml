@@ -52,7 +52,7 @@ jobs:
         run: ./gradlew test jacocoTestReport jacocoTestCoverageVerification
 
       - name: SonarQube Analysis
-        if: ${{ env.SONAR_TOKEN != '' }}
+        if: ${{ env.SONAR_TOKEN != '' && vars.SONAR_CI_ENABLED == 'true' }}
         env:
           SONAR_PROJECT_KEY: ${{ vars.SONAR_PROJECT_KEY || 'Sungw0o_Newsense' }}
           SONAR_PROJECT_NAME: ${{ vars.SONAR_PROJECT_NAME || 'Newsense' }}
