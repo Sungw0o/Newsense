@@ -1,6 +1,6 @@
 package com.newsense.backend.article.crawler.client;
 
-import com.fasterxml.jackson.databind.JsonNode;
+import tools.jackson.databind.JsonNode;
 import com.newsense.backend.article.crawler.config.CrawlerProperties;
 import com.newsense.backend.article.crawler.model.ArticleCandidate;
 import com.newsense.backend.article.crawler.model.CrawlRunResult;

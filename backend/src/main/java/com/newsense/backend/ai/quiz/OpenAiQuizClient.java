@@ -1,8 +1,8 @@
 package com.newsense.backend.ai.quiz;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
+import tools.jackson.core.JacksonException;
+import tools.jackson.databind.JsonNode;
+import tools.jackson.databind.ObjectMapper;
 import com.newsense.backend.ai.config.AiPipelineProperties;
 import com.newsense.backend.ai.config.OpenAiProperties;
 import com.newsense.backend.common.exception.CustomException;
@@ -91,7 +91,7 @@ public class OpenAiQuizClient {
             GeneratedQuizSet generated = objectMapper.readValue(extractOutputText(response), GeneratedQuizSet.class);
             validate(generated.quizzes());
             return generated.quizzes();
-        } catch (RestClientException | JsonProcessingException | IllegalArgumentException exception) {
+        } catch (RestClientException | JacksonException | IllegalArgumentException exception) {
             log.error("AI quiz generation failed: {}", exception.getMessage());
             throw new CustomException(ErrorCode.QUIZ_GENERATION_FAILED);
         }

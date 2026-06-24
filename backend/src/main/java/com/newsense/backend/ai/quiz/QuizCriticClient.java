@@ -1,8 +1,8 @@
 package com.newsense.backend.ai.quiz;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
+import tools.jackson.core.JacksonException;
+import tools.jackson.databind.JsonNode;
+import tools.jackson.databind.ObjectMapper;
 import com.newsense.backend.ai.config.AiPipelineProperties;
 import com.newsense.backend.ai.config.OpenAiProperties;
 import com.newsense.backend.quiz.domain.QuizType;
@@ -77,7 +77,7 @@ public class QuizCriticClient {
                     output.path("approved").asBoolean(false),
                     toTextList(output.path("issues"))
             );
-        } catch (RestClientException | JsonProcessingException | IllegalArgumentException exception) {
+        } catch (RestClientException | JacksonException | IllegalArgumentException exception) {
             log.warn("AI quiz critique failed. Using local validation result: {}", exception.getMessage());
             return localResult;
         }
@@ -116,7 +116,7 @@ public class QuizCriticClient {
             String articleText,
             List<String> evidenceChunks,
             List<GeneratedQuiz> quizzes
-    ) throws JsonProcessingException {
+    ) throws JacksonException {
         return "기사 제목: " + title
                 + "\n\n근거 청크:\n" + formatEvidenceChunks(evidenceChunks)
                 + "\n\n기사 본문:\n" + truncate(articleText)

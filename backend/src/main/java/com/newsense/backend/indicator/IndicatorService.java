@@ -1,8 +1,8 @@
 package com.newsense.backend.indicator;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
+import tools.jackson.core.JacksonException;
+import tools.jackson.databind.JsonNode;
+import tools.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.redis.core.StringRedisTemplate;
@@ -31,7 +31,7 @@ public class IndicatorService {
         if (cached != null) {
             try {
                 return objectMapper.readValue(cached, IndicatorResponse.class);
-            } catch (JsonProcessingException e) {
+            } catch (JacksonException e) {
                 log.warn("Failed to deserialize cached indicator, refreshing: {}", e.getMessage());
             }
         }
@@ -95,7 +95,7 @@ public class IndicatorService {
         try {
             String json = objectMapper.writeValueAsString(response);
             redisTemplate.opsForValue().set(REDIS_KEY, json, CACHE_TTL);
-        } catch (JsonProcessingException e) {
+        } catch (JacksonException e) {
             log.warn("Failed to cache indicator response: {}", e.getMessage());
         }
     }

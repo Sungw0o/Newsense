@@ -1,8 +1,8 @@
 package com.newsense.backend.ai.article;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
+import tools.jackson.core.JacksonException;
+import tools.jackson.databind.JsonNode;
+import tools.jackson.databind.ObjectMapper;
 import com.newsense.backend.ai.config.AiPipelineProperties;
 import com.newsense.backend.ai.config.OpenAiProperties;
 import com.newsense.backend.article.domain.ArticleCategory;
@@ -93,7 +93,7 @@ public class OpenAiArticleClassifierClient {
             }
             List<RelatedStockInfo> relatedStocks = parseRelatedStocks(output.path("related_stocks"));
             return new ArticleClassificationResult(category, difficulty, summary.trim(), relatedStocks);
-        } catch (RestClientException | JsonProcessingException | IllegalArgumentException exception) {
+        } catch (RestClientException | JacksonException | IllegalArgumentException exception) {
             log.error("AI article classification failed: {}", exception.getMessage());
             throw new CustomException(ErrorCode.AI_CLASSIFICATION_FAILED);
         }

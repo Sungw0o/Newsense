@@ -1,8 +1,8 @@
 package com.newsense.backend.ai.article;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
+import tools.jackson.core.JacksonException;
+import tools.jackson.databind.JsonNode;
+import tools.jackson.databind.ObjectMapper;
 import com.newsense.backend.ai.config.AiPipelineProperties;
 import com.newsense.backend.ai.config.OpenAiProperties;
 import lombok.RequiredArgsConstructor;
@@ -64,7 +64,7 @@ public class ArticleFactExtractorClient {
                     toTextList(output.path("keyTerms")),
                     toTextList(output.path("eventFacts"))
             );
-        } catch (RestClientException | JsonProcessingException | IllegalArgumentException exception) {
+        } catch (RestClientException | JacksonException | IllegalArgumentException exception) {
             log.warn("Article fact extraction failed. Continuing without extracted facts: {}", exception.getMessage());
             return ArticleFactExtractionResult.empty();
         }
