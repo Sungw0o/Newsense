@@ -12,8 +12,15 @@ onMounted(async () => {
   try {
     const rawToken = route.query.accessToken
     const token = Array.isArray(rawToken) ? rawToken[0] : rawToken
+    const needsOnboarding = route.query.needsOnboarding === 'true'
     await userStore.completeOAuthLogin(token)
-    router.replace('/')
+    // 백엔드 needsOnboarding 신호 OR 프로필 로드 후 interests가 비어있으면 온보딩으로
+    const interests = userStore.userInfo?.interests ?? []
+    if (needsOnboarding || interests.length === 0) {
+      router.replace('/onboarding')
+    } else {
+      router.replace('/')
+    }
   } catch {
     errorMsg.value = '소셜 로그인 처리에 실패했습니다. 다시 시도해 주세요.'
   }

@@ -51,9 +51,11 @@ public class OAuth2LoginSuccessHandler implements AuthenticationSuccessHandler {
         TokenPair tokenPair = jwtTokenProvider.createTokenPair(user);
         tokenStore.saveRefreshToken(user.getId(), tokenPair.refreshToken(), tokenPair.refreshExpiresAt());
         response.addHeader(HttpHeaders.SET_COOKIE, cookieManager.create(tokenPair.refreshToken()).toString());
+        boolean needsOnboarding = user.getInterests() == null || user.getInterests().isEmpty();
         String redirectUrl = UriComponentsBuilder.fromUriString(frontendUrl)
                 .path("/oauth/callback")
                 .queryParam("accessToken", tokenPair.accessToken())
+                .queryParam("needsOnboarding", needsOnboarding)
                 .build()
                 .toUriString();
         response.sendRedirect(redirectUrl);

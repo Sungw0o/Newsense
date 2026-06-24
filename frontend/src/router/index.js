@@ -27,6 +27,12 @@ const routes = [
     meta: { title: '소셜 로그인 - Newsense', guestOnly: true }
   },
   {
+    path: '/onboarding',
+    name: 'Onboarding',
+    component: () => import('../views/OnboardingView.vue'),
+    meta: { title: '관심사 설정 - Newsense', requiresAuth: true, isOnboarding: true }
+  },
+  {
     path: '/articles/:id',
     name: 'ArticleDetail',
     component: () => import('../views/ArticleDetailView.vue'),
@@ -110,7 +116,7 @@ router.beforeEach(async (to, from, next) => {
   }
 
   const userStore = useUserStore()
-  
+
   // 2. 앱 최초 진입/새로고침 시 토큰이 존재하지만 스토어 정보가 없으면 복구 시도
   if (!userStore.userInfo && localStorage.getItem('accessToken')) {
     try {
@@ -124,15 +130,28 @@ router.beforeEach(async (to, from, next) => {
 
   // 3. 페이지 보안 접근 제어
   if (to.meta.requiresAuth && !isAuthenticated) {
-    next({ name: 'Login', query: { redirect: to.fullPath } })
-  } else if (to.meta.guestOnly && isAuthenticated) {
-    next({ name: 'Home' })
-  } else if (to.meta.requiresAdmin && userStore.userInfo?.role !== 'ADMIN') {
-    alert('관리자 권한이 필요한 페이지입니다.')
-    next({ name: 'Home' })
-  } else {
-    next()
+    return next({ name: 'Login', query: { redirect: to.fullPath } })
   }
+  if (to.meta.guestOnly && isAuthenticated) {
+    return next({ name: 'Home' })
+  }
+  if (to.meta.requiresAdmin && userStore.userInfo?.role !== 'ADMIN') {
+    alert('관리자 권한이 필요한 페이지입니다.')
+    return next({ name: 'Home' })
+  }
+
+  // 4. 온보딩 강제: 인증된 유저 중 interests가 비어있으면 /onboarding으로 리다이렉트
+  //    isOnboarding 플래그가 있는 페이지(온보딩 자체)는 제외하여 무한루프 방지
+  if (
+    isAuthenticated &&
+    to.meta.requiresAuth &&
+    !to.meta.isOnboarding &&
+    (userStore.userInfo?.interests?.length ?? 0) === 0
+  ) {
+    return next({ name: 'Onboarding' })
+  }
+
+  next()
 })
 
 export default router
