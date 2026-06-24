@@ -83,7 +83,7 @@ export default {
       fontFamily: {
         sans: ['Inter', 'Pretendard', 'Noto Sans KR', 'system-ui', 'sans-serif'],
         display: ['Fustat', 'Inter', 'sans-serif'],
-        mono: ['"JetBrains Mono"', 'ui-monospace', 'monospace'],
+        mono: ['"Black Han Sans"', 'sans-serif'],
       },
       scale: {
         '102': '1.02',

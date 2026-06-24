@@ -349,7 +349,7 @@ form {
   font-size: 12px;
   cursor: pointer;
   padding: 6px 8px;
-  font-family: 'JetBrains Mono', monospace;
+  font-family: 'Black Han Sans', monospace;
 }
 
 .error-msg {

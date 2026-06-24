@@ -296,7 +296,7 @@ form { display: flex; flex-direction: column; gap: 14px; }
 .field { display: flex; flex-direction: column; gap: 6px; }
 .field label { font-size: 13px; font-weight: 500; color: var(--ink-2, #4a5161); display: flex; align-items: center; gap: 6px; }
 .dark .field label { color: #a4adbf; }
-.field-hint { font-size: 11.5px; color: var(--ink-3, #8a93a3); font-family: 'JetBrains Mono', monospace; }
+.field-hint { font-size: 11.5px; color: var(--ink-3, #8a93a3); font-family: 'Black Han Sans', monospace; }
 
 .field input {
   appearance: none;
@@ -343,7 +343,7 @@ form { display: flex; flex-direction: column; gap: 14px; }
 .field-feedback {
   font-size: 12px;
   margin: 4px 0 0;
-  font-family: 'JetBrains Mono', monospace;
+  font-family: 'Black Han Sans', monospace;
 }
 .field-feedback.ok { color: #1a9e5c; }
 .field-feedback.err { color: #b02a2a; }

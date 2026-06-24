@@ -219,7 +219,7 @@ const handleLogout = async () => {
   font-size: 11px;
   color: var(--ink-3);
   margin: 0 0 2px;
-  font-family: 'JetBrains Mono', monospace;
+  font-family: 'Black Han Sans', monospace;
   letter-spacing: 0.5px;
   text-transform: uppercase;
 }

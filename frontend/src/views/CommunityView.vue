@@ -126,7 +126,7 @@ const categoryColor = {
 }
 
 .eyebrow {
-  font-family: 'JetBrains Mono', monospace;
+  font-family: 'Black Han Sans', monospace;
   font-size: 11.5px;
   letter-spacing: 1px;
   color: var(--ink-3, #8a93a3);
@@ -230,7 +230,7 @@ const categoryColor = {
   border-radius: 999px;
   font-size: 11.5px;
   font-weight: 600;
-  font-family: 'JetBrains Mono', monospace;
+  font-family: 'Black Han Sans', monospace;
   margin-bottom: 10px;
 }
 
@@ -307,7 +307,7 @@ const categoryColor = {
 .post-date {
   font-size: 11.5px;
   color: var(--ink-3, #8a93a3);
-  font-family: 'JetBrains Mono', monospace;
+  font-family: 'Black Han Sans', monospace;
 }
 
 .post-stats { display: flex; gap: 12px; }
@@ -317,7 +317,7 @@ const categoryColor = {
   gap: 4px;
   font-size: 12.5px;
   color: var(--ink-3, #8a93a3);
-  font-family: 'JetBrains Mono', monospace;
+  font-family: 'Black Han Sans', monospace;
 }
 
 .loading-state { display: flex; justify-content: center; padding: 80px 0; }
