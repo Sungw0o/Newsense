@@ -37,6 +37,14 @@ crawler:
   retry-delay: ${CRAWLER_RETRY_DELAY:1000}
   request-delay: ${CRAWLER_REQUEST_DELAY:500}
   chunk-size: ${CRAWLER_CHUNK_SIZE:800}
+  pdf-min-text-length: ${CRAWLER_PDF_MIN_TEXT_LENGTH:500}
+  tess-data-path: ${TESS_DATA_PATH:}
+  naver-client-id: ${NAVER_CLIENT_ID:}
+  naver-client-secret: ${NAVER_CLIENT_SECRET:}
+  news-api-key: ${NEWS_API_KEY:}
+  cron:
+    public-source: ${SPRING_CRAWLER_CRON_PUBLIC:0 0 11,17 * * MON-FRI}
+    portal-source: ${SPRING_CRAWLER_CRON_PORTAL:0 0 8,14,20 * * *}
   sources:
     - key: bok
       name: 한국은행
