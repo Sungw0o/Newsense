@@ -66,10 +66,15 @@ const categoryColor = {
         v-for="post in displayPosts"
         :key="post.postId"
         class="post-card"
+        tabindex="0"
+        role="button"
+        :aria-label="post.title"
         @click="router.push(`/community/${post.postId}`)"
+        @keydown.enter="router.push(`/community/${post.postId}`)"
+        @keydown.space.prevent="router.push(`/community/${post.postId}`)"
       >
         <!-- Article scrap badge -->
-        <div v-if="post.articleScrap" class="scrap-badge" :style="{ background: categoryColor[post.articleScrap.category] + '18', color: categoryColor[post.articleScrap.category] }">
+        <div v-if="post.articleScrap" class="scrap-badge" :style="{ background: (categoryColor[post.articleScrap.category] ?? '#0084ff') + '18', color: categoryColor[post.articleScrap.category] ?? '#0084ff' }">
           <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor"><path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"/></svg>
           {{ post.articleScrap.category }} 기사 스크랩
         </div>
@@ -203,9 +208,12 @@ const categoryColor = {
   cursor: pointer;
   transition: transform .15s, box-shadow .15s;
 }
-.post-card:hover {
+.post-card:hover,
+.post-card:focus-visible {
   transform: translateY(-2px);
   box-shadow: inset 0 1px 0 rgba(255,255,255,0.85), 0 12px 30px -10px rgba(20,40,80,0.15);
+  outline: 2px solid #0084ff;
+  outline-offset: 2px;
 }
 .dark .post-card {
   background: rgba(20,24,34,0.55);

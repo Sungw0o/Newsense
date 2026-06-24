@@ -100,9 +100,9 @@ export const useCommunityStore = defineStore('community', {
       this.isLoading = true
       try {
         const res = await communityApi.getPosts()
-        this.posts = res?.data ?? res ?? MOCK_POSTS
+        this.posts = res?.data ?? res ?? JSON.parse(JSON.stringify(MOCK_POSTS))
       } catch {
-        this.posts = MOCK_POSTS
+        this.posts = JSON.parse(JSON.stringify(MOCK_POSTS))
       } finally {
         this.isLoading = false
       }
@@ -114,7 +114,8 @@ export const useCommunityStore = defineStore('community', {
         const res = await communityApi.getPost(postId)
         this.currentPost = res?.data ?? res
       } catch {
-        this.currentPost = MOCK_POSTS.find(p => p.postId === Number(postId)) ?? null
+        const found = MOCK_POSTS.find(p => p.postId === Number(postId))
+        this.currentPost = found ? JSON.parse(JSON.stringify(found)) : null
       } finally {
         this.isPostLoading = false
       }
@@ -131,10 +132,10 @@ export const useCommunityStore = defineStore('community', {
       const post = this.posts.find(p => p.postId === postId) ?? this.currentPost
       if (!post) return
 
-      try {
-        await communityApi.toggleReaction(postId, type)
-      } catch { /* optimistic only */ }
+      // 롤백용 스냅샷
+      const snapshot = { userReaction: post.userReaction, likeCount: post.likeCount, dislikeCount: post.dislikeCount }
 
+      // 상태 먼저 낙관적으로 변경
       const prev = post.userReaction
       if (prev === type) {
         post.userReaction = null
@@ -155,15 +156,23 @@ export const useCommunityStore = defineStore('community', {
           dislikeCount: post.dislikeCount,
         })
       }
+
+      // API 실패 시 롤백
+      try {
+        await communityApi.toggleReaction(postId, type)
+      } catch {
+        Object.assign(post, snapshot)
+        if (this.currentPost?.postId === postId) Object.assign(this.currentPost, snapshot)
+      }
     },
 
     async fetchComments(postId) {
       this.isCommentLoading = true
       try {
         const res = await communityApi.getComments(postId)
-        this.comments = res?.data ?? res ?? []
+        this.comments = res?.data ?? res ?? JSON.parse(JSON.stringify(MOCK_COMMENTS[postId] ?? []))
       } catch {
-        this.comments = MOCK_COMMENTS[postId] ?? []
+        this.comments = JSON.parse(JSON.stringify(MOCK_COMMENTS[postId] ?? []))
       } finally {
         this.isCommentLoading = false
       }

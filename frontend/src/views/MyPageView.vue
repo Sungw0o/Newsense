@@ -259,7 +259,9 @@ const nicknameFirst = () => (nickname.value || 'U').substring(0, 1)
   border-radius: 50%;
   display: block;
 }
-.avatar-btn:hover .avatar-overlay { opacity: 1; }
+.avatar-btn:hover .avatar-overlay,
+.avatar-btn:focus-visible .avatar-overlay { opacity: 1; }
+.avatar-btn:focus-visible { outline: 2px solid #0084ff; outline-offset: 3px; }
 
 .avatar {
   width: 72px; height: 72px;

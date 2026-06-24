@@ -25,16 +25,21 @@ function debounce(fn, delay) {
   }
 }
 
+let currentCheckSeq = 0
+
 const checkEmail = debounce(async (val) => {
   if (!val || !val.includes('@')) {
     emailStatus.value = 'idle'
     return
   }
+  const seq = ++currentCheckSeq
   emailStatus.value = 'checking'
   try {
     const res = await authApi.checkUsername(val)
+    if (seq !== currentCheckSeq) return // 더 최신 요청이 있으면 무시
     emailStatus.value = res?.data?.available ? 'available' : 'taken'
   } catch {
+    if (seq !== currentCheckSeq) return
     emailStatus.value = 'error'
   }
 }, 300)
