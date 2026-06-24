@@ -155,4 +155,30 @@ class LearningHistoryServiceTest {
         User user = TestFixtures.user(7L);
         given(userRepository.findById(7L)).willReturn(Optional.of(user));
         given(articleReadRepository.findAllByUserId(7L)).willReturn(List.of());
-        given(reviewRepository.
+        given(reviewRepository.findAllByUserIdAndIsActiveTrue(7L)).willReturn(List.of());
+        given(quizAnswerRepository.findAllByUserId(7L)).willReturn(List.of());
+        LocalDate today = LocalDate.now();
+        LocalDate weekStart = today.with(DayOfWeek.MONDAY);
+        LocalDate weekEnd = weekStart.plusDays(6);
+        given(learningHistoryRepository.countDistinctArticleIdByUserIdAndType(7L, LearningHistoryType.ARTICLE_READ))
+                .willReturn(3L);
+        given(learningHistoryRepository.countByUserIdAndType(7L, LearningHistoryType.REVIEW)).willReturn(2L);
+        given(learningHistoryRepository.countByUserIdAndType(7L, LearningHistoryType.QUIZ)).willReturn(4L);
+        given(learningHistoryRepository.countByUserIdAndTypeAndQuizCorrectTrue(7L, LearningHistoryType.QUIZ))
+                .willReturn(3L);
+        given(learningHistoryRepository.countDistinctLearningDateByUserIdAndLearningDateBetween(
+                7L,
+                weekStart,
+                weekEnd
+        )).willReturn(5L);
+        given(learningHistoryRepository.findDistinctLearningDatesByUserIdOrderByDesc(7L))
+                .willReturn(List.of(today, today.minusDays(1), today.minusDays(2), today.minusDays(4)));
+
+        LearningStatsResponse response = learningHistoryService.getStats(7L);
+
+        assertThat(response.totalReadArticleCount()).isEqualTo(3L);
+        assertThat(response.quizAccuracyRate()).isEqualTo(75.0);
+        assertThat(response.consecutiveLearningDays()).isEqualTo(3);
+        assertThat(response.weeklyLearningDays()).isEqualTo(5L);
+    }
+}

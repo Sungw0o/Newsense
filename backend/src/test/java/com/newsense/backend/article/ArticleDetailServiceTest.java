@@ -156,4 +156,8 @@ class ArticleDetailServiceTest {
         BookmarkToggleResponse deleted = articleDetailService.toggleBookmark(1L, 7L);
 
         assertThat(created.isBookmarked()).isTrue();
-        assertThat(deleted.isBoo
+        assertThat(deleted.isBookmarked()).isFalse();
+        then(bookmarkRepository).should().save(any(Bookmark.class));
+        then(bookmarkRepository).should().delete(bookmark);
+    }
+}

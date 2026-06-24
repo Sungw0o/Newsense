@@ -167,4 +167,20 @@ class QuizServiceTest {
         given(quizAnswerRepository.save(any(QuizAnswer.class))).willAnswer(invocation -> invocation.getArgument(0));
         given(articleTermRepository.findAllByArticleIdWithTerm(1L)).willReturn(List.of());
 
-        QuizAnswerResponse response = quizService.submitAnswer(10L, 7L, new QuizAnswerRequ
+        QuizAnswerResponse response = quizService.submitAnswer(10L, 7L, new QuizAnswerRequest("X"));
+
+        assertThat(response.correct()).isFalse();
+        assertThat(response.wrongNoteRecorded()).isTrue();
+        then(wrongNoteRecorder).should().record(7L, quiz, "X", List.of());
+    }
+
+    @Test
+    void submitAnswer_throwsWhenQuizMissing() {
+        given(quizRepository.findByIdAndIsActiveTrue(404L)).willReturn(Optional.empty());
+
+        assertThatThrownBy(() -> quizService.submitAnswer(404L, 7L, new QuizAnswerRequest("O")))
+                .isInstanceOf(CustomException.class)
+                .satisfies(error -> assertThat(((CustomException) error).getErrorCode())
+                        .isEqualTo(ErrorCode.QUIZ_NOT_FOUND));
+    }
+}
