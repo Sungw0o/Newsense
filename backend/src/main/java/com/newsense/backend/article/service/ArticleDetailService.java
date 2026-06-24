@@ -22,10 +22,14 @@ import com.newsense.backend.user.domain.User;
 import com.newsense.backend.user.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.ApplicationEventPublisher;
+import org.springframework.data.mongodb.core.MongoTemplate;
+import org.springframework.data.mongodb.core.query.Criteria;
+import org.springframework.data.mongodb.core.query.Query;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
+import java.util.Optional;
 
 @Service
 @RequiredArgsConstructor
@@ -39,6 +43,7 @@ public class ArticleDetailService {
     private final BookmarkRepository bookmarkRepository;
     private final UserRepository userRepository;
     private final ApplicationEventPublisher eventPublisher;
+    private final MongoTemplate mongoTemplate;
 
     @Transactional(readOnly = true)
     public ArticleDetailResponse getArticleDetail(Long articleId, Long userId) {
@@ -113,9 +118,19 @@ public class ArticleDetailService {
                 .orElseThrow(() -> new CustomException(ErrorCode.ARTICLE_NOT_FOUND));
     }
 
-    private java.util.Optional<ArticleContent> getArticleContent(ArticleMeta article) {
+    private Optional<ArticleContent> getArticleContent(ArticleMeta article) {
         return articleContentRepository.findById(article.getMongoDocumentId())
-                .or(() -> articleContentRepository.findBySourceUrl(article.getSourceUrl()));
+                .or(() -> articleContentRepository.findBySourceUrl(article.getSourceUrl()))
+                .or(() -> findArticleContentWithMongoTemplate(article));
+    }
+
+    private Optional<ArticleContent> findArticleContentWithMongoTemplate(ArticleMeta article) {
+        ArticleContent byId = mongoTemplate.findById(article.getMongoDocumentId(), ArticleContent.class);
+        if (byId != null) {
+            return Optional.of(byId);
+        }
+        Query query = Query.query(Criteria.where("sourceUrl").is(article.getSourceUrl()));
+        return Optional.ofNullable(mongoTemplate.findOne(query, ArticleContent.class));
     }
 
     private User getUser(Long userId) {

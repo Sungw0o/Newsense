@@ -42,8 +42,7 @@ public class ArticleContent {
             String rawText,
             String cleanText,
             List<String> chunks,
-            String contentHash
-    ) {
+            String contentHash) {
         ArticleContent content = new ArticleContent();
         content.sourceKey = sourceKey;
         content.source = source;

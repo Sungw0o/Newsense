@@ -14,9 +14,10 @@ spring:
     properties:
       hibernate:
         format_sql: true
+  mongodb:
+    uri: ${SPRING_MONGODB_URI:mongodb://localhost:27017/newsense}
   data:
     mongodb:
-      uri: ${SPRING_DATA_MONGODB_URI:mongodb://localhost:27017/newsense}
       auto-index-creation: true
     redis:
       host: ${SPRING_DATA_REDIS_HOST:localhost}

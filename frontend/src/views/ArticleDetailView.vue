@@ -18,6 +18,18 @@ const { selectedArticle, selectedArticleTerms, isLoading } = storeToRefs(article
 
 const isBookmarked = computed(() => selectedArticle.value?.isBookmarked ?? false)
 
+const escapeRegExp = (value) => value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
+
+const termPattern = computed(() => {
+  const names = selectedArticleTerms.value
+    .map(term => term.name)
+    .filter(Boolean)
+    .sort((left, right) => right.length - left.length)
+
+  if (names.length === 0) return null
+  return new RegExp(`(${names.map(escapeRegExp).join('|')})`, 'g')
+})
+
 // 텍스트에서 대괄호 [용어] 패턴을 감지하여 클릭 가능한 엘리먼트로 변환
 const formattedParagraphs = computed(() => {
   const selected = selectedArticle.value
@@ -25,14 +37,18 @@ const formattedParagraphs = computed(() => {
   
   const paragraphs = selected.content.split('\n\n')
   return paragraphs.map(p => {
-    // [용어]를 감지하여 파싱
+    const regex = termPattern.value
+    if (!regex) {
+      return [{ type: 'text', value: p }]
+    }
+
     const parts = []
-    const regex = /\[(.*?)\]/g
     let match
 
     let lastIndex = 0
+    regex.lastIndex = 0
     while ((match = regex.exec(p)) !== null) {
-      const termName = match[1]
+      const termName = match[0]
       const startIndex = match.index
       
       // 용어 매칭 이전 텍스트 추가
@@ -47,7 +63,7 @@ const formattedParagraphs = computed(() => {
       parts.push({
         type: 'term',
         value: termName,
-        hasDefinition: selectedArticleTerms.value.some(t => t.name === termName)
+        hasDefinition: true
       })
       
       lastIndex = regex.lastIndex
@@ -219,7 +235,7 @@ watch(articleId, async (newId) => {
               </p>
               <div class="text-xs text-slate-400 pt-2 flex items-center gap-1.5">
                 <span>ⓘ</span>
-                <span>기획재정부 시사경제사전 연동</span>
+                <span>{{ selectedTerm.source }}</span>
               </div>
             </div>
 

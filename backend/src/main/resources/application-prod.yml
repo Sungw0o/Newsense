@@ -11,9 +11,10 @@ spring:
     hibernate:
       ddl-auto: ${SPRING_JPA_DDL_AUTO:validate}
     show-sql: false
+  mongodb:
+    uri: ${SPRING_MONGODB_URI:${SPRING_DATA_MONGODB_URI}}
   data:
     mongodb:
-      uri: ${SPRING_DATA_MONGODB_URI}
       auto-index-creation: true
     redis:
       host: ${SPRING_DATA_REDIS_HOST}
