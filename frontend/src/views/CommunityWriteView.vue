@@ -35,7 +35,7 @@ const handleSubmit = async () => {
     const payload = {
       title: title.value.trim(),
       content: content.value.trim(),
-      articleId: selectedArticle.value?.articleId ?? null,
+      articleMetaId: selectedArticle.value?.articleId ?? null,
     }
     const created = await communityStore.createPost(payload)
     router.push(`/community/${created?.postId ?? ''}`)

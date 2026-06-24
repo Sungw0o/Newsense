@@ -25,11 +25,20 @@ public record ArticleDetailResponse(
             boolean isRead,
             boolean isBookmarked
     ) {
+        return of(article, content.getCleanText(), isRead, isBookmarked);
+    }
+
+    public static ArticleDetailResponse of(
+            ArticleMeta article,
+            String content,
+            boolean isRead,
+            boolean isBookmarked
+    ) {
         return new ArticleDetailResponse(
                 article.getId(),
                 article.getTitle(),
                 article.getSummary(),
-                content.getCleanText(),
+                content,
                 article.getCategory().getDisplayName(),
                 article.getDifficulty().getDisplayName(),
                 article.getSource(),

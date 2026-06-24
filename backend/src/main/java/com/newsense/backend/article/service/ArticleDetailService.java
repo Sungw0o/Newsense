@@ -43,8 +43,9 @@ public class ArticleDetailService {
     @Transactional(readOnly = true)
     public ArticleDetailResponse getArticleDetail(Long articleId, Long userId) {
         ArticleMeta article = getArticle(articleId);
-        ArticleContent content = articleContentRepository.findById(article.getMongoDocumentId())
-                .orElseThrow(() -> new CustomException(ErrorCode.ARTICLE_CONTENT_NOT_FOUND));
+        String content = getArticleContent(article)
+                .map(ArticleContent::getCleanText)
+                .orElse(article.getSummary());
 
         boolean isRead = userId != null && articleReadRepository.existsByUserIdAndArticleId(userId, articleId);
         boolean isBookmarked = userId != null && bookmarkRepository.existsByUserIdAndArticleId(userId, articleId);
@@ -58,9 +59,9 @@ public class ArticleDetailService {
         List<ArticleTerm> articleTerms = articleTermRepository.findAllByArticleIdWithTerm(articleId);
 
         if (articleTerms.isEmpty()) {
-            ArticleContent content = articleContentRepository.findById(article.getMongoDocumentId())
-                    .orElseThrow(() -> new CustomException(ErrorCode.ARTICLE_CONTENT_NOT_FOUND));
-            String articleText = content.getCleanText();
+            String articleText = getArticleContent(article)
+                    .map(ArticleContent::getCleanText)
+                    .orElse(article.getSummary());
 
             articleTerms = termRepository.findAll().stream()
                     .filter(term -> articleText.contains(term.getName()))
@@ -110,6 +111,11 @@ public class ArticleDetailService {
     private ArticleMeta getArticle(Long articleId) {
         return articleMetaRepository.findById(articleId)
                 .orElseThrow(() -> new CustomException(ErrorCode.ARTICLE_NOT_FOUND));
+    }
+
+    private java.util.Optional<ArticleContent> getArticleContent(ArticleMeta article) {
+        return articleContentRepository.findById(article.getMongoDocumentId())
+                .or(() -> articleContentRepository.findBySourceUrl(article.getSourceUrl()));
     }
 
     private User getUser(Long userId) {

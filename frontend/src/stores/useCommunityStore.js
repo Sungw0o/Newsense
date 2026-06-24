@@ -1,6 +1,45 @@
 import { defineStore } from 'pinia'
 import communityApi from '../api/communityApi'
 
+const getInitial = (name = '?') => name.trim().charAt(0).toUpperCase() || '?'
+
+const normalizePost = (post) => {
+  if (!post) return null
+  const username = post.username ?? post.author?.nickname ?? '익명'
+  return {
+    ...post,
+    postId: post.postId ?? post.id,
+    author: post.author ?? {
+      nickname: username,
+      avatarInitial: getInitial(username),
+    },
+    likeCount: post.likeCount ?? post.likes ?? 0,
+    dislikeCount: post.dislikeCount ?? post.dislikes ?? 0,
+    commentCount: post.commentCount ?? 0,
+    articleScrap: post.articleScrap ?? null,
+    userReaction: post.userReaction ?? null,
+  }
+}
+
+const normalizeComment = (comment) => {
+  if (!comment) return null
+  const username = comment.username ?? comment.author?.nickname ?? '익명'
+  return {
+    ...comment,
+    commentId: comment.commentId ?? comment.id,
+    author: comment.author ?? {
+      nickname: username,
+      avatarInitial: getInitial(username),
+    },
+  }
+}
+
+const pageContent = (response) => {
+  const data = response?.data ?? response
+  if (Array.isArray(data)) return data
+  return data?.content ?? []
+}
+
 const MOCK_POSTS = [
   {
     postId: 1,
@@ -100,9 +139,9 @@ export const useCommunityStore = defineStore('community', {
       this.isLoading = true
       try {
         const res = await communityApi.getPosts()
-        this.posts = res?.data ?? res ?? JSON.parse(JSON.stringify(MOCK_POSTS))
+        this.posts = pageContent(res).map(normalizePost).filter(Boolean)
       } catch {
-        this.posts = JSON.parse(JSON.stringify(MOCK_POSTS))
+        this.posts = []
       } finally {
         this.isLoading = false
       }
@@ -112,10 +151,9 @@ export const useCommunityStore = defineStore('community', {
       this.isPostLoading = true
       try {
         const res = await communityApi.getPost(postId)
-        this.currentPost = res?.data ?? res
+        this.currentPost = normalizePost(res?.data ?? res)
       } catch {
-        const found = MOCK_POSTS.find(p => p.postId === Number(postId))
-        this.currentPost = found ? JSON.parse(JSON.stringify(found)) : null
+        this.currentPost = null
       } finally {
         this.isPostLoading = false
       }
@@ -123,7 +161,7 @@ export const useCommunityStore = defineStore('community', {
 
     async createPost(data) {
       const res = await communityApi.createPost(data)
-      const created = res?.data ?? res
+      const created = normalizePost(res?.data ?? res)
       this.posts.unshift(created)
       return created
     },
@@ -170,9 +208,9 @@ export const useCommunityStore = defineStore('community', {
       this.isCommentLoading = true
       try {
         const res = await communityApi.getComments(postId)
-        this.comments = res?.data ?? res ?? JSON.parse(JSON.stringify(MOCK_COMMENTS[postId] ?? []))
+        this.comments = pageContent(res).map(normalizeComment).filter(Boolean)
       } catch {
-        this.comments = JSON.parse(JSON.stringify(MOCK_COMMENTS[postId] ?? []))
+        this.comments = []
       } finally {
         this.isCommentLoading = false
       }
@@ -180,12 +218,7 @@ export const useCommunityStore = defineStore('community', {
 
     async createComment(postId, content) {
       const res = await communityApi.createComment(postId, content)
-      const created = res?.data ?? res ?? {
-        commentId: Date.now(),
-        author: { nickname: '나', avatarInitial: '나' },
-        content,
-        createdAt: new Date().toISOString(),
-      }
+      const created = normalizeComment(res?.data ?? res)
       this.comments.push(created)
       if (this.currentPost?.postId === postId) this.currentPost.commentCount++
     },
