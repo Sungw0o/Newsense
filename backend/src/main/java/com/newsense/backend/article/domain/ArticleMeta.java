@@ -79,13 +79,39 @@ public class ArticleMeta {
             String mongoDocumentId,
             String contentHash
     ) {
+        return create(
+                title,
+                summary,
+                source,
+                sourceUrl,
+                ArticleCategory.MACRO_ECONOMY,
+                ArticleDifficulty.BASIC,
+                publishedAt,
+                estimatedMinutes,
+                mongoDocumentId,
+                contentHash
+        );
+    }
+
+    public static ArticleMeta create(
+            String title,
+            String summary,
+            String source,
+            String sourceUrl,
+            ArticleCategory category,
+            ArticleDifficulty difficulty,
+            LocalDate publishedAt,
+            int estimatedMinutes,
+            String mongoDocumentId,
+            String contentHash
+    ) {
         ArticleMeta article = new ArticleMeta();
         article.title = title;
         article.summary = summary;
         article.source = source;
         article.sourceUrl = sourceUrl;
-        article.category = ArticleCategory.ECONOMY;
-        article.difficulty = ArticleDifficulty.BASIC;
+        article.category = category;
+        article.difficulty = difficulty;
         article.publishedAt = publishedAt;
         article.estimatedMinutes = estimatedMinutes;
         article.mongoDocumentId = mongoDocumentId;

@@ -5,6 +5,7 @@ import com.newsense.backend.auth.dto.LoginResponse;
 import com.newsense.backend.auth.dto.SignupRequest;
 import com.newsense.backend.auth.dto.SignupResponse;
 import com.newsense.backend.auth.dto.TokenResponse;
+import com.newsense.backend.auth.dto.UsernameAvailabilityResponse;
 import com.newsense.backend.auth.token.JwtTokenProvider;
 import com.newsense.backend.auth.token.TokenPair;
 import com.newsense.backend.auth.token.TokenStore;
@@ -46,6 +47,11 @@ public class AuthService {
         );
         User savedUser = userRepository.save(user);
         return new SignupResponse(savedUser.getId(), savedUser.getEmail(), savedUser.getNickname());
+    }
+
+    @Transactional(readOnly = true)
+    public UsernameAvailabilityResponse checkUsername(String username) {
+        return new UsernameAvailabilityResponse(!userRepository.existsByNickname(username));
     }
 
     @Transactional(readOnly = true)

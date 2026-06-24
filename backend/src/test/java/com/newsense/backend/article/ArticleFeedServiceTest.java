@@ -44,7 +44,7 @@ class ArticleFeedServiceTest {
                 .willReturn(new PageImpl<>(List.of(article)));
 
         ArticleFeedPageResponse response = articleFeedService.getArticles(
-                ArticleCategory.FINANCE,
+                ArticleCategory.FINANCE_INVESTMENT,
                 ArticleDifficulty.BASIC,
                 0,
                 10,
@@ -61,7 +61,7 @@ class ArticleFeedServiceTest {
     @Test
     void getCategories_returnsAllCategoriesWithZeroDefault() {
         ArticleMetaRepository.CategoryCount count = mock(ArticleMetaRepository.CategoryCount.class);
-        given(count.getCategory()).willReturn(ArticleCategory.FINANCE);
+        given(count.getCategory()).willReturn(ArticleCategory.FINANCE_INVESTMENT);
         given(count.getArticleCount()).willReturn(3L);
         given(articleMetaRepository.countArticlesByCategory()).willReturn(List.of(count));
 
@@ -69,12 +69,12 @@ class ArticleFeedServiceTest {
 
         assertThat(responses).hasSize(ArticleCategory.values().length);
         assertThat(responses)
-                .filteredOn(response -> response.categoryId() == ArticleCategory.FINANCE)
+                .filteredOn(response -> response.categoryId() == ArticleCategory.FINANCE_INVESTMENT)
                 .singleElement()
                 .extracting(ArticleCategoryResponse::articleCount)
                 .isEqualTo(3L);
         assertThat(responses)
-                .filteredOn(response -> response.categoryId() == ArticleCategory.ECONOMY)
+                .filteredOn(response -> response.categoryId() == ArticleCategory.MACRO_ECONOMY)
                 .singleElement()
                 .extracting(ArticleCategoryResponse::articleCount)
                 .isEqualTo(0L);
