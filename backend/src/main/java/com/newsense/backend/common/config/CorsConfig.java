@@ -21,7 +21,8 @@ public class CorsConfig {
                 "http://127.0.0.1:5173",  // Vite dev server through loopback IP
                 "http://localhost:3000",  // 혹시 다른 포트 사용 시
                 "http://127.0.0.1:3000",  // 혹시 다른 포트 사용 시
-                "https://*.newsense.com"  // 추후 프로덕션
+                "https://*.new5ense.site",
+                "https://new5ense.site"
         ));
 
         config.setAllowedMethods(List.of("GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"));
