@@ -28,11 +28,11 @@ jwt:
 crawler:
   enabled: ${CRAWLER_ENABLED:true}
   bootstrap-enabled: ${CRAWLER_BOOTSTRAP_ENABLED:false}
-  minimum-articles: ${CRAWLER_MINIMUM_ARTICLES:10}
+  minimum-articles: ${CRAWLER_MINIMUM_ARTICLES:30}
   initial-delay: ${CRAWLER_INITIAL_DELAY:60000}
   fixed-delay: ${CRAWLER_FIXED_DELAY:3600000}
   connection-timeout: ${CRAWLER_CONNECTION_TIMEOUT:10000}
-  max-items-per-source: ${CRAWLER_MAX_ITEMS:20}
+  max-items-per-source: ${CRAWLER_MAX_ITEMS:30}
   max-retries: ${CRAWLER_MAX_RETRIES:3}
   retry-delay: ${CRAWLER_RETRY_DELAY:1000}
   request-delay: ${CRAWLER_REQUEST_DELAY:500}

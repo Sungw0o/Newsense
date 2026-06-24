@@ -61,11 +61,12 @@ GMS_MODEL=gpt-4o-mini
 
 ## 로컬 기사 자동 적재
 
-`local` 프로필에서는 기본적으로 `CRAWLER_BOOTSTRAP_ENABLED=true`이며, 앱 시작 시 `article_meta`가 `CRAWLER_MINIMUM_ARTICLES`보다 적으면 크롤러를 한 번 실행합니다. 기본 목표치는 10개입니다.
+`local` 프로필에서는 기본적으로 `CRAWLER_BOOTSTRAP_ENABLED=true`이며, 앱 시작 시 `article_meta`가 `CRAWLER_MINIMUM_ARTICLES`보다 적으면 목표치에 도달할 때까지 크롤러를 제한적으로 재시도합니다. 기본 목표치는 30개입니다.
 
 ```bash
 CRAWLER_BOOTSTRAP_ENABLED=true
-CRAWLER_MINIMUM_ARTICLES=10
+CRAWLER_MINIMUM_ARTICLES=30
+CRAWLER_MAX_ITEMS=30
 ```
 
 ## 중지

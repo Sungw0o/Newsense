@@ -10,6 +10,7 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -30,5 +31,12 @@ public interface UserApiDocs {
     ResponseEntity<ApiResponse<UserProfileResponse>> updateMyProfile(
             @AuthenticationPrincipal UserPrincipal userPrincipal,
             @Valid @RequestBody UserProfileUpdateRequest request
+    );
+
+    @Operation(summary = "회원 탈퇴", description = "계정을 비활성화(soft delete)합니다. 모든 데이터는 보존되며 재활성화 시 복구 가능합니다.")
+    @SecurityRequirement(name = "BearerAuth")
+    @DeleteMapping("/api/v1/users/me")
+    ResponseEntity<ApiResponse<Void>> deleteAccount(
+            @AuthenticationPrincipal UserPrincipal userPrincipal
     );
 }
