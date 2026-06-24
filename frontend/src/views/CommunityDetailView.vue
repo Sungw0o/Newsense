@@ -3,6 +3,7 @@ import { ref, onMounted, computed } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useCommunityStore } from '../stores/useCommunityStore'
 import { useUserStore } from '../stores/useUserStore'
+import communityApi from '../api/communityApi'
 
 const route = useRoute()
 const router = useRouter()
@@ -11,6 +12,30 @@ const userStore = useUserStore()
 
 const newComment = ref('')
 const isSubmittingComment = ref(false)
+
+const showReportModal = ref(false)
+const reportReason = ref('')
+const isReporting = ref(false)
+const reportDone = ref(false)
+
+const openReport = () => {
+  if (!userStore.isAuthenticated) { alert('로그인이 필요합니다.'); return }
+  reportReason.value = ''
+  reportDone.value = false
+  showReportModal.value = true
+}
+
+const submitReport = async () => {
+  isReporting.value = true
+  try {
+    await communityApi.reportPost(post.value.postId, reportReason.value)
+    reportDone.value = true
+  } catch {
+    alert('신고 처리에 실패했습니다.')
+  } finally {
+    isReporting.value = false
+  }
+}
 
 const post = computed(() => store.currentPost)
 
@@ -115,8 +140,44 @@ const categoryColor = {
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 15v4a3 3 0 0 0 3 3l4-9V2H5.72a2 2 0 0 0-2 1.7l-1.38 9a2 2 0 0 0 2 2.3H10z"/><path d="M17 2h2.67A2.31 2.31 0 0 1 22 4v7a2.31 2.31 0 0 1-2.33 2H17"/></svg>
             <span>{{ post.dislikeCount }}</span>
           </button>
+          <button class="report-btn" @click="openReport" title="게시글 신고">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+            신고
+          </button>
         </div>
       </div>
+
+      <!-- Report modal -->
+      <Teleport to="body">
+        <div v-if="showReportModal" class="modal-backdrop" @click.self="showReportModal = false">
+          <div class="modal-box">
+            <template v-if="reportDone">
+              <div class="modal-icon">✅</div>
+              <h3 class="modal-title">신고가 접수되었습니다</h3>
+              <p class="modal-desc">관리자가 검토 후 조치하겠습니다.</p>
+              <button class="btn-primary" style="width:100%;justify-content:center;" @click="showReportModal = false">확인</button>
+            </template>
+            <template v-else>
+              <div class="modal-icon">🚨</div>
+              <h3 class="modal-title">게시글 신고</h3>
+              <p class="modal-desc">신고 사유를 입력해 주세요. (선택)</p>
+              <textarea
+                v-model="reportReason"
+                class="report-textarea"
+                placeholder="욕설, 도배, 광고, 허위정보 등"
+                rows="3"
+                maxlength="500"
+              ></textarea>
+              <div style="display:flex;gap:10px;margin-top:14px;">
+                <button class="btn-ghost" style="flex:1;" @click="showReportModal = false">취소</button>
+                <button class="btn-primary" style="flex:1;justify-content:center;" :disabled="isReporting" @click="submitReport">
+                  {{ isReporting ? '접수 중…' : '신고 접수' }}
+                </button>
+              </div>
+            </template>
+          </div>
+        </div>
+      </Teleport>
 
       <!-- Comments -->
       <section class="comments-section">
@@ -445,6 +506,87 @@ const categoryColor = {
   border-radius: 50%;
   animation: spin .65s linear infinite;
 }
+
+.report-btn {
+  margin-left: auto;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 7px 13px;
+  background: none;
+  border: 1.5px solid rgba(0,0,0,0.08);
+  border-radius: 10px;
+  font-size: 12.5px;
+  font-weight: 600;
+  color: var(--ink-3, #8a93a3);
+  cursor: pointer;
+  transition: all .15s;
+}
+.report-btn:hover { border-color: #ef4444; color: #ef4444; }
+.dark .report-btn { border-color: rgba(255,255,255,0.12); color: #8a93a3; }
+.dark .report-btn:hover { border-color: #ef4444; color: #fca5a5; }
+
+/* Report modal */
+.modal-backdrop {
+  position: fixed; inset: 0;
+  background: rgba(0,0,0,0.45);
+  backdrop-filter: blur(4px);
+  z-index: 9999;
+  display: flex; align-items: center; justify-content: center;
+}
+.modal-box {
+  background: #fff;
+  border-radius: 20px;
+  padding: 32px 28px;
+  width: 100%;
+  max-width: 380px;
+  box-shadow: 0 20px 60px -12px rgba(0,0,0,0.25);
+}
+.dark .modal-box { background: #1a1e2b; }
+.modal-icon { font-size: 36px; text-align: center; margin-bottom: 12px; }
+.modal-title {
+  font-family: 'Fustat', sans-serif;
+  font-weight: 700;
+  font-size: 18px;
+  color: var(--ink, #0a0d12);
+  margin: 0 0 8px;
+  text-align: center;
+}
+.dark .modal-title { color: #f4f6fa; }
+.modal-desc { font-size: 13.5px; color: var(--ink-3, #8a93a3); text-align: center; margin: 0 0 16px; }
+
+.report-textarea {
+  width: 100%;
+  padding: 10px 12px;
+  background: rgba(0,0,0,0.03);
+  border: 1.5px solid rgba(0,0,0,0.10);
+  border-radius: 10px;
+  font: inherit;
+  font-size: 13.5px;
+  color: var(--ink, #0a0d12);
+  resize: none;
+  outline: none;
+  transition: border-color .15s;
+  box-sizing: border-box;
+}
+.report-textarea:focus { border-color: #0084ff; }
+.dark .report-textarea { background: rgba(255,255,255,0.05); border-color: rgba(255,255,255,0.12); color: #f4f6fa; }
+
+.btn-ghost {
+  padding: 10px 18px;
+  border-radius: 12px;
+  border: 1.5px solid rgba(0,0,0,0.10);
+  background: none;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--ink-2, #4a5161);
+  cursor: pointer;
+  transition: all .15s;
+}
+.btn-ghost:hover { border-color: #0084ff; color: #0084ff; }
+.dark .btn-ghost { border-color: rgba(255,255,255,0.12); color: #a4adbf; }
+
+.empty { padding: 80px 0; }
 
 @media (max-width: 640px) {
   .detail-shell { padding: 24px 0 60px; }

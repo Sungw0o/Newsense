@@ -1,6 +1,7 @@
 package com.newsense.backend.admin.controller;
 
 import com.newsense.backend.admin.dto.AdminStatsResponse;
+import com.newsense.backend.admin.dto.PostReportResponse;
 import com.newsense.backend.common.response.ApiResponse;
 import com.newsense.backend.user.dto.UserProfileResponse;
 import io.swagger.v3.oas.annotations.Operation;
@@ -39,5 +40,11 @@ public interface AdminApiDocs {
     @DeleteMapping("/api/v1/admin/posts/{postId}")
     ResponseEntity<ApiResponse<Void>> deletePost(
             @PathVariable Long postId
+    );
+
+    @Operation(summary = "신고 목록 조회 (관리자)")
+    @GetMapping("/api/v1/admin/reports")
+    ResponseEntity<ApiResponse<Page<PostReportResponse>>> getReports(
+            @PageableDefault(size = 20) Pageable pageable
     );
 }

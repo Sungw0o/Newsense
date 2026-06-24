@@ -3,6 +3,7 @@ import { onMounted, ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { useAdminStore } from '../stores/useAdminStore'
 import { useUserStore } from '../stores/useUserStore'
+import adminApi from '../api/adminApi'
 
 const router = useRouter()
 const store = useAdminStore()
@@ -13,6 +14,8 @@ if (userStore.userInfo?.role !== 'ADMIN') {
 }
 
 const activeTab = ref('stats')
+const reports = ref([])
+const isLoadingReports = ref(false)
 
 onMounted(async () => {
   await store.fetchStats()
@@ -22,6 +25,7 @@ onMounted(async () => {
 const tabs = [
   { key: 'stats', label: '통계' },
   { key: 'users', label: '사용자 관리' },
+  { key: 'reports', label: '신고 목록' },
 ]
 
 const roleLabel = (role) => role === 'ADMIN' ? '관리자' : '일반 사용자'
@@ -32,6 +36,41 @@ const handleRoleToggle = async (userId) => {
     await store.changeUserRole(userId)
   } catch {
     // error already stored in store.error
+  }
+}
+
+const loadReports = async () => {
+  if (reports.value.length > 0) return
+  isLoadingReports.value = true
+  try {
+    const res = await adminApi.getReports({ size: 50 })
+    const data = res?.data?.data ?? res?.data ?? {}
+    reports.value = data.content ?? []
+  } catch {
+    reports.value = []
+  } finally {
+    isLoadingReports.value = false
+  }
+}
+
+const handleTabChange = (key) => {
+  activeTab.value = key
+  if (key === 'reports') loadReports()
+}
+
+const formatDate = (iso) => {
+  if (!iso) return ''
+  const d = new Date(iso)
+  return `${d.getMonth() + 1}/${d.getDate()} ${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`
+}
+
+const handleDeleteReportedPost = async (postId) => {
+  if (!confirm('해당 게시글을 삭제하시겠습니까?')) return
+  try {
+    await store.deletePost(postId)
+    reports.value = reports.value.filter(r => r.postId !== postId)
+  } catch {
+    alert('삭제에 실패했습니다.')
   }
 }
 </script>
@@ -52,7 +91,7 @@ const handleRoleToggle = async (userId) => {
         :key="tab.key"
         class="tab-btn"
         :class="{ active: activeTab === tab.key }"
-        @click="activeTab = tab.key"
+        @click="handleTabChange(tab.key)"
       >{{ tab.label }}</button>
     </div>
 
@@ -80,6 +119,38 @@ const handleRoleToggle = async (userId) => {
           <span class="stat-num">{{ store.stats.totalArticles.toLocaleString() }}</span>
           <span class="stat-label">전체 기사</span>
         </div>
+      </div>
+    </section>
+
+    <!-- Reports tab -->
+    <section v-if="activeTab === 'reports'" class="tab-content">
+      <div v-if="isLoadingReports" class="loading-state"><div class="spinner"></div></div>
+      <div v-else-if="reports.length === 0" class="empty"><p class="eyebrow" style="text-align:center;">신고된 게시글이 없습니다</p></div>
+      <div v-else class="user-table-wrap">
+        <table class="user-table">
+          <thead>
+            <tr>
+              <th>신고 ID</th>
+              <th>게시글 제목</th>
+              <th>신고자</th>
+              <th>사유</th>
+              <th>일시</th>
+              <th>작업</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr v-for="r in reports" :key="r.reportId">
+              <td class="td-id">{{ r.reportId }}</td>
+              <td class="td-nick" style="max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">{{ r.postTitle }}</td>
+              <td>{{ r.reporterNickname }}</td>
+              <td style="max-width:180px;color:var(--ink-3,#8a93a3);font-size:12.5px;">{{ r.reason || '—' }}</td>
+              <td class="td-email">{{ formatDate(r.reportedAt) }}</td>
+              <td>
+                <button class="action-btn danger" @click="handleDeleteReportedPost(r.postId)">게시글 삭제</button>
+              </td>
+            </tr>
+          </tbody>
+        </table>
       </div>
     </section>
 
@@ -315,6 +386,8 @@ const handleRoleToggle = async (userId) => {
 .action-btn:hover { background: rgba(0,132,255,0.14); border-color: rgba(0,132,255,0.35); }
 .dark .action-btn { color: #4FB3FF; background: rgba(0,132,255,0.10); border-color: rgba(0,132,255,0.25); }
 .dark .action-btn:hover { background: rgba(0,132,255,0.18); }
+.action-btn.danger { color: #dc2626; background: rgba(239,68,68,0.07); border-color: rgba(239,68,68,0.25); }
+.action-btn.danger:hover { background: rgba(239,68,68,0.15); border-color: rgba(239,68,68,0.45); }
 
 .loading-state { display: flex; justify-content: center; padding: 80px 0; }
 .spinner {

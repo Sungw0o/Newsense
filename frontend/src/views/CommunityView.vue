@@ -7,7 +7,7 @@ const router = useRouter()
 const store = useCommunityStore()
 
 const activeFilter = ref('전체')
-const filters = ['전체', '기사 스크랩', '자유 토론', '문의']
+const filters = ['전체', '기사 스크랩', '자유 토론']
 const activeSort = ref('LATEST')
 const sortOptions = [
   { label: '최신순', value: 'LATEST' },
@@ -21,7 +21,6 @@ let searchDebounce = null
 const typeParam = computed(() => {
   if (activeFilter.value === '기사 스크랩') return null
   if (activeFilter.value === '자유 토론') return null
-  if (activeFilter.value === '문의') return 'INQUIRY'
   return null
 })
 
@@ -48,8 +47,8 @@ const clearSearch = () => {
 
 const displayPosts = computed(() => {
   if (activeFilter.value === '기사 스크랩') return store.posts.filter(p => p.articleScrap)
-  if (activeFilter.value === '자유 토론') return store.posts.filter(p => !p.articleScrap && p.type !== 'INQUIRY')
-  return store.posts
+  if (activeFilter.value === '자유 토론') return store.posts.filter(p => !p.articleScrap && p.type !== 'INQUIRY' && p.type !== 'NOTICE')
+  return store.posts.filter(p => p.type !== 'INQUIRY')
 })
 
 onMounted(async () => {

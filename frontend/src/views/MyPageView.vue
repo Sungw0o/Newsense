@@ -3,6 +3,7 @@ import { ref, watch, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { storeToRefs } from 'pinia'
 import { useUserStore } from '../stores/useUserStore'
+import communityApi from '../api/communityApi'
 
 const router = useRouter()
 const userStore = useUserStore()
@@ -85,6 +86,30 @@ const handleWithdraw = async () => {
 }
 
 const nicknameFirst = () => (nickname.value || 'U').substring(0, 1)
+
+// 문의하기
+const inquiryTitle = ref('')
+const inquiryContent = ref('')
+const isSubmittingInquiry = ref(false)
+const inquiryDone = ref(false)
+
+const submitInquiry = async () => {
+  if (!inquiryTitle.value.trim() || !inquiryContent.value.trim()) {
+    alert('제목과 내용을 모두 입력해 주세요.')
+    return
+  }
+  isSubmittingInquiry.value = true
+  try {
+    await communityApi.createPost({ title: inquiryTitle.value.trim(), content: inquiryContent.value.trim(), type: 'INQUIRY' })
+    inquiryDone.value = true
+    inquiryTitle.value = ''
+    inquiryContent.value = ''
+  } catch {
+    alert('문의 제출에 실패했습니다.')
+  } finally {
+    isSubmittingInquiry.value = false
+  }
+}
 </script>
 
 <template>
@@ -164,6 +189,47 @@ const nicknameFirst = () => (nickname.value || 'U').substring(0, 1)
             {{ isSaving ? '저장 중…' : '설정 저장하기' }}
           </button>
         </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 문의하기 섹션 -->
+  <div class="inquiry-section">
+    <p class="eyebrow">고객 지원</p>
+    <h2 class="inquiry-title">문의하기</h2>
+    <p class="inquiry-sub">서비스 이용 중 불편한 점이나 문의 사항을 남겨주세요.</p>
+
+    <div v-if="inquiryDone" class="inquiry-done">
+      <span class="done-icon">✅</span>
+      <p>문의가 접수되었습니다. 빠르게 답변 드리겠습니다.</p>
+      <button class="btn-link" @click="inquiryDone = false">새 문의 작성</button>
+    </div>
+    <div v-else class="inquiry-form">
+      <div class="setting-section">
+        <label class="setting-label">제목</label>
+        <input
+          v-model="inquiryTitle"
+          type="text"
+          class="setting-input"
+          placeholder="문의 제목을 입력하세요"
+          maxlength="200"
+        />
+      </div>
+      <div class="setting-section">
+        <label class="setting-label">내용</label>
+        <textarea
+          v-model="inquiryContent"
+          class="inquiry-textarea"
+          placeholder="문의 내용을 자세히 입력해 주세요."
+          rows="5"
+          maxlength="2000"
+        ></textarea>
+      </div>
+      <div class="settings-foot">
+        <button class="btn-primary save-btn" @click="submitInquiry" :disabled="isSubmittingInquiry">
+          <span v-if="isSubmittingInquiry" class="spinner-sm"></span>
+          {{ isSubmittingInquiry ? '제출 중…' : '문의 제출하기' }}
+        </button>
       </div>
     </div>
   </div>
@@ -535,9 +601,80 @@ const nicknameFirst = () => (nickname.value || 'U').substring(0, 1)
 }
 .dark .modal-desc { color: #a4adbf; }
 
+/* Inquiry section */
+.inquiry-section {
+  max-width: 960px;
+  margin: 32px auto 0;
+  padding: 32px;
+  background: rgba(255,255,255,0.65);
+  border: 1px solid rgba(0,0,0,0.07);
+  border-radius: 22px;
+  backdrop-filter: blur(40px) saturate(160%);
+  -webkit-backdrop-filter: blur(40px) saturate(160%);
+  box-shadow: inset 0 1px 0 rgba(255,255,255,0.85), 0 4px 20px -8px rgba(20,40,80,0.10);
+}
+.dark .inquiry-section {
+  background: rgba(20,24,34,0.55);
+  border-color: rgba(255,255,255,0.10);
+  box-shadow: inset 0 1px 0 rgba(255,255,255,0.08), 0 4px 20px -8px rgba(0,0,0,0.35);
+}
+
+.inquiry-title {
+  font-family: 'Fustat', sans-serif;
+  font-weight: 700;
+  font-size: 22px;
+  color: var(--ink, #0a0d12);
+  margin: 0 0 6px;
+}
+.dark .inquiry-title { color: #f4f6fa; }
+.inquiry-sub { font-size: 13.5px; color: var(--ink-3, #8a93a3); margin: 0 0 24px; }
+
+.inquiry-form {}
+.inquiry-textarea {
+  width: 100%;
+  padding: 12px 14px;
+  background: rgba(255,255,255,0.85);
+  border: 1.5px solid rgba(0,0,0,0.08);
+  border-radius: 12px;
+  font: inherit;
+  font-size: 14px;
+  color: var(--ink, #0a0d12);
+  resize: vertical;
+  outline: none;
+  transition: border-color .15s;
+  box-sizing: border-box;
+}
+.inquiry-textarea:focus { border-color: #0084ff; box-shadow: 0 0 0 3px rgba(0,132,255,0.10); }
+.dark .inquiry-textarea { background: rgba(20,24,34,0.70); border-color: rgba(255,255,255,0.12); color: #f4f6fa; }
+
+.inquiry-done {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  padding: 32px;
+  text-align: center;
+  color: var(--ink-2, #4a5161);
+  font-size: 14px;
+}
+.dark .inquiry-done { color: #a4adbf; }
+.done-icon { font-size: 32px; }
+
+.btn-link {
+  background: none;
+  border: none;
+  color: #0084ff;
+  font-size: 13.5px;
+  font-weight: 600;
+  cursor: pointer;
+  padding: 0;
+}
+.btn-link:hover { text-decoration: underline; }
+
 @media (max-width: 800px) {
   .settings-grid { grid-template-columns: 1fr; }
   .cat-grid { grid-template-columns: repeat(2, 1fr); }
   .settings-shell { padding: 30px 0 60px; }
+  .inquiry-section { padding: 20px 16px; }
 }
 </style>

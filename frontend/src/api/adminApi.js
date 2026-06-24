@@ -13,6 +13,9 @@ const adminApi = {
   deletePost(postId) {
     return axiosInstance.delete(`/admin/posts/${postId}`)
   },
+  getReports(params = {}) {
+    return axiosInstance.get('/admin/reports', { params })
+  },
 }
 
 export default adminApi

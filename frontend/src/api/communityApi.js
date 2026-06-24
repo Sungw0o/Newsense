@@ -29,6 +29,9 @@ const communityApi = {
   deleteComment(commentId) {
     return axiosInstance.delete(`/comments/${commentId}`)
   },
+  reportPost(postId, reason) {
+    return axiosInstance.post(`/posts/${postId}/report`, { reason: reason || '' })
+  },
 }
 
 export default communityApi

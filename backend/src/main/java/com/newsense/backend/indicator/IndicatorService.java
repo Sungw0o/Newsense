@@ -21,8 +21,6 @@ public class IndicatorService {
     private static final String REDIS_KEY = "indicator:latest";
     private static final Duration CACHE_TTL = Duration.ofMinutes(10);
     private static final double BOK_BASE_RATE = 3.5;
-    private static final String YAHOO_FINANCE_URL =
-            "https://query1.finance.yahoo.com/v8/finance/chart/{symbol}?range=1d&interval=1d";
     private static final String EXCHANGE_RATE_URL = "https://open.er-api.com/v6/latest/USD";
 
     private final StringRedisTemplate redisTemplate;
@@ -43,8 +41,8 @@ public class IndicatorService {
     public IndicatorResponse refresh() {
         try {
             RestClient client = RestClient.create();
-            Double kospi = fetchYahooPrice(client, "%5EKS11");
-            Double kosdaq = fetchYahooPrice(client, "%5EKQ11");
+            Double kospi = fetchYahooPrice(client, "^KS11");
+            Double kosdaq = fetchYahooPrice(client, "^KQ11");
             Double usdKrw = fetchUsdKrw(client);
 
             IndicatorResponse response = new IndicatorResponse(usdKrw, BOK_BASE_RATE, kospi, kosdaq, LocalDateTime.now());
@@ -56,10 +54,13 @@ public class IndicatorService {
         }
     }
 
-    private Double fetchYahooPrice(RestClient client, String encodedSymbol) {
+    private Double fetchYahooPrice(RestClient client, String symbol) {
         try {
+            String url = "https://query1.finance.yahoo.com/v8/finance/chart/"
+                    + java.net.URLEncoder.encode(symbol, java.nio.charset.StandardCharsets.UTF_8)
+                    + "?range=1d&interval=1d";
             JsonNode root = client.get()
-                    .uri(YAHOO_FINANCE_URL, encodedSymbol)
+                    .uri(java.net.URI.create(url))
                     .header("User-Agent", "Mozilla/5.0")
                     .retrieve()
                     .body(JsonNode.class);
@@ -69,7 +70,7 @@ public class IndicatorService {
             double price = meta.path("regularMarketPrice").asDouble(0.0);
             return price > 0 ? price : null;
         } catch (RestClientException e) {
-            log.debug("Yahoo Finance fetch failed for {}: {}", encodedSymbol, e.getMessage());
+            log.debug("Yahoo Finance fetch failed for {}: {}", symbol, e.getMessage());
             return null;
         }
     }

@@ -7,6 +7,7 @@ import com.newsense.backend.community.dto.CommentCreateRequest;
 import com.newsense.backend.community.dto.CommentResponse;
 import com.newsense.backend.community.dto.PostCreateRequest;
 import com.newsense.backend.community.dto.PostReactionResponse;
+import com.newsense.backend.community.dto.PostReportRequest;
 import com.newsense.backend.community.dto.PostResponse;
 import com.newsense.backend.community.dto.PostSort;
 import io.swagger.v3.oas.annotations.Operation;
@@ -93,5 +94,14 @@ public interface PostApiDocs {
     ResponseEntity<ApiResponse<Void>> deleteComment(
             @PathVariable Long commentId,
             @AuthenticationPrincipal UserPrincipal userPrincipal
+    );
+
+    @Operation(summary = "게시글 신고")
+    @SecurityRequirement(name = "BearerAuth")
+    @PostMapping("/api/v1/posts/{postId}/report")
+    ResponseEntity<ApiResponse<Void>> reportPost(
+            @PathVariable Long postId,
+            @AuthenticationPrincipal UserPrincipal userPrincipal,
+            @Valid @RequestBody PostReportRequest request
     );
 }

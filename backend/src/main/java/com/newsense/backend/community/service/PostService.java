@@ -8,16 +8,20 @@ import com.newsense.backend.community.domain.Post;
 import com.newsense.backend.community.domain.PostComment;
 import com.newsense.backend.community.domain.PostReaction;
 import com.newsense.backend.community.domain.PostReactionType;
+import com.newsense.backend.community.domain.PostReport;
 import com.newsense.backend.community.domain.PostType;
 import com.newsense.backend.community.dto.CommentCreateRequest;
 import com.newsense.backend.community.dto.CommentResponse;
 import com.newsense.backend.community.dto.PostCreateRequest;
 import com.newsense.backend.community.dto.PostReactionResponse;
+import com.newsense.backend.community.dto.PostReportRequest;
 import com.newsense.backend.community.dto.PostResponse;
 import com.newsense.backend.community.dto.PostSort;
 import com.newsense.backend.community.repository.PostCommentRepository;
 import com.newsense.backend.community.repository.PostReactionRepository;
+import com.newsense.backend.community.repository.PostReportRepository;
 import com.newsense.backend.community.repository.PostRepository;
+import org.springframework.dao.DataIntegrityViolationException;
 import com.newsense.backend.user.domain.User;
 import com.newsense.backend.user.domain.UserRole;
 import com.newsense.backend.user.repository.UserRepository;
@@ -37,6 +41,7 @@ public class PostService {
     private final PostRepository postRepository;
     private final PostReactionRepository postReactionRepository;
     private final PostCommentRepository postCommentRepository;
+    private final PostReportRepository postReportRepository;
     private final UserRepository userRepository;
     private final ArticleMetaRepository articleMetaRepository;
 
@@ -193,6 +198,17 @@ public class PostService {
     private Post findPost(Long postId) {
         return postRepository.findById(postId)
                 .orElseThrow(() -> new CustomException(ErrorCode.POST_NOT_FOUND));
+    }
+
+    @Transactional
+    public void reportPost(Long postId, Long userId, PostReportRequest request) {
+        Post post = findPost(postId);
+        User user = findUser(userId);
+        try {
+            postReportRepository.save(PostReport.create(post, user, request.reason()));
+        } catch (DataIntegrityViolationException e) {
+            // already reported by this user — ignore silently
+        }
     }
 
     private PostResponse toResponse(Post post) {

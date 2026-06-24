@@ -7,6 +7,7 @@ import com.newsense.backend.community.dto.CommentCreateRequest;
 import com.newsense.backend.community.dto.CommentResponse;
 import com.newsense.backend.community.dto.PostCreateRequest;
 import com.newsense.backend.community.dto.PostReactionResponse;
+import com.newsense.backend.community.dto.PostReportRequest;
 import com.newsense.backend.community.dto.PostResponse;
 import com.newsense.backend.community.dto.PostSort;
 import com.newsense.backend.community.service.PostService;
@@ -104,5 +105,11 @@ public class PostController implements PostApiDocs {
     public ResponseEntity<ApiResponse<Void>> deleteComment(Long commentId, UserPrincipal userPrincipal) {
         postService.deleteComment(commentId, userPrincipal.id());
         return ResponseEntity.ok(ApiResponse.success("댓글이 삭제되었습니다.", null));
+    }
+
+    @Override
+    public ResponseEntity<ApiResponse<Void>> reportPost(Long postId, UserPrincipal userPrincipal, PostReportRequest request) {
+        postService.reportPost(postId, userPrincipal.id(), request);
+        return ResponseEntity.ok(ApiResponse.success("신고가 접수되었습니다.", null));
     }
 }

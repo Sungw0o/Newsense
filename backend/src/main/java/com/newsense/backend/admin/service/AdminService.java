@@ -1,10 +1,12 @@
 package com.newsense.backend.admin.service;
 
 import com.newsense.backend.admin.dto.AdminStatsResponse;
+import com.newsense.backend.admin.dto.PostReportResponse;
 import com.newsense.backend.article.repository.ArticleMetaRepository;
 import com.newsense.backend.common.exception.CustomException;
 import com.newsense.backend.common.exception.ErrorCode;
 import com.newsense.backend.community.domain.Post;
+import com.newsense.backend.community.repository.PostReportRepository;
 import com.newsense.backend.community.repository.PostRepository;
 import com.newsense.backend.user.domain.User;
 import com.newsense.backend.user.domain.UserRole;
@@ -22,6 +24,7 @@ public class AdminService {
 
     private final UserRepository userRepository;
     private final PostRepository postRepository;
+    private final PostReportRepository postReportRepository;
     private final ArticleMetaRepository articleMetaRepository;
 
     @Transactional(readOnly = true)
@@ -51,5 +54,10 @@ public class AdminService {
         Post post = postRepository.findById(postId)
                 .orElseThrow(() -> new CustomException(ErrorCode.POST_NOT_FOUND));
         postRepository.delete(post);
+    }
+
+    @Transactional(readOnly = true)
+    public Page<PostReportResponse> getReports(Pageable pageable) {
+        return postReportRepository.findAllWithDetails(pageable).map(PostReportResponse::from);
     }
 }

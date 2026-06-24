@@ -78,6 +78,24 @@ const isExpanded = (dayDate, articleId) => expanded.value.has(`${dayDate}__${art
     <!-- Error banner -->
     <div v-if="error" class="error-banner">⚠️ {{ error }}</div>
 
+    <!-- Streak banner -->
+    <div class="streak-banner">
+      <div class="streak-left">
+        <span class="streak-flame">🔥</span>
+        <div>
+          <p class="streak-num">{{ stats?.consecutiveLearningDays ?? 0 }}일 연속 학습 중</p>
+          <p class="streak-sub">매일 뉴스를 읽고 경제 감각을 키워보세요!</p>
+        </div>
+      </div>
+      <div class="streak-dots">
+        <div v-for="(_, i) in 7" :key="i" class="streak-dot" :class="{ active: i < (stats?.weeklyLearningDays ?? 0) }">
+          <span v-if="i < (stats?.weeklyLearningDays ?? 0)" class="dot-fire">🔥</span>
+          <span v-else class="dot-empty">○</span>
+          <span class="dot-day">{{ ['월','화','수','목','금','토','일'][i] }}</span>
+        </div>
+      </div>
+    </div>
+
     <!-- Stats grid (4 cards) -->
     <div class="stats-grid">
       <div class="stat-card">
@@ -387,6 +405,58 @@ const isExpanded = (dayDate, articleId) => expanded.value.has(`${dayDate}__${art
 }
 
 /* Stats */
+/* Streak banner */
+.streak-banner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 20px;
+  padding: 22px 28px;
+  background: linear-gradient(135deg, rgba(255,128,30,0.12) 0%, rgba(255,180,50,0.08) 100%);
+  border: 1px solid rgba(255,128,30,0.22);
+  border-radius: 22px;
+  backdrop-filter: blur(40px) saturate(160%);
+  -webkit-backdrop-filter: blur(40px) saturate(160%);
+  box-shadow: inset 0 1px 0 rgba(255,255,255,0.85), 0 4px 16px -6px rgba(255,128,30,0.15);
+  flex-wrap: wrap;
+}
+.dark .streak-banner {
+  background: linear-gradient(135deg, rgba(255,128,30,0.15) 0%, rgba(255,180,50,0.08) 100%);
+  border-color: rgba(255,128,30,0.30);
+  box-shadow: inset 0 1px 0 rgba(255,255,255,0.06), 0 4px 16px -6px rgba(0,0,0,0.3);
+}
+
+.streak-left {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+.streak-flame { font-size: 32px; filter: drop-shadow(0 2px 4px rgba(255,128,30,0.4)); }
+.streak-num {
+  font-family: 'Fustat', sans-serif;
+  font-weight: 800;
+  font-size: 20px;
+  color: #FF801E;
+  margin: 0 0 3px;
+}
+.streak-sub { font-size: 12.5px; color: var(--ink-3); margin: 0; }
+.dark .streak-sub { color: #a4adbf; }
+
+.streak-dots {
+  display: flex;
+  gap: 12px;
+  flex-shrink: 0;
+}
+.streak-dot {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+}
+.dot-fire { font-size: 18px; filter: drop-shadow(0 1px 3px rgba(255,128,30,0.5)); }
+.dot-empty { font-size: 16px; color: var(--line); line-height: 1; }
+.dot-day { font-size: 10.5px; font-family: 'Nanum Gothic', monospace; color: var(--ink-3); }
+
 .stats-grid {
   display: grid;
   grid-template-columns: repeat(4, 1fr);
