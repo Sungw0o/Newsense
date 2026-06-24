@@ -54,7 +54,7 @@ Do not commit real secret values. Store sensitive values in GitHub Actions Secre
 - `SONAR_HOST_URL=https://sonarcloud.io`
 - `SONAR_PROJECT_KEY=Sungw0o_Newsense`
 - `SONAR_PROJECT_NAME=Newsense`
-- `SONAR_ORGANIZATION=Sungw0o`
+- `SONAR_ORGANIZATION=sungw0o`
 
 ### Backend defaults
 

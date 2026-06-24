@@ -56,7 +56,7 @@ jobs:
         env:
           SONAR_PROJECT_KEY: ${{ vars.SONAR_PROJECT_KEY || 'Sungw0o_Newsense' }}
           SONAR_PROJECT_NAME: ${{ vars.SONAR_PROJECT_NAME || 'Newsense' }}
-          SONAR_ORGANIZATION: ${{ vars.SONAR_ORGANIZATION || 'Sungw0o' }}
+          SONAR_ORGANIZATION: ${{ vars.SONAR_ORGANIZATION || 'sungw0o' }}
         run: ./gradlew sonar
 
   # ────────────────────────────────────────────────────────────────────────────
