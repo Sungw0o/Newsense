@@ -38,6 +38,7 @@ const handleLogout = async () => {
       <!-- Nav links -->
       <div class="nav-links">
         <router-link to="/" :class="{ active: isActive('/') }">뉴스 피드</router-link>
+        <router-link to="/community" :class="{ active: route.path.startsWith('/community') }">커뮤니티</router-link>
         <router-link to="/history" :class="{ active: isActive('/history') }">학습 이력</router-link>
         <router-link to="/wrong-notes" :class="{ active: isActive('/wrong-notes') }">오답노트</router-link>
       </div>

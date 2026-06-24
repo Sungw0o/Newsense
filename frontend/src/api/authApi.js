@@ -30,6 +30,14 @@ export const authApi = {
   logout() {
     return axiosInstance.post('/auth/logout')
   },
+
+  /**
+   * 이메일(username) 중복 확인 API
+   * @param {string} username
+   */
+  checkUsername(username) {
+    return axiosInstance.get('/auth/check-username', { params: { username } })
+  },
 }
 
 export default authApi

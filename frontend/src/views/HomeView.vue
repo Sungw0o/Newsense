@@ -107,30 +107,6 @@ const handleLoadMore = () => articleStore.fetchArticles()
       </div>
     </header>
 
-    <!-- Stats row -->
-    <div class="stats-row">
-      <div class="stat-card">
-        <p class="stat-label">학습 중인 사람</p>
-        <p class="stat-val">3,450<span class="unit">명</span></p>
-        <p class="stat-trend">↑ 12% 지난 주 대비</p>
-      </div>
-      <div class="stat-card">
-        <p class="stat-label">오늘 기사</p>
-        <p class="stat-val">{{ displayArticles.length }}<span class="unit">건</span></p>
-        <p class="stat-trend">↑ 최신 업데이트</p>
-      </div>
-      <div class="stat-card">
-        <p class="stat-label">평균 퀴즈 정답률</p>
-        <p class="stat-val">74<span class="unit">%</span></p>
-        <p class="stat-trend">↑ 3% 이번 주</p>
-      </div>
-      <div class="stat-card">
-        <p class="stat-label">누적 학습 세션</p>
-        <p class="stat-val">28.4<span class="unit">k</span></p>
-        <p class="stat-trend">↑ 꾸준히 성장 중</p>
-      </div>
-    </div>
-
     <!-- Category filter chips -->
     <div class="filters-row">
       <div class="chips">
@@ -258,64 +234,6 @@ const handleLoadMore = () => articleStore.fetchArticles()
 .dark .feed-meta b { color: #f4f6fa; }
 .feed-meta span { color: #0084ff; font-weight: 600; }
 
-/* Stats */
-.stats-row {
-  display: grid;
-  grid-template-columns: repeat(4, 1fr);
-  gap: 12px;
-  margin-bottom: 24px;
-}
-
-.stat-card {
-  padding: 16px 18px;
-  background: rgba(255, 255, 255, 0.60);
-  border: 1px solid rgba(0, 0, 0, 0.07);
-  border-radius: 14px;
-  backdrop-filter: blur(20px);
-  -webkit-backdrop-filter: blur(20px);
-  box-shadow: inset 0 2px 3px rgba(255, 255, 255, 0.5);
-}
-
-.dark .stat-card {
-  background: rgba(20, 24, 34, 0.55);
-  border-color: rgba(255, 255, 255, 0.10);
-  box-shadow: inset 0 1px 0 0 rgba(255,255,255,0.10);
-}
-
-.stat-label {
-  font-family: 'JetBrains Mono', monospace;
-  font-size: 10.5px;
-  letter-spacing: 0.6px;
-  color: var(--ink-3, #8a93a3);
-  text-transform: uppercase;
-  margin: 0 0 8px;
-}
-
-.stat-val {
-  font-family: 'Fustat', sans-serif;
-  font-weight: 800;
-  font-size: 26px;
-  letter-spacing: -0.8px;
-  color: var(--ink, #0a0d12);
-  margin: 0 0 4px;
-}
-.dark .stat-val { color: #f4f6fa; }
-
-.unit {
-  font-size: 14px;
-  font-weight: 600;
-  color: var(--ink-2, #4a5161);
-  margin-left: 3px;
-}
-.dark .unit { color: #a4adbf; }
-
-.stat-trend {
-  font-size: 11.5px;
-  color: #1f7a3a;
-  margin: 0;
-}
-.dark .stat-trend { color: #3ad07b; }
-
 /* Filters */
 .filters-row {
   display: flex;
@@ -422,7 +340,6 @@ const handleLoadMore = () => articleStore.fetchArticles()
 /* Responsive */
 @media (max-width: 1100px) {
   .feed-grid { grid-template-columns: repeat(2, 1fr); }
-  .stats-row { grid-template-columns: repeat(2, 1fr); }
   .feed-title { font-size: 42px; }
 }
 @media (max-width: 640px) {
@@ -431,6 +348,5 @@ const handleLoadMore = () => articleStore.fetchArticles()
   .feed-meta { text-align: left; }
   .feed-title { font-size: 34px; letter-spacing: -1px; }
   .feed-grid { grid-template-columns: 1fr; }
-  .stats-row { grid-template-columns: repeat(2, 1fr); }
 }
 </style>
