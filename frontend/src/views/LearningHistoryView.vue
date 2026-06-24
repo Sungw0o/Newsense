@@ -9,7 +9,7 @@ const router = useRouter()
 const historyStore = useHistoryStore()
 const wrongNoteStore = useWrongNoteStore()
 
-const { history, stats, bookmarks, isLoading, error } = storeToRefs(historyStore)
+const { history, stats, bookmarks, recommendations, isLoading, error } = storeToRefs(historyStore)
 const { wrongNotes, isLoading: isWrongNoteLoading } = storeToRefs(wrongNoteStore)
 
 const unresolvedWrongNotes = computed(() => wrongNotes.value.filter(note => !note.isResolved))
@@ -19,6 +19,7 @@ onMounted(async () => {
     historyStore.fetchHistory(),
     historyStore.fetchStats(),
     historyStore.fetchBookmarks(),
+    historyStore.fetchRecommendations(),
     wrongNoteStore.fetchWrongNotes()
   ]).catch(() => {})
 })
@@ -146,6 +147,39 @@ const navigate = (path) => router.push(path)
                 </button>
               </div>
             </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- AI-based personalized recommendations -->
+    <section v-if="recommendations && (recommendations.articles?.length || recommendations.results?.length)" class="section-card ai-rec">
+      <div class="section-head-row">
+        <div>
+          <h2 class="section-title">🤖 AI 맞춤 추천 기사</h2>
+          <p class="section-sub">오답노트의 취약 개념을 바탕으로 복습에 도움이 될 기사를 추천합니다.</p>
+        </div>
+      </div>
+
+      <div v-if="recommendations.weaknessTerms?.length" class="weakness-tags">
+        <span class="tag-label">분석된 취약 개념</span>
+        <span v-for="term in recommendations.weaknessTerms.slice(0, 6)" :key="term" class="weakness-tag">{{ term }}</span>
+      </div>
+
+      <div class="rec-list">
+        <div
+          v-for="item in (recommendations.articles || recommendations.results || []).slice(0, 6)"
+          :key="item.article?.articleId || item.articleId"
+          class="rec-item"
+          @click="navigate(`/articles/${item.article?.articleId || item.articleId}`)"
+        >
+          <div class="rec-meta">
+            <span class="bookmark-category">{{ item.article?.category || item.category }}</span>
+            <span class="bookmark-source">{{ item.article?.source || item.source }}</span>
+          </div>
+          <p class="bookmark-title">{{ item.article?.title || item.title }}</p>
+          <div v-if="item.matchedKeywords?.length" class="matched-keywords">
+            <span v-for="kw in item.matchedKeywords.slice(0, 3)" :key="kw" class="matched-kw">{{ kw }}</span>
           </div>
         </div>
       </div>
@@ -491,6 +525,71 @@ const navigate = (path) => router.push(path)
 .dark .btn-ghost { border-color: rgba(255,255,255,0.12); color: #a4adbf; }
 .dark .btn-ghost:hover { border-color: #4FB3FF; color: #4FB3FF; }
 
+/* AI Recommendations */
+.ai-rec { border-color: rgba(0,132,255,0.20); }
+.dark .ai-rec { border-color: rgba(0,132,255,0.25); }
+
+.weakness-tags {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 16px;
+  padding: 12px 14px;
+  background: rgba(0,132,255,0.05);
+  border: 1px solid rgba(0,132,255,0.12);
+  border-radius: 12px;
+}
+
+.tag-label {
+  font-size: 11.5px;
+  font-weight: 600;
+  color: var(--ink-3);
+  font-family: 'Nanum Gothic', monospace;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  white-space: nowrap;
+}
+
+.weakness-tag {
+  font-size: 12px;
+  font-weight: 600;
+  padding: 3px 10px;
+  border-radius: 8px;
+  background: rgba(0,132,255,0.12);
+  color: #0084ff;
+  font-family: 'Nanum Gothic', monospace;
+}
+.dark .weakness-tag { color: #4FB3FF; background: rgba(0,132,255,0.18); }
+
+.rec-list { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; }
+
+.rec-item {
+  padding: 14px 16px;
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  cursor: pointer;
+  transition: border-color .15s, transform .15s;
+}
+.rec-item:hover { border-color: #0084ff; transform: translateY(-1px); }
+
+.matched-keywords {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px;
+  margin-top: 8px;
+}
+
+.matched-kw {
+  font-size: 11px;
+  padding: 2px 7px;
+  border-radius: 5px;
+  background: rgba(0,132,255,0.08);
+  color: #0084ff;
+  font-family: 'Nanum Gothic', monospace;
+}
+.dark .matched-kw { color: #4FB3FF; background: rgba(0,132,255,0.15); }
+
 /* Bookmarks */
 .bookmark-list { display: flex; flex-direction: column; gap: 10px; }
 
@@ -617,6 +716,7 @@ const navigate = (path) => router.push(path)
 @media (max-width: 768px) {
   .stats-grid { grid-template-columns: repeat(2, 1fr); }
   .history-title { font-size: 34px; }
+  .rec-list { grid-template-columns: 1fr; }
 }
 
 @media (max-width: 480px) {

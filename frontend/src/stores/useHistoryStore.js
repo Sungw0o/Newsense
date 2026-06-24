@@ -1,11 +1,13 @@
 import { defineStore } from 'pinia'
 import { learningApi } from '../api/learningApi'
+import ragApi from '../api/ragApi'
 
 export const useHistoryStore = defineStore('history', {
   state: () => ({
     history: null,
     stats: null,
     bookmarks: [],
+    recommendations: null,
     isLoading: false,
     error: null
   }),
@@ -44,6 +46,15 @@ export const useHistoryStore = defineStore('history', {
         this.bookmarks = response.data || response || []
       } catch {
         this.bookmarks = []
+      }
+    },
+
+    async fetchRecommendations() {
+      try {
+        const response = await ragApi.getRecommendations(6)
+        this.recommendations = response.data || response
+      } catch {
+        this.recommendations = null
       }
     }
   }
