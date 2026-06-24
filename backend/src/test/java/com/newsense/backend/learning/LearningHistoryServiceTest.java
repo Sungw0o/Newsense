@@ -77,6 +77,11 @@ class LearningHistoryServiceTest {
 
         learningHistoryService.recordArticleRead(new ArticleReadCompletedEvent(7L, 1L, LocalDateTime.now()));
 
+        then(learningHistoryRepository).should().existsByUserIdAndTypeAndReferenceId(
+                7L,
+                LearningHistoryType.ARTICLE_READ,
+                1L
+        );
         then(learningHistoryRepository).shouldHaveNoMoreInteractions();
     }
 
