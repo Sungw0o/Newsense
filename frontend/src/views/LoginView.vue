@@ -12,6 +12,7 @@ const password = ref('')
 const isLoading = ref(false)
 const errorMsg = ref('')
 const showPassword = ref(false)
+const apiOrigin = (import.meta.env.VITE_API_BASE_URL || 'http://localhost:8080/api/v1').replace('/api/v1', '')
 
 const handleLogin = async () => {
   if (!email.value || !password.value) {
@@ -31,6 +32,10 @@ const handleLogin = async () => {
   } finally {
     isLoading.value = false
   }
+}
+
+const startSocialLogin = (provider) => {
+  window.location.href = `${apiOrigin}/oauth2/authorization/${provider}`
 }
 </script>
 
@@ -140,6 +145,15 @@ const handleLogin = async () => {
           <span v-if="!isLoading" class="submit-arrow">→</span>
         </button>
       </form>
+
+      <div class="social-login">
+        <div class="social-divider"><span>또는 소셜 계정으로 계속</span></div>
+        <div class="social-buttons">
+          <button type="button" class="social-btn kakao" @click="startSocialLogin('kakao')">카카오</button>
+          <button type="button" class="social-btn naver" @click="startSocialLogin('naver')">네이버</button>
+          <button type="button" class="social-btn google" @click="startSocialLogin('google')">Google</button>
+        </div>
+      </div>
 
       <div class="auth-foot">
         아직 계정이 없으신가요?
@@ -399,6 +413,45 @@ form {
   font-size: 13.5px;
   color: var(--ink-2, #4a5161);
 }
+.social-login {
+  margin-top: 18px;
+}
+.social-divider {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 12px;
+  font-size: 12px;
+  color: var(--ink-3, #8a93a3);
+}
+.social-divider::before,
+.social-divider::after {
+  content: "";
+  flex: 1;
+  height: 1px;
+  background: rgba(0,0,0,0.08);
+}
+.dark .social-divider::before,
+.dark .social-divider::after { background: rgba(255,255,255,0.10); }
+.social-buttons {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 8px;
+}
+.social-btn {
+  min-height: 42px;
+  border-radius: 12px;
+  border: 1px solid rgba(0,0,0,0.08);
+  font-size: 13px;
+  font-weight: 800;
+  cursor: pointer;
+  transition: all .2s;
+}
+.social-btn:hover { transform: translateY(-1px); box-shadow: 0 12px 24px -16px rgba(20,40,80,0.25); }
+.social-btn.kakao { background: #FEE500; color: #191600; }
+.social-btn.naver { background: #03C75A; color: #fff; }
+.social-btn.google { background: #fff; color: #1f2937; }
+.dark .social-btn.google { background: rgba(255,255,255,0.08); color: #f4f6fa; border-color: rgba(255,255,255,0.12); }
 .dark .auth-foot { border-color: rgba(255,255,255,0.10); color: #a4adbf; }
 .auth-foot a {
   color: #0084ff;

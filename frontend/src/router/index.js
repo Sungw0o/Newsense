@@ -21,6 +21,12 @@ const routes = [
     meta: { title: '회원가입 - Newsense', guestOnly: true }
   },
   {
+    path: '/oauth/callback',
+    name: 'OAuthCallback',
+    component: () => import('../views/OAuthCallbackView.vue'),
+    meta: { title: '소셜 로그인 - Newsense', guestOnly: true }
+  },
+  {
     path: '/articles/:id',
     name: 'ArticleDetail',
     component: () => import('../views/ArticleDetailView.vue'),
@@ -122,6 +128,7 @@ router.beforeEach(async (to, from, next) => {
   } else if (to.meta.guestOnly && isAuthenticated) {
     next({ name: 'Home' })
   } else if (to.meta.requiresAdmin && userStore.userInfo?.role !== 'ADMIN') {
+    alert('관리자 권한이 필요한 페이지입니다.')
     next({ name: 'Home' })
   } else {
     next()

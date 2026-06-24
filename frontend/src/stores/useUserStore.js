@@ -78,6 +78,15 @@ export const useUserStore = defineStore('user', {
       this.userInfo = null
     },
 
+    async completeOAuthLogin(accessToken) {
+      if (!accessToken) {
+        throw new Error('소셜 로그인 토큰이 누락되었습니다.')
+      }
+      localStorage.setItem('accessToken', accessToken)
+      this.isAuthenticated = true
+      await this.fetchUserProfile()
+    },
+
     /**
      * 앱 구동 시 초기 인증 체크
      */
