@@ -1,6 +1,8 @@
 package com.newsense.backend.article.domain;
 
+import com.newsense.backend.article.converter.ArticleCategoryJpaConverter;
 import jakarta.persistence.Column;
+import jakarta.persistence.Convert;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
 import jakarta.persistence.Enumerated;
@@ -46,7 +48,7 @@ public class ArticleMeta {
     @Column(name = "source_url", nullable = false, length = 1000)
     private String sourceUrl;
 
-    @Enumerated(EnumType.STRING)
+    @Convert(converter = ArticleCategoryJpaConverter.class)
     @Column(nullable = false, length = 30)
     private ArticleCategory category;
 

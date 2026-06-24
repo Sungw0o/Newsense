@@ -1,6 +1,7 @@
 package com.newsense.backend.article;
 
 import com.newsense.backend.article.converter.ArticleCategoryConverter;
+import com.newsense.backend.article.converter.ArticleCategoryJpaConverter;
 import com.newsense.backend.article.converter.ArticleDifficultyConverter;
 import com.newsense.backend.article.crawler.util.ContentCleaner;
 import com.newsense.backend.article.crawler.util.ContentHasher;
@@ -65,5 +66,14 @@ class ArticleUtilityTest {
                 .isInstanceOf(IllegalArgumentException.class);
         assertThatThrownBy(() -> difficultyConverter.convert("unknown"))
                 .isInstanceOf(IllegalArgumentException.class);
+    }
+
+    @Test
+    void articleCategoryJpaConverter_acceptsLegacyDatabaseValues() {
+        ArticleCategoryJpaConverter converter = new ArticleCategoryJpaConverter();
+
+        assertThat(converter.convertToEntityAttribute("ECONOMY")).isEqualTo(ArticleCategory.MACRO_ECONOMY);
+        assertThat(converter.convertToEntityAttribute("FINANCE")).isEqualTo(ArticleCategory.FINANCE_INVESTMENT);
+        assertThat(converter.convertToDatabaseColumn(ArticleCategory.POLICY_SYSTEM)).isEqualTo("POLICY_SYSTEM");
     }
 }
