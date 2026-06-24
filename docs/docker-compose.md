@@ -55,9 +55,15 @@ AI 퀴즈 생성은 SSAFY GMS의 OpenAI 호환 Chat Completions 엔드포인트�
 GMS_KEY=<your-gms-key>
 GMS_BASE_URL=https://gms.ssafy.io/gmsapi/api.openai.com/v1
 GMS_MODEL=gpt-4o-mini
+AI_PIPELINE_MAX_QUIZ_RETRIES=2
+AI_FACT_EXTRACTOR_MODEL=gemini-2.5-flash-lite
+AI_ARTICLE_CLASSIFIER_MODEL=gpt-4o-mini
+AI_QUIZ_GENERATOR_MODEL=o3-mini
+AI_QUIZ_CRITIC_MODEL=gpt-4o-mini
 ```
 
 기존 `OPENAI_API_KEY`, `OPENAI_BASE_URL`, `OPENAI_MODEL` 환경변수도 하위 호환용으로 남아 있지만, 새 설정에서는 `GMS_*` 값을 우선 사용합니다. 실제 키는 `.env`에만 저장하고 Git에는 올리지 않습니다.
+AI 파이프라인 모델은 역할별 환경변수로 분리되어 있으며, 별도 지정이 없으면 팩트 추출, 요약/분류, 퀴즈 생성, 퀴즈 검증의 기본 모델 조합을 사용합니다.
 
 ## 로컬 기사 자동 적재
 

@@ -1,8 +1,11 @@
 package com.newsense.backend.quiz.service;
 
 import com.newsense.backend.ai.quiz.GeneratedQuiz;
+import com.newsense.backend.ai.config.AiPipelineProperties;
 import com.newsense.backend.ai.quiz.EconomicTermContext;
 import com.newsense.backend.ai.quiz.OpenAiQuizClient;
+import com.newsense.backend.ai.quiz.QuizCriticClient;
+import com.newsense.backend.ai.quiz.QuizCritiqueResult;
 import com.newsense.backend.article.document.ArticleContent;
 import com.newsense.backend.article.domain.ArticleMeta;
 import com.newsense.backend.article.repository.ArticleContentRepository;
@@ -51,6 +54,8 @@ public class QuizService {
     private final TermRepository termRepository;
     private final UserRepository userRepository;
     private final OpenAiQuizClient openAiQuizClient;
+    private final QuizCriticClient quizCriticClient;
+    private final AiPipelineProperties pipelineProperties;
     private final WrongNoteRecorder wrongNoteRecorder;
     private final RagRetrievalService ragRetrievalService;
     private final ApplicationEventPublisher eventPublisher;
@@ -158,10 +163,48 @@ public class QuizService {
             List<String> evidence = content == null
                     ? List.of(article.getSummary())
                     : ragRetrievalService.retrieveQuizEvidence(article.getTitle(), content, economicTerms);
-            return openAiQuizClient.generate(article.getTitle(), articleText, economicTerms, evidence);
+            return generateAndCritique(article, articleText, economicTerms, evidence);
         } catch (RuntimeException exception) {
             return fallbackQuizzes(article, economicTerms);
         }
+    }
+
+    private List<GeneratedQuiz> generateAndCritique(
+            ArticleMeta article,
+            String articleText,
+            List<EconomicTermContext> economicTerms,
+            List<String> evidence
+    ) {
+        String criticFeedback = null;
+        RuntimeException lastFailure = null;
+        for (int attempt = 1; attempt <= pipelineProperties.maxQuizRetries(); attempt++) {
+            try {
+                List<GeneratedQuiz> generated = openAiQuizClient.generate(
+                        article.getTitle(),
+                        articleText,
+                        economicTerms,
+                        evidence,
+                        criticFeedback
+                );
+                QuizCritiqueResult critique = quizCriticClient.critique(
+                        article.getTitle(),
+                        articleText,
+                        evidence,
+                        generated
+                );
+                if (critique.approved()) {
+                    return generated;
+                }
+                criticFeedback = critique.feedback();
+            } catch (RuntimeException exception) {
+                lastFailure = exception;
+                criticFeedback = "생성 또는 검증 중 오류가 발생했습니다: " + exception.getMessage();
+            }
+        }
+        if (lastFailure != null) {
+            throw lastFailure;
+        }
+        throw new CustomException(ErrorCode.QUIZ_GENERATION_FAILED);
     }
 
     private List<GeneratedQuiz> fallbackQuizzes(
