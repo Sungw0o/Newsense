@@ -1,7 +1,9 @@
 package com.newsense.backend.article.crawler.service;
 
+import com.newsense.backend.ai.article.ArticleImportanceEvaluation;
 import com.newsense.backend.ai.article.ArticleClassificationResult;
 import com.newsense.backend.ai.article.OpenAiArticleClassifierClient;
+import com.newsense.backend.ai.article.OpenAiArticleEvaluatorClient;
 import com.newsense.backend.article.crawler.config.CrawlerProperties;
 import com.newsense.backend.article.crawler.model.CrawledArticle;
 import com.newsense.backend.article.crawler.util.ContentCleaner;
@@ -22,6 +24,8 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
+import java.time.LocalDate;
+import java.time.LocalDateTime;
 
 @Slf4j
 @Service
@@ -40,6 +44,7 @@ public class ArticlePersistenceService {
     private final CrawlerProperties properties;
     private final ApplicationEventPublisher eventPublisher;
     private final OpenAiArticleClassifierClient articleClassifierClient;
+    private final OpenAiArticleEvaluatorClient articleEvaluatorClient;
 
     @Transactional
     public boolean saveIfNew(CrawledArticle article) {
@@ -55,6 +60,22 @@ public class ArticlePersistenceService {
         String contentHash = contentHasher.sha256(cleanText);
         if (articleMetaRepository.existsByContentHash(contentHash)
                 || articleContentRepository.existsByContentHash(contentHash)) {
+            return false;
+        }
+        if (isDailyLimitExceeded()) {
+            log.info("Article skipped by daily crawler limit: limit={}, sourceUrl={}",
+                    properties.dailyLimit(), article.sourceUrl());
+            return false;
+        }
+        ArticleImportanceEvaluation evaluation = evaluateImportance(article.title(), cleanText);
+        if (!isImportantEnough(evaluation)) {
+            log.info(
+                    "Article skipped by importance filter: score={}, threshold={}, reason={}, sourceUrl={}",
+                    evaluation.importanceScore(),
+                    properties.importanceThreshold(),
+                    evaluation.reason(),
+                    article.sourceUrl()
+            );
             return false;
         }
         List<String> chunks = sentenceChunker.chunk(cleanText, properties.chunkSize());
@@ -132,6 +153,30 @@ public class ArticlePersistenceService {
                     summarize(cleanText)
             );
         }
+    }
+
+    private ArticleImportanceEvaluation evaluateImportance(String title, String cleanText) {
+        try {
+            return articleEvaluatorClient.evaluate(title, cleanText);
+        } catch (RuntimeException exception) {
+            log.warn("AI article importance evaluation failed. Allowing article save: {}",
+                    exception.getMessage());
+            return new ArticleImportanceEvaluation(true, 100, "AI evaluation unavailable");
+        }
+    }
+
+    private boolean isImportantEnough(ArticleImportanceEvaluation evaluation) {
+        return evaluation.important() && evaluation.importanceScore() >= properties.importanceThreshold();
+    }
+
+    private boolean isDailyLimitExceeded() {
+        if (properties.dailyLimit() <= 0) {
+            return false;
+        }
+        LocalDate today = LocalDate.now();
+        LocalDateTime start = today.atStartOfDay();
+        LocalDateTime end = today.plusDays(1).atStartOfDay();
+        return articleMetaRepository.countByCollectedAtBetween(start, end) >= properties.dailyLimit();
     }
 
     private int estimateMinutes(String cleanText) {

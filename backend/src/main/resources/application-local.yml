@@ -41,6 +41,9 @@ crawler:
   request-delay: ${CRAWLER_REQUEST_DELAY:500}
   chunk-size: ${CRAWLER_CHUNK_SIZE:800}
   pdf-min-text-length: ${CRAWLER_PDF_MIN_TEXT_LENGTH:500}
+  importance-threshold: ${CRAWLER_IMPORTANCE_THRESHOLD:70}
+  daily-limit: ${CRAWLER_DAILY_LIMIT:30}
+  retention-days: ${CRAWLER_RETENTION_DAYS:180}
   tess-data-path: ${TESS_DATA_PATH:}
   naver-client-id: ${NAVER_CLIENT_ID:}
   naver-client-secret: ${NAVER_CLIENT_SECRET:}

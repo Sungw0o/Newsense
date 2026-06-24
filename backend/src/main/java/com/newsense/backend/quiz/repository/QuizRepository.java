@@ -14,4 +14,6 @@ public interface QuizRepository extends JpaRepository<Quiz, Long> {
 
     @EntityGraph(attributePaths = {"article", "options"})
     Optional<Quiz> findByIdAndIsActiveTrue(Long quizId);
+
+    void deleteByArticleId(Long articleId);
 }
