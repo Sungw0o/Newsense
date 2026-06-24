@@ -5,7 +5,7 @@ export const useQuizStore = defineStore('quiz', {
   state: () => ({
     quizzes: [],
     currentQuizIndex: 0,
-    answers: {}, // { quizId: userAnswer }
+    answers: {}, // { quizId: answer }
     quizResults: null, // { score, totalQuestions, results: [ { quizId, isCorrect, explanation, correctAns } ] }
     isLoading: false,
   }),
@@ -79,18 +79,17 @@ export const useQuizStore = defineStore('quiz', {
       this.isLoading = true
       try {
         // 모든 퀴즈에 대한 정답 제출을 하나씩 보내거나 벌크로 보냄.
-        // BE-007: POST /api/quiz/{quizId}/answer (제출 바디에 userAns 포함)
+        // BE-007: POST /api/quiz/{quizId}/answer
         // 퀴즈 결과 리스트 생성
         const results = []
         let correctCount = 0
 
         for (const quiz of this.quizzes) {
-          const userAns = this.answers[quiz.id] ?? ''
-          const response = await axiosInstance.post(`/quiz/${quiz.id}/answer`, { userAns })
-          // response.data: { isCorrect, actualAnswer, explanation }
+          const answer = this.answers[quiz.id] ?? ''
+          const response = await axiosInstance.post(`/quiz/${quiz.id}/answer`, { answer })
           const grading = response.data || response
           
-          if (grading.isCorrect) {
+          if (grading.correct) {
             correctCount++
           }
 
@@ -99,9 +98,9 @@ export const useQuizStore = defineStore('quiz', {
             question: quiz.question,
             type: quiz.type, // OX or MULTIPLE
             options: quiz.options,
-            userAns,
-            correctAns: grading.actualAnswer,
-            isCorrect: grading.isCorrect,
+            userAns: grading.userAnswer,
+            correctAns: grading.correctAnswer,
+            isCorrect: grading.correct,
             explanation: grading.explanation,
           })
         }

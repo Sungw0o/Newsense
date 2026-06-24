@@ -45,7 +45,7 @@ const handleCardClick = (id) => {
     >
       <ArticleCard 
         v-for="article in articles" 
-        :key="article.id"
+        :key="article.articleId"
         :article="article"
         @click="handleCardClick"
       />

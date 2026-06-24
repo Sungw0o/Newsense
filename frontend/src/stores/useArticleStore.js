@@ -6,7 +6,7 @@ export const useArticleStore = defineStore('article', {
     articles: [],
     selectedArticle: null,
     selectedArticleTerms: [],
-    currentRequestId: 0, // 레이스 컨디션 방지용 요청 ID
+    currentRequestId: 0,
     filters: {
       category: '',
       difficulty: '',
@@ -17,9 +17,6 @@ export const useArticleStore = defineStore('article', {
     isLoading: false,
   }),
   actions: {
-    /**
-     * 필터 리셋
-     */
     resetFilters() {
       this.filters.category = ''
       this.filters.difficulty = ''
@@ -28,9 +25,6 @@ export const useArticleStore = defineStore('article', {
       this.hasMore = true
     },
 
-    /**
-     * 카테고리 필터 설정
-     */
     setCategory(category) {
       this.filters.category = category
       this.filters.page = 0
@@ -39,9 +33,6 @@ export const useArticleStore = defineStore('article', {
       return this.fetchArticles()
     },
 
-    /**
-     * 난이도 필터 설정
-     */
     setDifficulty(difficulty) {
       this.filters.difficulty = difficulty
       this.filters.page = 0
@@ -50,25 +41,20 @@ export const useArticleStore = defineStore('article', {
       return this.fetchArticles()
     },
 
-    /**
-     * 기사 목록 조회 (페이징 / 무한 스크롤)
-     */
     async fetchArticles() {
       if (this.isLoading || !this.hasMore) return
       this.isLoading = true
-      const requestId = ++this.currentRequestId // 요청 번호 생성
+      const requestId = ++this.currentRequestId
 
       try {
         const { category, difficulty, page, size } = this.filters
         const response = await articleApi.getArticles({ category, difficulty, page, size })
-        
-        // 최신 요청이 아닌 경우 무시 (Race Condition 방지)
+
         if (requestId !== this.currentRequestId) return
 
-        // 백엔드 응답 규격 data: { content: [...], last: true/false, ... }
         const data = response.data || response
         const content = data.content || []
-        
+
         if (page === 0) {
           this.articles = content
         } else {
@@ -88,12 +74,9 @@ export const useArticleStore = defineStore('article', {
       }
     },
 
-    /**
-     * 특정 기사 상세조회
-     */
     async fetchArticleDetail(articleId) {
       this.selectedArticle = null
-      this.selectedArticleTerms = [] // 상세조회 시작 시 이전 데이터 클리어
+      this.selectedArticleTerms = []
       this.isLoading = true
       try {
         const response = await articleApi.getArticleDetail(articleId)
@@ -107,46 +90,37 @@ export const useArticleStore = defineStore('article', {
       }
     },
 
-    /**
-     * 기사 내 경제 용어 목록 조회
-     */
     async fetchArticleTerms(articleId) {
       try {
         const response = await articleApi.getArticleTerms(articleId)
         this.selectedArticleTerms = response.data || response
       } catch (error) {
         console.error('Fetch article terms error:', error)
-        this.selectedArticleTerms = [] // 에러 발생 시 클리어
+        this.selectedArticleTerms = []
         throw error
       }
     },
 
-    /**
-     * 기사 읽음 처리 완료 API 호출
-     */
     async markArticleAsRead(articleId) {
       try {
         return await articleApi.markAsRead(articleId)
       } catch (error) {
         console.error('Mark article as read error:', error)
-        throw error // 에러 전파
+        throw error
       }
     },
 
-    /**
-     * 기사 북마크 토글 API 호출
-     */
     async toggleBookmark(articleId) {
       try {
         const response = await articleApi.toggleBookmark(articleId)
-        if (this.selectedArticle && this.selectedArticle.id === articleId) {
-          // 로컬 상태 동기화
-          this.selectedArticle.isBookmarked = !this.selectedArticle.isBookmarked
+        const data = response.data || response
+        if (this.selectedArticle && String(this.selectedArticle.id) === String(articleId)) {
+          this.selectedArticle.isBookmarked = data.isBookmarked
         }
         return response
       } catch (error) {
         console.error('Toggle bookmark error:', error)
-        throw error // 에러 전파
+        throw error
       }
     }
   }

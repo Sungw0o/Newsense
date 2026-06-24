@@ -12,7 +12,7 @@ export const quizApi = {
   /**
    * 퀴즈 답변 제출 및 채점
    * @param {number|string} quizId
-   * @param {Object} payload { userAns: string }
+   * @param {Object} payload { answer: string }
    */
   submitAnswer(quizId, payload) {
     return axiosInstance.post(`/quiz/${quizId}/answer`, payload)
