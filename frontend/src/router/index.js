@@ -81,6 +81,12 @@ const routes = [
     meta: { title: '게시글 - Newsense', requiresAuth: true }
   },
   {
+    path: '/admin',
+    name: 'Admin',
+    component: () => import('../views/AdminView.vue'),
+    meta: { title: '관리자 페이지 - Newsense', requiresAuth: true, requiresAdmin: true }
+  },
+  {
     path: '/:pathMatch(.*)*',
     redirect: '/'
   }
@@ -112,10 +118,10 @@ router.beforeEach(async (to, from, next) => {
 
   // 3. 페이지 보안 접근 제어
   if (to.meta.requiresAuth && !isAuthenticated) {
-    // 로그인 안된 경우 로그인 페이지로 리다이렉트 (목적지 보관)
     next({ name: 'Login', query: { redirect: to.fullPath } })
   } else if (to.meta.guestOnly && isAuthenticated) {
-    // 이미 로그인된 경우 홈으로 리다이렉트
+    next({ name: 'Home' })
+  } else if (to.meta.requiresAdmin && userStore.userInfo?.role !== 'ADMIN') {
     next({ name: 'Home' })
   } else {
     next()

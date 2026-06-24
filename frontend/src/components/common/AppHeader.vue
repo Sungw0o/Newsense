@@ -62,6 +62,7 @@ const handleLogout = async () => {
             <p class="drop-email">{{ userInfo?.email }}</p>
           </div>
           <router-link to="/mypage" @click="showDropdown = false" class="drop-item">마이페이지</router-link>
+          <router-link v-if="userInfo?.role === 'ADMIN'" to="/admin" @click="showDropdown = false" class="drop-item drop-admin">관리자 페이지</router-link>
           <button @click="handleLogout" class="drop-item drop-logout">로그아웃</button>
         </div>
       </div>
@@ -280,6 +281,9 @@ const handleLogout = async () => {
 .dark .drop-item { color: #f4f6fa; }
 .dark .drop-item:hover { background: rgba(0, 132, 255, 0.16); color: #4FB3FF; }
 
+.drop-admin { color: #6366f1; }
+.dark .drop-admin { color: #a5b4fc; }
+.drop-admin:hover { background: rgba(99, 102, 241, 0.08) !important; color: #6366f1 !important; }
 .drop-logout { color: #b02a2a; }
 .dark .drop-logout { color: #ff8a8a; }
 .drop-logout:hover { background: rgba(176, 42, 42, 0.08) !important; color: #b02a2a !important; }

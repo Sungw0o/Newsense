@@ -86,6 +86,10 @@ public class User {
         this.isActive = false;
     }
 
+    public void changeRole(UserRole newRole) {
+        this.role = newRole;
+    }
+
     public void updateProfile(String nickname, List<String> interests, String profileImageUrl, ArticleDifficulty level) {
         if (nickname != null && !nickname.isBlank()) {
             this.nickname = nickname;
