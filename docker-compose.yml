@@ -20,10 +20,15 @@ services:
       JWT_SECRET: ${JWT_SECRET}
       JWT_ACCESS_EXPIRATION: ${JWT_ACCESS_EXPIRATION:-1800000}
       JWT_REFRESH_EXPIRATION: ${JWT_REFRESH_EXPIRATION:-1209600000}
-      OPENAI_API_KEY: ${OPENAI_API_KEY}
-      OPENAI_BASE_URL: ${OPENAI_BASE_URL:-https://api.openai.com/v1}
+      GMS_KEY: ${GMS_KEY:-}
+      GMS_BASE_URL: ${GMS_BASE_URL:-https://gms.ssafy.io/gmsapi/api.openai.com/v1}
+      GMS_MODEL: ${GMS_MODEL:-gpt-4o-mini}
+      OPENAI_API_KEY: ${OPENAI_API_KEY:-}
+      OPENAI_BASE_URL: ${OPENAI_BASE_URL:-https://gms.ssafy.io/gmsapi/api.openai.com/v1}
       OPENAI_MODEL: ${OPENAI_MODEL:-gpt-4o-mini}
       CRAWLER_ENABLED: ${CRAWLER_ENABLED:-true}
+      CRAWLER_BOOTSTRAP_ENABLED: ${CRAWLER_BOOTSTRAP_ENABLED:-false}
+      CRAWLER_MINIMUM_ARTICLES: ${CRAWLER_MINIMUM_ARTICLES:-10}
       BOK_CRAWLER_LIST_URL: ${BOK_CRAWLER_LIST_URL}
       MOEF_CRAWLER_LIST_URL: ${MOEF_CRAWLER_LIST_URL}
     depends_on:
@@ -55,6 +60,8 @@ services:
       - mysql_data:/var/lib/mysql
     expose:
       - "3306"
+    ports:
+      - "13306:3306"
     healthcheck:
       test: ["CMD-SHELL", "mysqladmin ping -h 127.0.0.1 -uroot -p$${MYSQL_ROOT_PASSWORD} --silent"]
       interval: 10s
@@ -76,6 +83,8 @@ services:
       - mongo_data:/data/db
     expose:
       - "27017"
+    ports:
+      - "27017:27017"
     healthcheck:
       test: ["CMD-SHELL", "mongosh --quiet --eval 'db.adminCommand({ ping: 1 }).ok' || exit 1"]
       interval: 10s
@@ -93,6 +102,8 @@ services:
       - redis_data:/data
     expose:
       - "6379"
+    ports:
+      - "6379:6379"
     healthcheck:
       test: ["CMD", "redis-cli", "ping"]
       interval: 10s

@@ -27,6 +27,8 @@ jwt:
 
 crawler:
   enabled: ${CRAWLER_ENABLED:true}
+  bootstrap-enabled: ${CRAWLER_BOOTSTRAP_ENABLED:false}
+  minimum-articles: ${CRAWLER_MINIMUM_ARTICLES:10}
   initial-delay: ${CRAWLER_INITIAL_DELAY:60000}
   fixed-delay: ${CRAWLER_FIXED_DELAY:3600000}
   connection-timeout: ${CRAWLER_CONNECTION_TIMEOUT:10000}

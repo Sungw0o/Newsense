@@ -5,7 +5,7 @@ Newsense의 1차 RAG 기능은 별도 벡터 DB 없이 현재 저장 구조를 �
 - MongoDB `article_content.chunks`: 기사 본문 청크 저장소
 - MySQL `article_meta`: 기사 메타데이터
 - MySQL `wrong_note` / `wrong_note_term`: 사용자별 취약 개념 신호
-- OpenAI 퀴즈 생성: 검색된 근거 청크를 프롬프트에 함께 전달
+- SSAFY GMS `gpt-4o-mini` 퀴즈 생성: 검색된 근거 청크를 프롬프트에 함께 전달
 
 ## 기사 청크 검색
 
@@ -55,7 +55,7 @@ Authorization: Bearer <access-token>
 
 ## 퀴즈 생성 RAG 보강
 
-기사 퀴즈 생성 시 전체 본문만 OpenAI에 전달하지 않고, 기사 제목과 경제 용어를 기반으로 관련 청크를 먼저 검색한 뒤 `검색된 근거 청크`로 함께 전달합니다.
+기사 퀴즈 생성 시 전체 본문만 SSAFY GMS에 전달하지 않고, 기사 제목과 경제 용어를 기반으로 관련 청크를 먼저 검색한 뒤 `검색된 근거 청크`로 함께 전달합니다.
 
 이로써 퀴즈는 다음 우선순위를 갖습니다.
 

@@ -7,6 +7,8 @@ import java.util.List;
 @ConfigurationProperties(prefix = "crawler")
 public record CrawlerProperties(
         boolean enabled,
+        boolean bootstrapEnabled,
+        int minimumArticles,
         long initialDelay,
         long fixedDelay,
         int connectionTimeout,
