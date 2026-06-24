@@ -2,6 +2,7 @@ package com.newsense.backend.community.controller;
 
 import com.newsense.backend.auth.security.UserPrincipal;
 import com.newsense.backend.common.response.ApiResponse;
+import com.newsense.backend.community.domain.PostType;
 import com.newsense.backend.community.dto.CommentCreateRequest;
 import com.newsense.backend.community.dto.CommentResponse;
 import com.newsense.backend.community.dto.PostCreateRequest;
@@ -15,6 +16,8 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.RestController;
+
+import java.util.List;
 
 @RestController
 @RequiredArgsConstructor
@@ -33,10 +36,18 @@ public class PostController implements PostApiDocs {
     }
 
     @Override
-    public ResponseEntity<ApiResponse<Page<PostResponse>>> getPosts(Pageable pageable, PostSort sort, String keyword) {
+    public ResponseEntity<ApiResponse<Page<PostResponse>>> getPosts(Pageable pageable, PostSort sort, String keyword, PostType type) {
         return ResponseEntity.ok(ApiResponse.success(
                 "게시글 목록 조회에 성공했습니다.",
-                postService.getPosts(pageable, sort, keyword)
+                postService.getPosts(pageable, sort, keyword, type)
+        ));
+    }
+
+    @Override
+    public ResponseEntity<ApiResponse<List<PostResponse>>> getNotices() {
+        return ResponseEntity.ok(ApiResponse.success(
+                "공지사항 조회에 성공했습니다.",
+                postService.getNotices()
         ));
     }
 

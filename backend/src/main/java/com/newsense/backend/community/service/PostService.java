@@ -8,6 +8,7 @@ import com.newsense.backend.community.domain.Post;
 import com.newsense.backend.community.domain.PostComment;
 import com.newsense.backend.community.domain.PostReaction;
 import com.newsense.backend.community.domain.PostReactionType;
+import com.newsense.backend.community.domain.PostType;
 import com.newsense.backend.community.dto.CommentCreateRequest;
 import com.newsense.backend.community.dto.CommentResponse;
 import com.newsense.backend.community.dto.PostCreateRequest;
@@ -18,6 +19,7 @@ import com.newsense.backend.community.repository.PostCommentRepository;
 import com.newsense.backend.community.repository.PostReactionRepository;
 import com.newsense.backend.community.repository.PostRepository;
 import com.newsense.backend.user.domain.User;
+import com.newsense.backend.user.domain.UserRole;
 import com.newsense.backend.user.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
@@ -25,6 +27,8 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+
+import java.util.List;
 
 @Service
 @RequiredArgsConstructor
@@ -39,6 +43,10 @@ public class PostService {
     @Transactional
     public PostResponse createPost(Long userId, PostCreateRequest request) {
         User user = findUser(userId);
+        PostType postType = request.type() == null ? PostType.GENERAL : request.type();
+        if (postType == PostType.NOTICE && user.getRole() != UserRole.ADMIN) {
+            throw new CustomException(ErrorCode.ACCESS_DENIED);
+        }
         ArticleMeta article = request.articleMetaId() == null
                 ? null
                 : articleMetaRepository.findById(request.articleMetaId())
@@ -48,25 +56,47 @@ public class PostService {
                 request.content(),
                 user,
                 article,
-                request.scrapSummaryId()
+                request.scrapSummaryId(),
+                postType
         ));
         return toResponse(post);
     }
 
     @Transactional(readOnly = true)
-    public Page<PostResponse> getPosts(Pageable pageable, PostSort sort, String keyword) {
+    public Page<PostResponse> getPosts(Pageable pageable, PostSort sort, String keyword, PostType type) {
         PageRequest pageRequest = PageRequest.of(pageable.getPageNumber(), pageable.getPageSize(), sort.toSort());
-        if (keyword != null && !keyword.isBlank()) {
-            String pattern = "%" + keyword.toLowerCase() + "%";
+        boolean hasKeyword = keyword != null && !keyword.isBlank();
+        boolean hasType = type != null;
+
+        if (hasKeyword || hasType) {
+            String pattern = hasKeyword ? "%" + keyword.toLowerCase() + "%" : null;
             return postRepository.findAll(
-                    (root, query, cb) -> cb.or(
-                            cb.like(cb.lower(root.get("title")), pattern),
-                            cb.like(cb.lower(root.get("content")), pattern)
-                    ),
+                    (root, query, cb) -> {
+                        var predicate = cb.conjunction();
+                        if (hasType) {
+                            predicate = cb.and(predicate, cb.equal(root.get("type"), type));
+                        }
+                        if (hasKeyword) {
+                            predicate = cb.and(predicate, cb.or(
+                                    cb.like(cb.lower(root.get("title")), pattern),
+                                    cb.like(cb.lower(root.get("content")), pattern)
+                            ));
+                        }
+                        return predicate;
+                    },
                     pageRequest
             ).map(this::toResponse);
         }
         return postRepository.findAll(pageRequest).map(this::toResponse);
+    }
+
+    @Transactional(readOnly = true)
+    public List<PostResponse> getNotices() {
+        PageRequest pageRequest = PageRequest.of(0, 10, PostSort.LATEST.toSort());
+        return postRepository.findAll(
+                (root, query, cb) -> cb.equal(root.get("type"), PostType.NOTICE),
+                pageRequest
+        ).map(this::toResponse).getContent();
     }
 
     @Transactional

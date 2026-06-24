@@ -4,6 +4,9 @@ const communityApi = {
   getPosts(params = {}) {
     return axiosInstance.get('/posts', { params })
   },
+  getNotices() {
+    return axiosInstance.get('/posts/notices')
+  },
   getPost(postId) {
     return axiosInstance.get(`/posts/${postId}`)
   },

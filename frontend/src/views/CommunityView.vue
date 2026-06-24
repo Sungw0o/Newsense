@@ -7,7 +7,7 @@ const router = useRouter()
 const store = useCommunityStore()
 
 const activeFilter = ref('전체')
-const filters = ['전체', '기사 스크랩', '자유 토론']
+const filters = ['전체', '기사 스크랩', '자유 토론', '문의']
 const activeSort = ref('LATEST')
 const sortOptions = [
   { label: '최신순', value: 'LATEST' },
@@ -18,7 +18,14 @@ const searchInput = ref('')
 const activeKeyword = ref('')
 let searchDebounce = null
 
-const fetchPosts = () => store.fetchPosts({ sort: activeSort.value, keyword: activeKeyword.value || undefined })
+const typeParam = computed(() => {
+  if (activeFilter.value === '기사 스크랩') return null
+  if (activeFilter.value === '자유 토론') return null
+  if (activeFilter.value === '문의') return 'INQUIRY'
+  return null
+})
+
+const fetchPosts = () => store.fetchPosts({ sort: activeSort.value, keyword: activeKeyword.value || undefined, type: typeParam.value || undefined })
 
 const changeSort = (sort) => {
   activeSort.value = sort
@@ -41,11 +48,13 @@ const clearSearch = () => {
 
 const displayPosts = computed(() => {
   if (activeFilter.value === '기사 스크랩') return store.posts.filter(p => p.articleScrap)
-  if (activeFilter.value === '자유 토론') return store.posts.filter(p => !p.articleScrap)
+  if (activeFilter.value === '자유 토론') return store.posts.filter(p => !p.articleScrap && p.type !== 'INQUIRY')
   return store.posts
 })
 
-onMounted(fetchPosts)
+onMounted(async () => {
+  await Promise.all([fetchPosts(), store.fetchNotices()])
+})
 
 const formatDate = (iso) => {
   const d = new Date(iso)
@@ -112,6 +121,31 @@ const categoryColor = {
         {{ option.label }}
       </button>
     </div>
+
+    <!-- Pinned notices -->
+    <section v-if="store.notices.length > 0 && activeFilter !== '문의'" class="notice-section">
+      <div class="notice-header">
+        <span class="notice-icon">📢</span>
+        <span class="notice-label">공지사항</span>
+      </div>
+      <div class="notice-list">
+        <div
+          v-for="notice in store.notices"
+          :key="notice.postId"
+          class="notice-item"
+          tabindex="0"
+          role="button"
+          :aria-label="notice.title"
+          @click="router.push(`/community/${notice.postId}`)"
+          @keydown.enter="router.push(`/community/${notice.postId}`)"
+          @keydown.space.prevent="router.push(`/community/${notice.postId}`)"
+        >
+          <span class="notice-pin">📌</span>
+          <span class="notice-title">{{ notice.title }}</span>
+          <span class="notice-date">{{ formatDate(notice.createdAt) }}</span>
+        </div>
+      </div>
+    </section>
 
     <!-- Loading -->
     <div v-if="store.isLoading" class="loading-state">
@@ -337,6 +371,72 @@ const categoryColor = {
 .sort-chip.active { background: rgba(0,132,255,0.10); color: #0084ff; border-color: rgba(0,132,255,0.35); }
 .dark .sort-chip { background: rgba(20,24,34,0.45); border-color: rgba(255,255,255,0.10); color: #a4adbf; }
 .dark .sort-chip.active { color: #9BCBFF; border-color: rgba(0,132,255,0.4); background: rgba(0,132,255,0.14); }
+
+.notice-section {
+  margin-bottom: 20px;
+  border-radius: 14px;
+  overflow: hidden;
+  border: 1px solid rgba(217, 119, 6, 0.20);
+  background: rgba(251, 191, 36, 0.06);
+}
+.dark .notice-section {
+  background: rgba(251, 191, 36, 0.05);
+  border-color: rgba(251, 191, 36, 0.15);
+}
+
+.notice-header {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  padding: 10px 16px;
+  border-bottom: 1px solid rgba(217, 119, 6, 0.15);
+}
+.notice-icon { font-size: 14px; }
+.notice-label {
+  font-family: 'Nanum Gothic', monospace;
+  font-size: 11.5px;
+  font-weight: 700;
+  letter-spacing: 0.8px;
+  color: #d97706;
+  text-transform: uppercase;
+}
+.dark .notice-label { color: #fbbf24; }
+
+.notice-list { display: flex; flex-direction: column; }
+
+.notice-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 11px 16px;
+  cursor: pointer;
+  transition: background .12s;
+  border-bottom: 1px solid rgba(217, 119, 6, 0.08);
+}
+.notice-item:last-child { border-bottom: none; }
+.notice-item:hover { background: rgba(217, 119, 6, 0.06); }
+.dark .notice-item:hover { background: rgba(251, 191, 36, 0.07); }
+.notice-item:focus-visible { outline: 2px solid #d97706; outline-offset: -2px; }
+
+.notice-pin { font-size: 12px; flex-shrink: 0; }
+
+.notice-title {
+  flex: 1;
+  font-size: 13.5px;
+  font-weight: 600;
+  color: var(--ink, #0a0d12);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.dark .notice-title { color: #e0e4ef; }
+
+.notice-date {
+  font-family: 'Nanum Gothic', monospace;
+  font-size: 11.5px;
+  color: var(--ink-3, #8a93a3);
+  flex-shrink: 0;
+}
 
 .post-list { display: flex; flex-direction: column; gap: 12px; }
 

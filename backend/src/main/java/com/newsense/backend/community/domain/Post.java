@@ -4,6 +4,8 @@ import com.newsense.backend.article.domain.ArticleMeta;
 import com.newsense.backend.user.domain.User;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
 import jakarta.persistence.FetchType;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
@@ -53,6 +55,10 @@ public class Post {
     @Column(name = "view_count", nullable = false)
     private long viewCount;
 
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false, length = 20)
+    private PostType type;
+
     @Column(name = "created_at", nullable = false, updatable = false)
     private LocalDateTime createdAt;
 
@@ -61,7 +67,8 @@ public class Post {
             String content,
             User user,
             ArticleMeta article,
-            Long scrapSummaryId
+            Long scrapSummaryId,
+            PostType type
     ) {
         Post post = new Post();
         post.title = title;
@@ -69,6 +76,7 @@ public class Post {
         post.user = user;
         post.article = article;
         post.scrapSummaryId = scrapSummaryId;
+        post.type = type == null ? PostType.GENERAL : type;
         post.likes = 0;
         post.dislikes = 0;
         post.viewCount = 0;

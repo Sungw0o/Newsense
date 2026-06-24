@@ -127,6 +127,7 @@ const MOCK_COMMENTS = {
 export const useCommunityStore = defineStore('community', {
   state: () => ({
     posts: [],
+    notices: [],
     currentPost: null,
     comments: [],
     isLoading: false,
@@ -144,6 +145,17 @@ export const useCommunityStore = defineStore('community', {
         this.posts = []
       } finally {
         this.isLoading = false
+      }
+    },
+
+    async fetchNotices() {
+      try {
+        const res = await communityApi.getNotices()
+        const data = res?.data ?? res
+        const list = Array.isArray(data) ? data : (data?.content ?? [])
+        this.notices = list.map(normalizePost).filter(Boolean)
+      } catch {
+        this.notices = []
       }
     },
 

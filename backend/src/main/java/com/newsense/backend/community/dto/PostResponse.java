@@ -1,6 +1,7 @@
 package com.newsense.backend.community.dto;
 
 import com.newsense.backend.community.domain.Post;
+import com.newsense.backend.community.domain.PostType;
 
 import java.time.LocalDateTime;
 
@@ -13,6 +14,7 @@ public record PostResponse(
         Long articleMetaId,
         ArticleScrapResponse articleScrap,
         Long scrapSummaryId,
+        PostType type,
         int likes,
         int dislikes,
         long viewCount,
@@ -32,6 +34,7 @@ public record PostResponse(
                 post.getArticle() == null ? null : post.getArticle().getId(),
                 articleScrap,
                 post.getScrapSummaryId(),
+                post.getType(),
                 post.getLikes(),
                 post.getDislikes(),
                 post.getViewCount(),

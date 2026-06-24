@@ -2,6 +2,7 @@ package com.newsense.backend.community.controller;
 
 import com.newsense.backend.auth.security.UserPrincipal;
 import com.newsense.backend.common.response.ApiResponse;
+import com.newsense.backend.community.domain.PostType;
 import com.newsense.backend.community.dto.CommentCreateRequest;
 import com.newsense.backend.community.dto.CommentResponse;
 import com.newsense.backend.community.dto.PostCreateRequest;
@@ -24,6 +25,8 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestParam;
 
+import java.util.List;
+
 @Tag(name = "Community", description = "커뮤니티 게시글 및 댓글")
 public interface PostApiDocs {
 
@@ -35,13 +38,18 @@ public interface PostApiDocs {
             @Valid @RequestBody PostCreateRequest request
     );
 
-    @Operation(summary = "전체 게시글 페이징 조회 (키워드 검색 포함)")
+    @Operation(summary = "전체 게시글 페이징 조회 (키워드 검색 및 타입 필터 포함)")
     @GetMapping("/api/v1/posts")
     ResponseEntity<ApiResponse<Page<PostResponse>>> getPosts(
             @PageableDefault(size = 20) Pageable pageable,
             @RequestParam(defaultValue = "LATEST") PostSort sort,
-            @RequestParam(required = false) String keyword
+            @RequestParam(required = false) String keyword,
+            @RequestParam(required = false) PostType type
     );
+
+    @Operation(summary = "공지사항 목록 조회 (최신 10건)")
+    @GetMapping("/api/v1/posts/notices")
+    ResponseEntity<ApiResponse<List<PostResponse>>> getNotices();
 
     @Operation(summary = "게시글 단건 조회")
     @GetMapping("/api/v1/posts/{postId}")
