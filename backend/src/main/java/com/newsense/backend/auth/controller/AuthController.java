@@ -5,6 +5,7 @@ import com.newsense.backend.auth.dto.LoginResponse;
 import com.newsense.backend.auth.dto.SignupRequest;
 import com.newsense.backend.auth.dto.SignupResponse;
 import com.newsense.backend.auth.dto.TokenResponse;
+import com.newsense.backend.auth.dto.UsernameAvailabilityResponse;
 import com.newsense.backend.auth.service.AuthService;
 import com.newsense.backend.auth.service.LoginResult;
 import com.newsense.backend.auth.service.RefreshResult;
@@ -40,6 +41,14 @@ public class AuthController implements AuthApiDocs {
         return ResponseEntity.ok()
                 .header(HttpHeaders.SET_COOKIE, cookieManager.create(result.tokenPair().refreshToken()).toString())
                 .body(ApiResponse.success("로그인이 완료되었습니다.", result.response()));
+    }
+
+    @Override
+    public ResponseEntity<ApiResponse<UsernameAvailabilityResponse>> checkUsername(String username) {
+        return ResponseEntity.ok(ApiResponse.success(
+                "ID 중복 확인이 완료되었습니다.",
+                authService.checkUsername(username)
+        ));
     }
 
     @Override

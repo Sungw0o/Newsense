@@ -59,7 +59,7 @@ class ArticleUtilityTest {
         ArticleCategoryConverter categoryConverter = new ArticleCategoryConverter();
         ArticleDifficultyConverter difficultyConverter = new ArticleDifficultyConverter();
 
-        assertThat(categoryConverter.convert("finance")).isEqualTo(ArticleCategory.FINANCE);
+        assertThat(categoryConverter.convert("finance")).isEqualTo(ArticleCategory.FINANCE_INVESTMENT);
         assertThat(difficultyConverter.convert("BASIC")).isEqualTo(ArticleDifficulty.BASIC);
         assertThatThrownBy(() -> categoryConverter.convert("unknown"))
                 .isInstanceOf(IllegalArgumentException.class);
