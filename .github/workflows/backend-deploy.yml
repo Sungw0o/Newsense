@@ -1,0 +1,114 @@
+name: Backend CI / CD
+
+# ─────────────────────────────────────────────────────────────────────────────
+# 트리거 규칙
+#   · backend/** 변경이 있는 모든 push  → CI (테스트 + SonarQube)
+#   · develop / main push               → CI 완료 후 EC2 배포까지 실행
+#   · develop / main 으로 향하는 PR     → CI 만 (배포 없음)
+# ─────────────────────────────────────────────────────────────────────────────
+on:
+  push:
+    paths:
+      - 'backend/**'
+      - '.github/workflows/backend-deploy.yml'
+  pull_request:
+    branches: [develop, main]
+    paths:
+      - 'backend/**'
+
+jobs:
+  # ────────────────────────────────────────────────────────────────────────────
+  # CI — 모든 브랜치에서 실행
+  # ────────────────────────────────────────────────────────────────────────────
+  ci:
+    name: Test & Quality
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: backend
+    env:
+      SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+      SONAR_HOST_URL: ${{ secrets.SONAR_HOST_URL }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0   # SonarQube 이슈 추적에 전체 히스토리 필요
+
+      - name: Set up Java 21 (Temurin)
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+
+      - name: Cache Gradle
+        uses: gradle/actions/setup-gradle@v4
+
+      - name: Test & Coverage Gate (Jacoco 80%)
+        run: ./gradlew test jacocoTestReport jacocoTestCoverageVerification
+
+      - name: SonarQube Analysis
+        if: ${{ env.SONAR_TOKEN != '' }}
+        env:
+          SONAR_PROJECT_KEY: ${{ vars.SONAR_PROJECT_KEY }}
+          SONAR_PROJECT_NAME: ${{ vars.SONAR_PROJECT_NAME }}
+        run: ./gradlew sonar
+
+  # ────────────────────────────────────────────────────────────────────────────
+  # CD — develop / main push 시에만 실행
+  # ────────────────────────────────────────────────────────────────────────────
+  deploy:
+    name: Deploy to EC2
+    needs: ci
+    runs-on: ubuntu-latest
+    if: >
+      github.event_name == 'push' &&
+      (github.ref == 'refs/heads/develop' || github.ref == 'refs/heads/main')
+    defaults:
+      run:
+        working-directory: backend
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Java 21 (Temurin)
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+
+      - name: Cache Gradle
+        uses: gradle/actions/setup-gradle@v4
+
+      # EC2 빌드 부하를 차단하기 위해 CI 러너에서 직접 JAR 생성
+      - name: Build bootJar
+        run: ./gradlew bootJar --no-daemon
+
+      # EC2 /opt/newsense/backend/build/libs/ 로 JAR 전송
+      # strip_components: 3 → backend/build/libs/{jar} → {jar} → target 디렉터리에 적재
+      - name: Copy JAR to EC2 via SCP
+        uses: appleboy/scp-action@v0.1.7
+        with:
+          host: ${{ secrets.EC2_HOST }}
+          username: ${{ secrets.EC2_USERNAME }}
+          key: ${{ secrets.EC2_SSH_KEY }}
+          source: "backend/build/libs/*.jar"
+          target: "/opt/newsense/backend/build/libs/"
+          strip_components: 3
+
+      # Docker Compose로 app 서비스만 리빌드 후 재시작, 이미지 정리
+      - name: Restart app via Docker Compose
+        uses: appleboy/ssh-action@v1
+        with:
+          host: ${{ secrets.EC2_HOST }}
+          username: ${{ secrets.EC2_USERNAME }}
+          key: ${{ secrets.EC2_SSH_KEY }}
+          script: |
+            set -e
+            cd /opt/newsense
+            docker compose build app
+            docker compose up -d app
+            # EBS 8GB 여유 공간 확보 — 미사용 이미지 즉시 정리
+            docker image prune -f
