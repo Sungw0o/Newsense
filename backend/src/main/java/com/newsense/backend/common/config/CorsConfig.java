@@ -18,7 +18,9 @@ public class CorsConfig {
         // 허용할 Origin: 로컬 개발 + 추후 프로덕션 도메인 추가
         config.setAllowedOriginPatterns(List.of(
                 "http://localhost:5173",  // Vite dev server
+                "http://127.0.0.1:5173",  // Vite dev server through loopback IP
                 "http://localhost:3000",  // 혹시 다른 포트 사용 시
+                "http://127.0.0.1:3000",  // 혹시 다른 포트 사용 시
                 "https://*.newsense.com"  // 추후 프로덕션
         ));
 
