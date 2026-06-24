@@ -125,67 +125,7 @@ jobs:
             set -e
             cd /opt/newsense
             mkdir -p backend/build/libs infra/nginx
-            : > .env
-            chmod 600 .env
-            cat > .env <<'EOF'
-            SPRING_PROFILES_ACTIVE=prod
-            SERVER_FORWARD_HEADERS_STRATEGY=framework
-            NGINX_BIND_ADDRESS=127.0.0.1
-            NGINX_HTTP_PORT=8080
-
-            MYSQL_DATABASE=${{ vars.MYSQL_DATABASE || 'newsense' }}
-            MYSQL_USER=${{ secrets.MYSQL_USER }}
-            MYSQL_PASSWORD=${{ secrets.MYSQL_PASSWORD }}
-            MYSQL_ROOT_PASSWORD=${{ secrets.MYSQL_ROOT_PASSWORD }}
-            SPRING_JPA_DDL_AUTO=${{ vars.SPRING_JPA_DDL_AUTO || 'validate' }}
-
-            MONGO_DATABASE=${{ vars.MONGO_DATABASE || 'newsense' }}
-            MONGO_INITDB_ROOT_USERNAME=${{ secrets.MONGO_INITDB_ROOT_USERNAME }}
-            MONGO_INITDB_ROOT_PASSWORD=${{ secrets.MONGO_INITDB_ROOT_PASSWORD }}
-
-            JWT_SECRET=${{ secrets.JWT_SECRET }}
-            JWT_ACCESS_EXPIRATION=${{ vars.JWT_ACCESS_EXPIRATION || '1800000' }}
-            JWT_REFRESH_EXPIRATION=${{ vars.JWT_REFRESH_EXPIRATION || '1209600000' }}
-
-            APP_FRONTEND_URL=${{ vars.APP_FRONTEND_URL || 'https://new5ense.site' }}
-            GOOGLE_CLIENT_ID=${{ secrets.GOOGLE_CLIENT_ID }}
-            GOOGLE_CLIENT_SECRET=${{ secrets.GOOGLE_CLIENT_SECRET }}
-            NAVER_OAUTH_CLIENT_ID=${{ secrets.NAVER_OAUTH_CLIENT_ID }}
-            NAVER_OAUTH_CLIENT_SECRET=${{ secrets.NAVER_OAUTH_CLIENT_SECRET }}
-            KAKAO_CLIENT_ID=${{ secrets.KAKAO_CLIENT_ID }}
-            KAKAO_CLIENT_SECRET=${{ secrets.KAKAO_CLIENT_SECRET }}
-
-            GMS_KEY=${{ secrets.GMS_KEY }}
-            GMS_BASE_URL=${{ vars.GMS_BASE_URL || 'https://gms.ssafy.io/gmsapi/api.openai.com/v1' }}
-            GMS_MODEL=${{ vars.GMS_MODEL || 'gpt-4o-mini' }}
-            OPENAI_API_KEY=${{ secrets.OPENAI_API_KEY || secrets.GMS_KEY }}
-            OPENAI_BASE_URL=${{ vars.OPENAI_BASE_URL || vars.GMS_BASE_URL || 'https://gms.ssafy.io/gmsapi/api.openai.com/v1' }}
-            OPENAI_MODEL=${{ vars.OPENAI_MODEL || vars.GMS_MODEL || 'gpt-4o-mini' }}
-            AI_PIPELINE_MAX_QUIZ_RETRIES=${{ vars.AI_PIPELINE_MAX_QUIZ_RETRIES || '2' }}
-            AI_EMBEDDING_MODEL=${{ vars.AI_EMBEDDING_MODEL || 'text-embedding-3-large' }}
-            AI_FACT_EXTRACTOR_MODEL=${{ vars.AI_FACT_EXTRACTOR_MODEL || 'gemini-2.5-flash-lite' }}
-            AI_ARTICLE_CLASSIFIER_MODEL=${{ vars.AI_ARTICLE_CLASSIFIER_MODEL || 'gpt-4o-mini' }}
-            AI_QUIZ_GENERATOR_MODEL=${{ vars.AI_QUIZ_GENERATOR_MODEL || 'o3-mini' }}
-            AI_QUIZ_CRITIC_MODEL=${{ vars.AI_QUIZ_CRITIC_MODEL || 'gpt-4o-mini' }}
-
-            CRAWLER_ENABLED=${{ vars.CRAWLER_ENABLED || 'true' }}
-            CRAWLER_BOOTSTRAP_ENABLED=${{ vars.CRAWLER_BOOTSTRAP_ENABLED || 'false' }}
-            CRAWLER_MINIMUM_ARTICLES=${{ vars.CRAWLER_MINIMUM_ARTICLES || '30' }}
-            CRAWLER_MAX_ITEMS=${{ vars.CRAWLER_MAX_ITEMS || '30' }}
-            NAVER_CLIENT_ID=${{ secrets.NAVER_CLIENT_ID }}
-            NAVER_CLIENT_SECRET=${{ secrets.NAVER_CLIENT_SECRET }}
-            NEWS_API_KEY=${{ secrets.NEWS_API_KEY }}
-            BOK_CRAWLER_LIST_URL=${{ vars.BOK_CRAWLER_LIST_URL || 'https://www.bok.or.kr/portal/singl/newsData/listCont.do?pageIndex=1&targetDepth=3&menuNo=201263&syncMenuChekKey=1&searchCnd=1&searchKwd=' }}
-            MOEF_CRAWLER_LIST_URL=${{ vars.MOEF_CRAWLER_LIST_URL || 'https://www.moef.go.kr/nw/nes/nesdta.do?menuNo=4010100' }}
-
-            RAG_VECTOR_SEARCH_ENABLED=${{ vars.RAG_VECTOR_SEARCH_ENABLED || 'true' }}
-            RAG_VECTOR_SEARCH_MODE=${{ vars.RAG_VECTOR_SEARCH_MODE || 'local' }}
-            RAG_VECTOR_SEARCH_INDEX_NAME=${{ vars.RAG_VECTOR_SEARCH_INDEX_NAME || 'article_embedding_index' }}
-            RAG_VECTOR_SEARCH_NUM_CANDIDATES=${{ vars.RAG_VECTOR_SEARCH_NUM_CANDIDATES || '200' }}
-            RAG_VECTOR_SEARCH_DIMENSIONS=${{ vars.RAG_VECTOR_SEARCH_DIMENSIONS || '3072' }}
-            RAG_EMBEDDING_BACKFILL_ENABLED=${{ vars.RAG_EMBEDDING_BACKFILL_ENABLED || 'false' }}
-            EOF
-            sed -i 's/^[[:space:]]\{12\}//' .env
+            test -f .env
             chmod 600 .env
             docker compose build app
             docker compose up -d mysql mongodb redis app nginx
