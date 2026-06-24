@@ -2,6 +2,7 @@ package com.newsense.backend.article.crawler.service;
 
 import com.newsense.backend.ai.article.ArticleClassificationResult;
 import com.newsense.backend.ai.article.OpenAiArticleClassifierClient;
+import com.newsense.backend.ai.article.RelatedStockInfo;
 import com.newsense.backend.article.crawler.config.CrawlerProperties;
 import com.newsense.backend.article.crawler.model.CrawledArticle;
 import com.newsense.backend.article.crawler.util.ContentCleaner;
@@ -11,9 +12,11 @@ import com.newsense.backend.article.document.ArticleContent;
 import com.newsense.backend.article.domain.ArticleCategory;
 import com.newsense.backend.article.domain.ArticleDifficulty;
 import com.newsense.backend.article.domain.ArticleMeta;
+import com.newsense.backend.article.domain.ArticleRelatedStock;
 import com.newsense.backend.article.event.ArticleStoredEvent;
 import com.newsense.backend.article.repository.ArticleContentRepository;
 import com.newsense.backend.article.repository.ArticleMetaRepository;
+import com.newsense.backend.article.repository.ArticleRelatedStockRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.ApplicationEventPublisher;
@@ -22,6 +25,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
+import java.util.stream.Collectors;
 
 @Slf4j
 @Service
@@ -31,10 +35,11 @@ public class ArticlePersistenceService {
     private static final int SUMMARY_MAX_LENGTH = 500;
     private static final int AI_SUMMARY_MAX_LENGTH = 1000;
     private static final int CHARACTERS_PER_MINUTE = 500;
-    private static final int AI_SUMMARY_THRESHOLD = 1500;
+    private static final int AI_SUMMARY_THRESHOLD = 1000;
 
     private final ArticleMetaRepository articleMetaRepository;
     private final ArticleContentRepository articleContentRepository;
+    private final ArticleRelatedStockRepository articleRelatedStockRepository;
     private final ContentCleaner contentCleaner;
     private final SentenceChunker sentenceChunker;
     private final ContentHasher contentHasher;
@@ -93,6 +98,7 @@ public class ArticlePersistenceService {
                     contentHash
             );
             ArticleMeta savedMeta = articleMetaRepository.save(meta);
+            saveRelatedStocks(savedMeta, classification.relatedStocks());
             eventPublisher.publishEvent(new ArticleStoredEvent(savedMeta.getId()));
             return true;
         } catch (RuntimeException exception) {
@@ -105,6 +111,16 @@ public class ArticlePersistenceService {
     public boolean alreadyExists(String sourceUrl) {
         return articleMetaRepository.existsBySourceUrl(sourceUrl)
                 || articleContentRepository.existsBySourceUrl(sourceUrl);
+    }
+
+    private void saveRelatedStocks(ArticleMeta savedMeta, List<RelatedStockInfo> stocks) {
+        if (stocks == null || stocks.isEmpty()) {
+            return;
+        }
+        List<ArticleRelatedStock> entities = stocks.stream()
+                .map(s -> ArticleRelatedStock.create(savedMeta, s.stockName(), s.stockCode(), s.relationReason()))
+                .collect(Collectors.toList());
+        articleRelatedStockRepository.saveAll(entities);
     }
 
     private String summarize(String cleanText) {
@@ -127,7 +143,7 @@ public class ArticlePersistenceService {
             return new ArticleClassificationResult(
                     ArticleCategory.MACRO_ECONOMY,
                     ArticleDifficulty.BASIC,
-                    summarize(cleanText)
+                    ""
             );
         }
         try {

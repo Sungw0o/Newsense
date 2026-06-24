@@ -7,6 +7,8 @@ import com.newsense.backend.article.dto.ArticleDetailResponse;
 import com.newsense.backend.article.dto.ArticleReadResponse;
 import com.newsense.backend.article.dto.ArticleTermResponse;
 import com.newsense.backend.article.dto.BookmarkToggleResponse;
+import com.newsense.backend.article.dto.RelatedStockResponse;
+import com.newsense.backend.article.repository.ArticleRelatedStockRepository;
 import com.newsense.backend.article.event.ArticleReadCompletedEvent;
 import com.newsense.backend.article.repository.ArticleContentRepository;
 import com.newsense.backend.article.repository.ArticleMetaRepository;
@@ -30,6 +32,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -44,6 +47,7 @@ public class ArticleDetailService {
     private final UserRepository userRepository;
     private final ApplicationEventPublisher eventPublisher;
     private final MongoTemplate mongoTemplate;
+    private final ArticleRelatedStockRepository articleRelatedStockRepository;
 
     @Transactional(readOnly = true)
     public ArticleDetailResponse getArticleDetail(Long articleId, Long userId) {
@@ -55,7 +59,12 @@ public class ArticleDetailService {
         boolean isRead = userId != null && articleReadRepository.existsByUserIdAndArticleId(userId, articleId);
         boolean isBookmarked = userId != null && bookmarkRepository.existsByUserIdAndArticleId(userId, articleId);
 
-        return ArticleDetailResponse.of(article, content, isRead, isBookmarked);
+        List<RelatedStockResponse> relatedStocks = articleRelatedStockRepository.findAllByArticleMetaId(articleId)
+                .stream()
+                .map(RelatedStockResponse::from)
+                .collect(Collectors.toList());
+
+        return ArticleDetailResponse.of(article, content, isRead, isBookmarked, relatedStocks);
     }
 
     @Transactional

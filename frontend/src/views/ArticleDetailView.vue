@@ -220,6 +220,32 @@ watch(articleId, async (newId) => {
             </p>
           </div>
 
+          <!-- Related Listed Companies -->
+          <div v-if="selectedArticle.relatedStocks?.length" class="mt-10 pt-8 border-t border-slate-100">
+            <div class="flex items-center gap-2 mb-4">
+              <span class="text-base">🏢</span>
+              <span class="text-sm font-bold text-slate-700">뉴스 연관 기업 정보</span>
+            </div>
+            <div class="flex flex-wrap gap-3">
+              <a
+                v-for="stock in selectedArticle.relatedStocks"
+                :key="stock.stockCode"
+                :href="`https://finance.naver.com/item/main.naver?code=${stock.stockCode}`"
+                target="_blank"
+                rel="noopener noreferrer"
+                class="flex flex-col gap-1 px-4 py-3 bg-slate-50 border border-slate-200 hover:border-primary-300 hover:bg-primary-50 rounded-xl transition-all duration-200 cursor-pointer"
+              >
+                <div class="flex items-center gap-2">
+                  <span class="text-xs font-bold text-slate-800">{{ stock.stockName }}</span>
+                  <span class="text-xs font-mono text-slate-400 bg-slate-100 px-1.5 py-0.5 rounded">{{ stock.stockCode }}</span>
+                  <span class="text-xs text-slate-400">↗</span>
+                </div>
+                <p v-if="stock.relationReason" class="text-xs text-slate-500 leading-relaxed">{{ stock.relationReason }}</p>
+              </a>
+            </div>
+            <p class="text-xs text-slate-400 mt-3">* AI가 추출한 연관 종목입니다. 투자 판단의 근거로 삼지 마세요.</p>
+          </div>
+
           <!-- Call to Action Buttons -->
           <div class="border-t border-slate-100 mt-12 pt-8 flex flex-col sm:flex-row gap-4 justify-end">
             <BaseButton 

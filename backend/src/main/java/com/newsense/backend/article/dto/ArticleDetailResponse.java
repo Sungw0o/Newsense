@@ -4,6 +4,7 @@ import com.newsense.backend.article.document.ArticleContent;
 import com.newsense.backend.article.domain.ArticleMeta;
 
 import java.time.LocalDate;
+import java.util.List;
 
 public record ArticleDetailResponse(
         Long id,
@@ -17,22 +18,25 @@ public record ArticleDetailResponse(
         LocalDate publishedAt,
         int estimatedMinutes,
         boolean isRead,
-        boolean isBookmarked
+        boolean isBookmarked,
+        List<RelatedStockResponse> relatedStocks
 ) {
     public static ArticleDetailResponse of(
             ArticleMeta article,
             ArticleContent content,
             boolean isRead,
-            boolean isBookmarked
+            boolean isBookmarked,
+            List<RelatedStockResponse> relatedStocks
     ) {
-        return of(article, content.getCleanText(), isRead, isBookmarked);
+        return of(article, content.getCleanText(), isRead, isBookmarked, relatedStocks);
     }
 
     public static ArticleDetailResponse of(
             ArticleMeta article,
             String content,
             boolean isRead,
-            boolean isBookmarked
+            boolean isBookmarked,
+            List<RelatedStockResponse> relatedStocks
     ) {
         return new ArticleDetailResponse(
                 article.getId(),
@@ -46,7 +50,8 @@ public record ArticleDetailResponse(
                 article.getPublishedAt(),
                 article.getEstimatedMinutes(),
                 isRead,
-                isBookmarked
+                isBookmarked,
+                relatedStocks
         );
     }
 }

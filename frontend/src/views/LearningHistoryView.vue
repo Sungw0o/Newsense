@@ -1,5 +1,5 @@
 <script setup>
-import { computed, onMounted } from 'vue'
+import { computed, onMounted, ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { storeToRefs } from 'pinia'
 import { useHistoryStore } from '../stores/useHistoryStore'
@@ -30,6 +30,38 @@ const typeColor = { ARTICLE_READ: '#0084ff', QUIZ: '#d97706', REVIEW: '#059669' 
 const formatTime = (str) => (str && str.length >= 16) ? str.substring(11, 16) : ''
 
 const navigate = (path) => router.push(path)
+
+// Group timeline items by articleId within each day
+const groupedDays = computed(() => {
+  if (!history.value?.days) return []
+  return history.value.days.map(day => {
+    const groups = []
+    const seen = new Map()
+    for (const item of day.timeline) {
+      const key = item.articleId ?? item.historyId
+      if (!seen.has(key)) {
+        seen.set(key, { articleId: item.articleId, articleTitle: item.articleTitle, articleCategory: item.articleCategory, items: [] })
+        groups.push(seen.get(key))
+      }
+      seen.get(key).items.push(item)
+    }
+    return { ...day, groups }
+  })
+})
+
+// Tracks which article groups are expanded (when >1 event)
+const expanded = ref(new Set())
+const toggleGroup = (dayDate, articleId) => {
+  const key = `${dayDate}__${articleId}`
+  if (expanded.value.has(key)) {
+    expanded.value.delete(key)
+  } else {
+    expanded.value.add(key)
+  }
+  // trigger reactivity
+  expanded.value = new Set(expanded.value)
+}
+const isExpanded = (dayDate, articleId) => expanded.value.has(`${dayDate}__${articleId}`)
 </script>
 
 <template>
@@ -109,7 +141,7 @@ const navigate = (path) => router.push(path)
       </div>
 
       <div v-else class="timeline">
-        <div v-for="day in history.days" :key="day.date" class="day-group">
+        <div v-for="day in groupedDays" :key="day.date" class="day-group">
           <div class="day-header">
             <span class="day-label">{{ day.date }}</span>
             <div class="day-divider"></div>
@@ -117,34 +149,94 @@ const navigate = (path) => router.push(path)
           </div>
 
           <div class="timeline-items">
-            <div v-for="item in day.timeline" :key="item.historyId" class="timeline-item">
-              <div class="item-left">
-                <div class="type-badges">
-                  <span class="type-badge" :style="{ background: (typeColor[item.type] ?? '#0084ff') + '18', color: typeColor[item.type] ?? '#0084ff' }">
-                    {{ typeLabel[item.type] ?? item.type }}
-                  </span>
-                  <span v-if="item.articleCategory" class="category-badge">{{ item.articleCategory }}</span>
-                  <span class="time-badge">{{ formatTime(item.learnedAt) }}</span>
+            <!-- Grouped by article -->
+            <div v-for="group in day.groups" :key="group.articleId ?? group.items[0].historyId" class="article-group">
+              <!-- Single event — show inline as before -->
+              <div v-if="group.items.length === 1" class="timeline-item">
+                <div class="item-left">
+                  <div class="type-badges">
+                    <span class="type-badge" :style="{ background: (typeColor[group.items[0].type] ?? '#0084ff') + '18', color: typeColor[group.items[0].type] ?? '#0084ff' }">
+                      {{ typeLabel[group.items[0].type] ?? group.items[0].type }}
+                    </span>
+                    <span v-if="group.articleCategory" class="category-badge">{{ group.articleCategory }}</span>
+                    <span class="time-badge">{{ formatTime(group.items[0].learnedAt) }}</span>
+                  </div>
+                  <p class="item-title" @click="navigate(`/articles/${group.articleId}`)">{{ group.articleTitle }}</p>
+                  <div v-if="group.items[0].type === 'REVIEW' && (group.items[0].reviewSummary || group.items[0].reviewLearned)" class="review-card">
+                    <div v-if="group.items[0].reviewSummary">
+                      <p class="review-label">요약</p>
+                      <p class="review-text">{{ group.items[0].reviewSummary }}</p>
+                    </div>
+                    <div v-if="group.items[0].reviewLearned">
+                      <p class="review-label">배운 점</p>
+                      <p class="review-text">{{ group.items[0].reviewLearned }}</p>
+                    </div>
+                  </div>
                 </div>
-                <p class="item-title" @click="navigate(`/articles/${item.articleId}`)">{{ item.articleTitle }}</p>
-                <div v-if="item.type === 'REVIEW' && (item.reviewSummary || item.reviewLearned)" class="review-card">
-                  <div v-if="item.reviewSummary">
-                    <p class="review-label">요약</p>
-                    <p class="review-text">{{ item.reviewSummary }}</p>
-                  </div>
-                  <div v-if="item.reviewLearned">
-                    <p class="review-label">배운 점</p>
-                    <p class="review-text">{{ item.reviewLearned }}</p>
-                  </div>
+                <div class="item-right">
+                  <span v-if="group.items[0].type === 'QUIZ'" class="quiz-result" :class="group.items[0].quizCorrect ? 'correct' : 'wrong'">
+                    {{ group.items[0].quizCorrect ? '🎯 정답' : '❌ 오답' }}
+                  </span>
+                  <button v-else-if="group.items[0].type === 'REVIEW'" class="btn-ghost" @click="navigate(`/articles/${group.articleId}/review`)">
+                    리뷰 보기
+                  </button>
                 </div>
               </div>
-              <div class="item-right">
-                <span v-if="item.type === 'QUIZ'" class="quiz-result" :class="item.quizCorrect ? 'correct' : 'wrong'">
-                  {{ item.quizCorrect ? '🎯 정답' : '❌ 오답' }}
-                </span>
-                <button v-else-if="item.type === 'REVIEW'" class="btn-ghost" @click="navigate(`/articles/${item.articleId}/review`)">
-                  리뷰 보기
-                </button>
+
+              <!-- Multiple events for same article — collapsible toggle -->
+              <div v-else class="group-toggle">
+                <div
+                  class="group-toggle-header"
+                  @click="toggleGroup(day.date, group.articleId)"
+                >
+                  <div class="item-left">
+                    <div class="type-badges">
+                      <span
+                        v-for="item in group.items"
+                        :key="item.historyId"
+                        class="type-badge"
+                        :style="{ background: (typeColor[item.type] ?? '#0084ff') + '18', color: typeColor[item.type] ?? '#0084ff' }"
+                      >{{ typeLabel[item.type] ?? item.type }}</span>
+                      <span v-if="group.articleCategory" class="category-badge">{{ group.articleCategory }}</span>
+                    </div>
+                    <p class="item-title" @click.stop="navigate(`/articles/${group.articleId}`)">{{ group.articleTitle }}</p>
+                  </div>
+                  <div class="item-right">
+                    <span class="toggle-arrow" :class="{ open: isExpanded(day.date, group.articleId) }">▾</span>
+                  </div>
+                </div>
+
+                <!-- Expanded sub-items -->
+                <div v-if="isExpanded(day.date, group.articleId)" class="group-sub-items">
+                  <div v-for="item in group.items" :key="item.historyId" class="sub-item">
+                    <div class="sub-item-left">
+                      <div class="type-badges">
+                        <span class="type-badge" :style="{ background: (typeColor[item.type] ?? '#0084ff') + '18', color: typeColor[item.type] ?? '#0084ff' }">
+                          {{ typeLabel[item.type] ?? item.type }}
+                        </span>
+                        <span class="time-badge">{{ formatTime(item.learnedAt) }}</span>
+                      </div>
+                      <div v-if="item.type === 'REVIEW' && (item.reviewSummary || item.reviewLearned)" class="review-card">
+                        <div v-if="item.reviewSummary">
+                          <p class="review-label">요약</p>
+                          <p class="review-text">{{ item.reviewSummary }}</p>
+                        </div>
+                        <div v-if="item.reviewLearned">
+                          <p class="review-label">배운 점</p>
+                          <p class="review-text">{{ item.reviewLearned }}</p>
+                        </div>
+                      </div>
+                    </div>
+                    <div class="item-right">
+                      <span v-if="item.type === 'QUIZ'" class="quiz-result" :class="item.quizCorrect ? 'correct' : 'wrong'">
+                        {{ item.quizCorrect ? '🎯 정답' : '❌ 오답' }}
+                      </span>
+                      <button v-else-if="item.type === 'REVIEW'" class="btn-ghost" @click="navigate(`/articles/${group.articleId}/review`)">
+                        리뷰 보기
+                      </button>
+                    </div>
+                  </div>
+                </div>
               </div>
             </div>
           </div>
@@ -394,6 +486,54 @@ const navigate = (path) => router.push(path)
 .timeline { display: flex; flex-direction: column; gap: 24px; }
 .day-group {}
 
+/* Article group container */
+.article-group {
+  border-bottom: 1px solid var(--line);
+}
+.article-group:last-child { border-bottom: none; }
+
+/* Collapsible toggle header */
+.group-toggle {}
+.group-toggle-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 14px 0;
+  cursor: pointer;
+  user-select: none;
+}
+.group-toggle-header:hover .item-title { color: #0084ff; }
+
+.toggle-arrow {
+  font-size: 16px;
+  color: var(--ink-3);
+  transition: transform 0.2s;
+  flex-shrink: 0;
+  margin-top: 2px;
+}
+.toggle-arrow.open { transform: rotate(180deg); }
+
+/* Expanded sub-items */
+.group-sub-items {
+  padding: 0 0 10px 16px;
+  border-left: 2px solid var(--line);
+  margin-left: 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+}
+.sub-item {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 10px 0;
+  border-bottom: 1px dashed var(--line);
+}
+.sub-item:last-child { border-bottom: none; }
+.sub-item-left { flex: 1; min-width: 0; }
+
 .day-header {
   display: flex;
   align-items: center;
@@ -427,9 +567,7 @@ const navigate = (path) => router.push(path)
   justify-content: space-between;
   gap: 16px;
   padding: 14px 0;
-  border-bottom: 1px solid var(--line);
 }
-.timeline-item:last-child { border-bottom: none; }
 
 .item-left { flex: 1; min-width: 0; }
 
