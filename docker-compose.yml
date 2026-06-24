@@ -10,6 +10,7 @@ services:
     environment:
       SPRING_PROFILES_ACTIVE: ${SPRING_PROFILES_ACTIVE:-prod}
       SERVER_PORT: 8080
+      SERVER_FORWARD_HEADERS_STRATEGY: ${SERVER_FORWARD_HEADERS_STRATEGY:-framework}
       SPRING_DATASOURCE_URL: jdbc:mysql://mysql:3306/${MYSQL_DATABASE:-newsense}?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=Asia/Seoul&characterEncoding=UTF-8
       SPRING_DATASOURCE_USERNAME: ${MYSQL_USER:-newsense}
       SPRING_DATASOURCE_PASSWORD: ${MYSQL_PASSWORD}
@@ -20,18 +21,40 @@ services:
       JWT_SECRET: ${JWT_SECRET}
       JWT_ACCESS_EXPIRATION: ${JWT_ACCESS_EXPIRATION:-1800000}
       JWT_REFRESH_EXPIRATION: ${JWT_REFRESH_EXPIRATION:-1209600000}
+      APP_FRONTEND_URL: ${APP_FRONTEND_URL:-https://new5ense.site}
+      GOOGLE_CLIENT_ID: ${GOOGLE_CLIENT_ID:-}
+      GOOGLE_CLIENT_SECRET: ${GOOGLE_CLIENT_SECRET:-}
+      NAVER_OAUTH_CLIENT_ID: ${NAVER_OAUTH_CLIENT_ID:-}
+      NAVER_OAUTH_CLIENT_SECRET: ${NAVER_OAUTH_CLIENT_SECRET:-}
+      KAKAO_CLIENT_ID: ${KAKAO_CLIENT_ID:-}
+      KAKAO_CLIENT_SECRET: ${KAKAO_CLIENT_SECRET:-}
       GMS_KEY: ${GMS_KEY:-}
       GMS_BASE_URL: ${GMS_BASE_URL:-https://gms.ssafy.io/gmsapi/api.openai.com/v1}
       GMS_MODEL: ${GMS_MODEL:-gpt-4o-mini}
       OPENAI_API_KEY: ${OPENAI_API_KEY:-}
       OPENAI_BASE_URL: ${OPENAI_BASE_URL:-https://gms.ssafy.io/gmsapi/api.openai.com/v1}
       OPENAI_MODEL: ${OPENAI_MODEL:-gpt-4o-mini}
+      AI_PIPELINE_MAX_QUIZ_RETRIES: ${AI_PIPELINE_MAX_QUIZ_RETRIES:-2}
+      AI_EMBEDDING_MODEL: ${AI_EMBEDDING_MODEL:-text-embedding-3-large}
+      AI_FACT_EXTRACTOR_MODEL: ${AI_FACT_EXTRACTOR_MODEL:-gemini-2.5-flash-lite}
+      AI_ARTICLE_CLASSIFIER_MODEL: ${AI_ARTICLE_CLASSIFIER_MODEL:-gpt-4o-mini}
+      AI_QUIZ_GENERATOR_MODEL: ${AI_QUIZ_GENERATOR_MODEL:-o3-mini}
+      AI_QUIZ_CRITIC_MODEL: ${AI_QUIZ_CRITIC_MODEL:-gpt-4o-mini}
       CRAWLER_ENABLED: ${CRAWLER_ENABLED:-true}
       CRAWLER_BOOTSTRAP_ENABLED: ${CRAWLER_BOOTSTRAP_ENABLED:-false}
       CRAWLER_MINIMUM_ARTICLES: ${CRAWLER_MINIMUM_ARTICLES:-30}
       CRAWLER_MAX_ITEMS: ${CRAWLER_MAX_ITEMS:-30}
+      NAVER_CLIENT_ID: ${NAVER_CLIENT_ID:-}
+      NAVER_CLIENT_SECRET: ${NAVER_CLIENT_SECRET:-}
+      NEWS_API_KEY: ${NEWS_API_KEY:-}
       BOK_CRAWLER_LIST_URL: ${BOK_CRAWLER_LIST_URL}
       MOEF_CRAWLER_LIST_URL: ${MOEF_CRAWLER_LIST_URL}
+      RAG_VECTOR_SEARCH_ENABLED: ${RAG_VECTOR_SEARCH_ENABLED:-true}
+      RAG_VECTOR_SEARCH_MODE: ${RAG_VECTOR_SEARCH_MODE:-local}
+      RAG_VECTOR_SEARCH_INDEX_NAME: ${RAG_VECTOR_SEARCH_INDEX_NAME:-article_embedding_index}
+      RAG_VECTOR_SEARCH_NUM_CANDIDATES: ${RAG_VECTOR_SEARCH_NUM_CANDIDATES:-200}
+      RAG_VECTOR_SEARCH_DIMENSIONS: ${RAG_VECTOR_SEARCH_DIMENSIONS:-3072}
+      RAG_EMBEDDING_BACKFILL_ENABLED: ${RAG_EMBEDDING_BACKFILL_ENABLED:-false}
     depends_on:
       mysql:
         condition: service_healthy
@@ -62,7 +85,7 @@ services:
     expose:
       - "3306"
     ports:
-      - "13306:3306"
+      - "127.0.0.1:13306:3306"
     healthcheck:
       test: ["CMD-SHELL", "mysqladmin ping -h 127.0.0.1 -uroot -p$${MYSQL_ROOT_PASSWORD} --silent"]
       interval: 10s
@@ -85,7 +108,7 @@ services:
     expose:
       - "27017"
     ports:
-      - "27017:27017"
+      - "127.0.0.1:27017:27017"
     healthcheck:
       test: ["CMD-SHELL", "mongosh --quiet --eval 'db.adminCommand({ ping: 1 }).ok' || exit 1"]
       interval: 10s
@@ -104,7 +127,7 @@ services:
     expose:
       - "6379"
     ports:
-      - "6379:6379"
+      - "127.0.0.1:6379:6379"
     healthcheck:
       test: ["CMD", "redis-cli", "ping"]
       interval: 10s
