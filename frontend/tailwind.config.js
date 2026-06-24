@@ -81,7 +81,9 @@ export default {
         }
       },
       fontFamily: {
-        sans: ['Pretendard', 'Noto Sans KR', 'Inter', 'sans-serif'],
+        sans: ['Inter', 'Pretendard', 'Noto Sans KR', 'system-ui', 'sans-serif'],
+        display: ['Fustat', 'Inter', 'sans-serif'],
+        mono: ['"JetBrains Mono"', 'ui-monospace', 'monospace'],
       },
       scale: {
         '102': '1.02',

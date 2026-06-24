@@ -3,8 +3,7 @@ import { ref, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { storeToRefs } from 'pinia'
 import { useArticleStore } from '../stores/useArticleStore'
-import BaseButton from '../components/common/BaseButton.vue'
-import ArticleFeedList from '../components/article/ArticleFeedList.vue'
+import ArticleCard from '../components/article/ArticleCard.vue'
 
 const router = useRouter()
 const articleStore = useArticleStore()
@@ -12,161 +11,426 @@ const { articles, isLoading, hasMore, filters } = storeToRefs(articleStore)
 
 const categories = ['전체', '금융', '부동산', '주식', '환율', '거시경제']
 
-// 로컬 폴백 데모용 기사 데이터 (API 오프라인 시 쇼케이스용)
 const mockArticles = ref([
   {
     articleId: 1,
     title: '기준금리 인하가 청년 전세대출에 미치는 영향',
-    preview: '한국은행 금융통화위원회가 이번 달 기준금리를 0.25%p 인하했습니다. 이에 따라 시중 은행의 전세자금대출 금리도 하락세를 보일 것으로 예상되는데, 청년들이 주목해야 할 핵심 포인트를 정리했습니다.',
+    summary: '한국은행 금융통화위원회가 이번 달 기준금리를 0.25%p 인하했습니다. 시중 은행의 전세자금대출 금리도 하락세를 보일 것으로 예상되는데, 청년들이 주목해야 할 핵심 포인트를 정리했습니다.',
     category: '금융',
     difficulty: '초급',
-    createdAt: '2026-06-22',
-    readTime: '3분'
+    publishedAt: '2026-06-22',
+    estimatedMinutes: 3,
+    quizCount: 3,
   },
   {
     articleId: 2,
     title: 'LTV와 DSR 규제 완화, 무엇이 달라지나?',
-    preview: '정부가 가계부채 관리 방안의 일환으로 주택담보대출 비율(LTV)과 총부채원리금상환비율(DSR)의 한도를 조정했습니다. 부동산 시장과 실수요자들에게 미칠 파급력을 상세히 분석합니다.',
+    summary: '정부가 주택담보대출 비율(LTV)과 총부채원리금상환비율(DSR)의 한도를 조정했습니다. 부동산 시장과 실수요자들에게 미칠 파급력을 상세히 분석합니다.',
     category: '부동산',
     difficulty: '중급',
-    createdAt: '2026-06-21',
-    readTime: '5분'
+    publishedAt: '2026-06-21',
+    estimatedMinutes: 5,
+    quizCount: 4,
   },
   {
     articleId: 3,
     title: '미국 연준(Fed)의 테이퍼링 종료와 한국 주식시장',
-    preview: '미국 연방준비제도가 테이퍼링 정책 종료 및 금리 인상 사이클 진입을 예고했습니다. 원달러 환율 급변동 상황에서 개인 투자자가 취해야 할 방어적 포트폴리오 전략을 소개합니다.',
+    summary: '미국 연방준비제도가 테이퍼링 정책 종료 및 금리 인상 사이클 진입을 예고했습니다. 원달러 환율 급변동 상황에서 개인 투자자가 취해야 할 방어적 포트폴리오 전략을 소개합니다.',
     category: '주식',
     difficulty: '고급',
-    createdAt: '2026-06-20',
-    readTime: '7분'
-  }
+    publishedAt: '2026-06-20',
+    estimatedMinutes: 7,
+    quizCount: 5,
+  },
+  {
+    articleId: 4,
+    title: '소비자물가지수(CPI) 상승률 둔화의 의미',
+    summary: '최근 발표된 소비자물가지수 상승률이 예상치를 하회하며 인플레이션 압력이 완화되는 신호를 보내고 있습니다. 금리 정책에 미치는 영향을 살펴봅니다.',
+    category: '거시경제',
+    difficulty: '중급',
+    publishedAt: '2026-06-19',
+    estimatedMinutes: 4,
+    quizCount: 3,
+  },
+  {
+    articleId: 5,
+    title: '원달러 환율 1,400원 돌파 — 수출입 기업 영향',
+    summary: '원달러 환율이 주요 지지선인 1,400원을 넘어서면서 수출 기업과 수입 의존 업종에 미치는 영향이 엇갈리고 있습니다.',
+    category: '환율',
+    difficulty: '중급',
+    publishedAt: '2026-06-18',
+    estimatedMinutes: 4,
+    quizCount: 3,
+  },
 ])
 
-// 스토어 기사가 비어있고 로딩 중이 아닐 때만 데모용 mock 기사 노출 (로컬 폴백)
 const displayArticles = computed(() => {
-  if (articles.value.length > 0) {
-    return articles.value
-  }
-  // 필터링 적용된 mock 기사 반환
+  if (articles.value.length > 0) return articles.value
   let res = mockArticles.value
-  if (filters.value.category) {
-    res = res.filter(a => a.category === filters.value.category)
-  }
-  if (filters.value.difficulty) {
-    res = res.filter(a => a.difficulty === filters.value.difficulty)
-  }
+  if (filters.value.category) res = res.filter(a => a.category === filters.value.category)
+  if (filters.value.difficulty) res = res.filter(a => a.difficulty === filters.value.difficulty)
   return res
 })
 
-const activeCategory = computed(() => {
-  return filters.value.category || '전체'
-})
+const activeCategory = computed(() => filters.value.category || '전체')
 
 onMounted(() => {
-  if (articles.value.length === 0) {
-    articleStore.fetchArticles()
-  }
+  if (articles.value.length === 0) articleStore.fetchArticles()
 })
 
 const filterByCategory = async (category) => {
-  const categoryParam = category === '전체' ? '' : category
-  await articleStore.setCategory(categoryParam)
+  await articleStore.setCategory(category === '전체' ? '' : category)
 }
 
-const filterByDifficulty = async (difficulty) => {
-  const diffParam = difficulty === '전체' ? '' : difficulty
-  await articleStore.setDifficulty(diffParam)
-}
+const navigateToDetail = (id) => router.push(`/articles/${id}`)
 
-const navigateToDetail = (id) => {
-  router.push(`/articles/${id}`)
-}
-
-const handleLoadMore = () => {
-  articleStore.fetchArticles()
-}
+const handleLoadMore = () => articleStore.fetchArticles()
 </script>
 
 <template>
-  <div class="relative w-full max-w-6xl mx-auto px-4 py-8">
-    <!-- Animated background glowing orbs -->
-    <div class="absolute top-10 left-1/4 w-80 h-80 bg-primary-500/10 rounded-full blur-[100px] pointer-events-none animate-pulse-glow"></div>
-    <div class="absolute bottom-10 right-1/4 w-80 h-80 bg-brand-500/10 rounded-full blur-[100px] pointer-events-none animate-pulse-glow" style="animation-delay: 2s;"></div>
-
-    <!-- Hero Banner -->
-    <header class="relative overflow-hidden mb-12 glass-panel rounded-3xl p-8 md:p-12 text-slate-800 dark:text-white shadow-premium border-primary-500/10">
-      <!-- Glow gradient overlay -->
-      <div class="absolute inset-0 bg-gradient-to-r from-primary-500/5 to-secondary-500/5 pointer-events-none"></div>
-      
-      <div class="relative z-10 md:flex md:items-center md:justify-between">
-        <div class="md:max-w-xl">
-          <h1 class="text-3xl md:text-4xl font-extrabold mb-4 leading-tight tracking-tight select-none text-slate-800 dark:text-white">
-            경제 뉴스를 읽고,<br>
-            개념 퀴즈로 문해력을 키우세요!
-          </h1>
-          <p class="text-slate-600 dark:text-slate-300 text-sm md:text-base font-light mb-6 leading-relaxed select-none">
-            기획재정부 사전을 기반으로 한 AI 용어 매핑 and 맞춤형 피드백을 통해 경제 지식을 가장 쉽고 체계적으로 학습할 수 있습니다.
-          </p>
-          <BaseButton 
-            variant="primary" 
-            class="shadow-glass-glow hover:shadow-glass-glow-hover font-bold px-6 py-3 rounded-full"
-            @click="filterByCategory('전체')"
-          >
-            오늘의 기사 보러가기
-          </BaseButton>
-        </div>
-        
-        <!-- Weekly Stats Card -->
-        <div class="hidden md:flex mt-8 md:mt-0 w-72 h-44 glass-panel rounded-2xl border-slate-200/50 dark:border-white/5 p-6 flex-col justify-between shadow-premium">
-          <span class="text-xs uppercase tracking-widest text-primary-600 dark:text-primary-400 font-bold select-none">Weekly Stats</span>
-          <div class="text-3xl font-black text-slate-800 dark:text-white select-none">3,450명</div>
-          <div class="text-xs text-slate-500 dark:text-slate-400 leading-normal select-none">이 뉴스엔스에서 경제 근육을 활발히 키우고 있습니다.</div>
-        </div>
+  <div class="feed-shell">
+    <!-- Page header -->
+    <header class="feed-head">
+      <div>
+        <p class="eyebrow">
+          <span class="live-dot"></span>
+          오늘의 브리프
+        </p>
+        <h1 class="feed-title">
+          경제를 읽고,<br>
+          <span class="accent">문해력</span>을 키우세요
+        </h1>
+      </div>
+      <div class="feed-meta">
+        <b>2026년 6월 24일</b><br>
+        뉴스 <span>{{ displayArticles.length }}</span>건 업데이트됨
       </div>
     </header>
 
-    <!-- Categories and Difficulties Filter Tabs -->
-    <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-8 border-b border-slate-200/60 dark:border-white/5 pb-4">
-      <!-- Categories -->
-      <div class="flex flex-wrap items-center gap-2.5">
-        <button 
-          v-for="cat in categories" 
+    <!-- Stats row -->
+    <div class="stats-row">
+      <div class="stat-card">
+        <p class="stat-label">학습 중인 사람</p>
+        <p class="stat-val">3,450<span class="unit">명</span></p>
+        <p class="stat-trend">↑ 12% 지난 주 대비</p>
+      </div>
+      <div class="stat-card">
+        <p class="stat-label">오늘 기사</p>
+        <p class="stat-val">{{ displayArticles.length }}<span class="unit">건</span></p>
+        <p class="stat-trend">↑ 최신 업데이트</p>
+      </div>
+      <div class="stat-card">
+        <p class="stat-label">평균 퀴즈 정답률</p>
+        <p class="stat-val">74<span class="unit">%</span></p>
+        <p class="stat-trend">↑ 3% 이번 주</p>
+      </div>
+      <div class="stat-card">
+        <p class="stat-label">누적 학습 세션</p>
+        <p class="stat-val">28.4<span class="unit">k</span></p>
+        <p class="stat-trend">↑ 꾸준히 성장 중</p>
+      </div>
+    </div>
+
+    <!-- Category filter chips -->
+    <div class="filters-row">
+      <div class="chips">
+        <button
+          v-for="cat in categories"
           :key="cat"
+          class="chip"
+          :class="{ active: activeCategory === cat }"
           @click="filterByCategory(cat)"
-          class="px-4 py-2.5 text-xs font-semibold rounded-full border transition-all duration-300 select-none"
-          :class="activeCategory === cat 
-            ? 'bg-primary-500 border-primary-500/30 text-white shadow-glass-glow' 
-            : 'bg-slate-200/40 border-slate-200/50 text-slate-500 hover:bg-slate-200/60 dark:bg-white/5 dark:border-white/5 dark:text-slate-400 dark:hover:bg-white/10 dark:hover:text-slate-200'"
         >
           {{ cat }}
-        </button>
-      </div>
-
-      <!-- Difficulty Filter -->
-      <div class="flex items-center gap-2">
-        <span class="text-xs text-slate-400 dark:text-slate-500 font-semibold select-none mr-1">난이도:</span>
-        <button 
-          v-for="diff in ['전체', '초급', '중급', '고급']" 
-          :key="diff"
-          @click="filterByDifficulty(diff)"
-          class="px-3 py-1.5 text-xs font-semibold rounded-lg border transition-all duration-300 select-none"
-          :class="(filters.difficulty || '전체') === diff || (diff === '전체' && !filters.difficulty)
-            ? 'bg-secondary-500 border-secondary-500/30 text-white' 
-            : 'bg-slate-200/40 border-slate-200/50 text-slate-500 hover:bg-slate-200/60 dark:bg-white/5 dark:border-white/5 dark:text-slate-400 dark:hover:bg-white/10'"
-        >
-          {{ diff }}
+          <span class="chip-count">
+            {{ cat === '전체' ? displayArticles.length : displayArticles.filter(a => a.category === cat).length || displayArticles.length }}
+          </span>
         </button>
       </div>
     </div>
 
-    <!-- Articles Feed List Component -->
-    <ArticleFeedList 
-      :articles="displayArticles"
-      :is-loading="isLoading"
-      :has-more="hasMore"
-      @load-more="handleLoadMore"
-      @card-click="navigateToDetail"
-    />
+    <!-- Loading -->
+    <div v-if="isLoading && displayArticles.length === 0" class="loading-state">
+      <div class="spinner"></div>
+      <p class="eyebrow" style="margin-top:16px;">기사를 불러오는 중</p>
+    </div>
+
+    <!-- Feed grid -->
+    <div v-else class="feed-grid">
+      <ArticleCard
+        v-for="(article, index) in displayArticles"
+        :key="article.articleId"
+        :article="article"
+        :featured="index === 0"
+        @click="navigateToDetail"
+      />
+    </div>
+
+    <!-- Load more -->
+    <div v-if="hasMore && !isLoading" class="load-more">
+      <button class="btn-primary" @click="handleLoadMore">
+        더 보기
+        <span class="load-arrow">↓</span>
+      </button>
+    </div>
+
+    <div v-if="isLoading && displayArticles.length > 0" class="load-more">
+      <div class="spinner"></div>
+    </div>
   </div>
 </template>
+
+<style scoped>
+.feed-shell {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 48px 0 80px;
+}
+
+/* Header */
+.feed-head {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 24px;
+  margin-bottom: 28px;
+}
+
+.eyebrow {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 11.5px;
+  letter-spacing: 1px;
+  color: var(--ink-3, #8a93a3);
+  text-transform: uppercase;
+  margin: 0 0 10px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.live-dot {
+  width: 7px; height: 7px;
+  border-radius: 50%;
+  background: #FF801E;
+  box-shadow: 0 0 0 4px rgba(255, 128, 30, 0.18);
+  animation: pulse 2s infinite;
+}
+
+@keyframes pulse {
+  0%, 100% { box-shadow: 0 0 0 4px rgba(255, 128, 30, 0.18); }
+  50%       { box-shadow: 0 0 0 8px rgba(255, 128, 30, 0.06); }
+}
+
+.feed-title {
+  font-family: 'Fustat', sans-serif;
+  font-weight: 800;
+  font-size: 52px;
+  line-height: 1.05;
+  letter-spacing: -1.5px;
+  margin: 0;
+  color: var(--ink, #0a0d12);
+}
+
+.dark .feed-title { color: #f4f6fa; }
+
+.accent {
+  background: linear-gradient(95deg, #0084ff 0%, #4FB3FF 60%, #0a4a99 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
+.dark .accent {
+  background: linear-gradient(95deg, #6CB8FF 0%, #B8DAFF 60%, #FFFFFF 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+}
+
+.feed-meta {
+  text-align: right;
+  font-size: 13px;
+  color: var(--ink-2, #4a5161);
+  line-height: 1.65;
+  flex-shrink: 0;
+}
+.feed-meta b { color: var(--ink, #0a0d12); font-weight: 600; }
+.dark .feed-meta { color: #a4adbf; }
+.dark .feed-meta b { color: #f4f6fa; }
+.feed-meta span { color: #0084ff; font-weight: 600; }
+
+/* Stats */
+.stats-row {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 12px;
+  margin-bottom: 24px;
+}
+
+.stat-card {
+  padding: 16px 18px;
+  background: rgba(255, 255, 255, 0.60);
+  border: 1px solid rgba(0, 0, 0, 0.07);
+  border-radius: 14px;
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  box-shadow: inset 0 2px 3px rgba(255, 255, 255, 0.5);
+}
+
+.dark .stat-card {
+  background: rgba(20, 24, 34, 0.55);
+  border-color: rgba(255, 255, 255, 0.10);
+  box-shadow: inset 0 1px 0 0 rgba(255,255,255,0.10);
+}
+
+.stat-label {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 10.5px;
+  letter-spacing: 0.6px;
+  color: var(--ink-3, #8a93a3);
+  text-transform: uppercase;
+  margin: 0 0 8px;
+}
+
+.stat-val {
+  font-family: 'Fustat', sans-serif;
+  font-weight: 800;
+  font-size: 26px;
+  letter-spacing: -0.8px;
+  color: var(--ink, #0a0d12);
+  margin: 0 0 4px;
+}
+.dark .stat-val { color: #f4f6fa; }
+
+.unit {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--ink-2, #4a5161);
+  margin-left: 3px;
+}
+.dark .unit { color: #a4adbf; }
+
+.stat-trend {
+  font-size: 11.5px;
+  color: #1f7a3a;
+  margin: 0;
+}
+.dark .stat-trend { color: #3ad07b; }
+
+/* Filters */
+.filters-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 24px;
+  flex-wrap: wrap;
+}
+
+.chips {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  padding: 8px 14px;
+  background: rgba(255, 255, 255, 0.6);
+  border: 1px solid rgba(0, 0, 0, 0.08);
+  border-radius: 999px;
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--ink-2, #4a5161);
+  cursor: pointer;
+  transition: all .15s;
+  line-height: 1;
+}
+.chip:hover { color: var(--ink, #0a0d12); border-color: rgba(0,0,0,0.18); }
+.chip.active {
+  background: var(--ink, #0a0d12);
+  color: #fff;
+  border-color: var(--ink, #0a0d12);
+}
+
+.dark .chip {
+  background: rgba(20, 24, 34, 0.55);
+  border-color: rgba(255,255,255,0.12);
+  color: #a4adbf;
+  box-shadow: inset 0 1px 0 0 rgba(255,255,255,0.08);
+}
+.dark .chip:hover { color: #f4f6fa; border-color: rgba(255,255,255,0.25); }
+.dark .chip.active { background: #f4f6fa; color: #07090f; border-color: #f4f6fa; }
+
+.chip-count {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 11px;
+  padding: 2px 6px;
+  border-radius: 5px;
+  background: rgba(0, 0, 0, 0.06);
+  color: var(--ink-3, #8a93a3);
+}
+.chip.active .chip-count {
+  background: rgba(255,255,255,0.2);
+  color: rgba(255,255,255,0.75);
+}
+.dark .chip.active .chip-count { background: rgba(0,0,0,0.15); color: rgba(0,0,0,0.6); }
+
+/* Feed grid */
+.feed-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 20px;
+}
+
+/* Load more */
+.load-more {
+  margin-top: 36px;
+  display: flex;
+  justify-content: center;
+}
+
+.load-arrow {
+  width: 24px; height: 24px;
+  border-radius: 50%;
+  background: #fff;
+  color: #0084ff;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 11px;
+  font-weight: 700;
+}
+
+/* Spinner */
+.loading-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 80px 0;
+}
+.spinner {
+  width: 32px; height: 32px;
+  border: 3px solid rgba(0, 132, 255, 0.15);
+  border-top-color: #0084ff;
+  border-radius: 50%;
+  animation: spin .7s linear infinite;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+
+/* Responsive */
+@media (max-width: 1100px) {
+  .feed-grid { grid-template-columns: repeat(2, 1fr); }
+  .stats-row { grid-template-columns: repeat(2, 1fr); }
+  .feed-title { font-size: 42px; }
+}
+@media (max-width: 640px) {
+  .feed-shell { padding: 32px 0 60px; }
+  .feed-head { flex-direction: column; align-items: flex-start; }
+  .feed-meta { text-align: left; }
+  .feed-title { font-size: 34px; letter-spacing: -1px; }
+  .feed-grid { grid-template-columns: 1fr; }
+  .stats-row { grid-template-columns: repeat(2, 1fr); }
+}
+</style>

@@ -3,8 +3,6 @@ import { ref, computed, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { storeToRefs } from 'pinia'
 import { useQuizStore } from '../stores/useQuizStore'
-import BaseButton from '../components/common/BaseButton.vue'
-import LoadingSpinner from '../components/common/LoadingSpinner.vue'
 
 const route = useRoute()
 const router = useRouter()
@@ -16,40 +14,28 @@ const { quizzes, currentQuizIndex, answers, isLoading } = storeToRefs(quizStore)
 const currentQuiz = computed(() => quizStore.currentQuiz)
 const progress = computed(() => quizStore.progressPercentage)
 
+const optionKeys = ['A', 'B', 'C', 'D', 'E']
+
 const selectAnswer = (answer) => {
-  if (currentQuiz.value) {
-    quizStore.saveAnswer(currentQuiz.value.id, answer)
-  }
+  if (currentQuiz.value) quizStore.saveAnswer(currentQuiz.value.id, answer)
 }
 
-const nextQuiz = () => {
-  quizStore.nextQuiz()
-}
-
-const prevQuiz = () => {
-  quizStore.prevQuiz()
-}
+const nextQuiz = () => quizStore.nextQuiz()
+const prevQuiz = () => quizStore.prevQuiz()
 
 const isSubmitting = ref(false)
 
 const submitQuiz = async () => {
   if (isSubmitting.value) return
-
-  // 답변 미선택 시 경고
   const unansweredCount = quizzes.value.filter(q => !answers.value[q.id]).length
-  if (unansweredCount > 0) {
-    if (!confirm('아직 풀지 않은 문제가 있습니다. 그래도 제출하시겠습니까?')) {
-      return
-    }
-  }
+  if (unansweredCount > 0 && !confirm('아직 풀지 않은 문제가 있습니다. 그래도 제출하시겠습니까?')) return
 
   isSubmitting.value = true
   try {
     await quizStore.submitAnswers()
-    // 채점 처리 후 결과 페이지 이동
     router.push(`/quiz/${articleId}/result`)
-  } catch (err) {
-    alert('퀴즈 정답 제출에 실패했습니다. 다시 시도해 주세요.')
+  } catch {
+    alert('퀴즈 제출에 실패했습니다. 다시 시도해 주세요.')
   } finally {
     isSubmitting.value = false
   }
@@ -65,127 +51,389 @@ onMounted(async () => {
 </script>
 
 <template>
-  <div class="max-w-3xl mx-auto px-4 py-8">
-    <!-- Header -->
-    <div class="flex items-center justify-between mb-8">
-      <button 
-        @click="router.push(`/articles/${articleId}`)" 
-        class="text-sm font-semibold text-slate-500 hover:text-primary-600 transition-colors duration-200"
-      >
-        &larr; 기사 본문으로
-      </button>
-      <span class="text-xs text-slate-400 font-semibold uppercase tracking-wider">
-        QUIZ PROGRESS
+  <div class="quiz-shell">
+    <!-- Top bar -->
+    <div class="topbar">
+      <span class="qmeta">
+        <span class="tag tag-pill tag-eco">퀴즈</span>
+        <b>문제 {{ currentQuizIndex + 1 }}</b>
+        <span style="opacity:0.4;">/</span>
+        <span>{{ quizzes.length }}</span>
       </span>
+      <button class="exit-btn" @click="router.push(`/articles/${articleId}`)">
+        ← 기사로 돌아가기
+      </button>
     </div>
 
-    <!-- Loading State -->
-    <div v-if="isLoading" class="flex flex-col items-center justify-center py-20 gap-4">
-      <LoadingSpinner />
-      <p class="text-sm text-slate-400 font-light select-none">AI가 퀴즈를 출제하고 있습니다...</p>
+    <!-- Progress -->
+    <div class="prog">
+      <div class="prog-fill" :style="{ width: `${progress}%` }"></div>
+    </div>
+    <div class="prog-dots">
+      <span
+        v-for="(q, i) in quizzes"
+        :key="q.id"
+        class="prog-dot"
+        :class="{
+          done: i < currentQuizIndex && answers[q.id],
+          current: i === currentQuizIndex,
+          wrong: i < currentQuizIndex && !answers[q.id],
+        }"
+      ></span>
     </div>
 
-    <!-- Empty State -->
-    <div v-else-if="quizzes.length === 0" class="text-center py-20 text-slate-400">
-      ⚠️ 이 기사에는 퀴즈가 준비되어 있지 않습니다.
+    <!-- Loading -->
+    <div v-if="isLoading" class="center-state">
+      <div class="spinner"></div>
+      <p class="eyebrow" style="margin-top:16px; justify-content:center;">AI가 퀴즈를 생성하는 중</p>
     </div>
 
-    <!-- Main Content -->
-    <div v-else>
-      <!-- Progress Bar -->
-      <div class="w-full bg-slate-100 h-2 rounded-full mb-8 relative overflow-hidden">
-        <div 
-          class="bg-gradient-to-r from-primary-500 to-secondary-500 h-full rounded-full transition-all duration-500"
-          :style="{ width: `${progress}%` }"
-        ></div>
+    <!-- Empty -->
+    <div v-else-if="quizzes.length === 0" class="center-state">
+      <p style="font-size:15px; color:var(--ink-2);">이 기사에는 퀴즈가 없습니다.</p>
+    </div>
+
+    <!-- Quiz card -->
+    <div v-else-if="currentQuiz">
+      <div class="qcard">
+        <p class="q-eyebrow">
+          <span class="dot"></span>
+          {{ currentQuiz.type === 'OX' ? 'OX 퀴즈' : '객관식' }}
+        </p>
+        <h2 class="q-text">{{ currentQuiz.question }}</h2>
+
+        <!-- Options -->
+        <div class="opts">
+          <button
+            v-for="(opt, idx) in currentQuiz.options"
+            :key="opt"
+            class="opt"
+            :class="{
+              selected: answers[currentQuiz.id] === opt,
+              disabled: !!answers[currentQuiz.id],
+            }"
+            @click="selectAnswer(opt)"
+            :disabled="!!answers[currentQuiz.id]"
+          >
+            <span class="opt-key">{{ optionKeys[idx] ?? (idx + 1) }}</span>
+            <span class="opt-label">{{ opt }}</span>
+            <span class="opt-ind"></span>
+          </button>
+        </div>
       </div>
 
-      <!-- Quiz Card -->
-      <div v-if="currentQuiz" class="bg-white rounded-3xl border border-slate-200/80 p-8 shadow-premium mb-8 min-h-[300px] flex flex-col justify-between">
-        <div>
-          <div class="flex items-center gap-2 mb-4">
-            <span class="text-xs font-black bg-primary-100 text-primary-700 px-2.5 py-1 rounded-lg">
-              문제 {{ currentQuizIndex + 1 }} / {{ quizzes.length }}
-            </span>
-            <span class="text-xs font-semibold bg-slate-100 text-slate-500 px-2.5 py-1 rounded-lg">
-              {{ currentQuiz.type === 'OX' ? 'OX 퀴즈' : '객관식 퀴즈' }}
-            </span>
-          </div>
+      <!-- Footer nav -->
+      <div class="quiz-foot">
+        <button class="ghost-btn" @click="prevQuiz" :disabled="currentQuizIndex === 0">
+          ← 이전
+        </button>
 
-          <h2 class="text-xl md:text-2xl font-extrabold text-slate-800 mb-8 leading-snug">
-            {{ currentQuiz.question }}
-          </h2>
+        <button
+          v-if="currentQuizIndex < quizzes.length - 1"
+          class="ghost-btn"
+          @click="nextQuiz"
+        >
+          다음 →
+        </button>
 
-          <!-- Answer Options -->
-          <div v-if="currentQuiz.type === 'OX'" class="grid grid-cols-2 gap-4">
-            <button 
-              v-for="opt in currentQuiz.options" 
-              :key="opt"
-              @click="selectAnswer(opt)"
-              class="py-6 rounded-2xl border-2 text-2xl font-black transition-all duration-300 hover:scale-102 flex items-center justify-center"
-              :class="answers[currentQuiz.id] === opt 
-                ? 'bg-primary-50 border-primary-500 text-primary-700 shadow-md' 
-                : 'bg-white border-slate-200 text-slate-400 hover:border-slate-300 hover:text-slate-600'"
-            >
-              {{ opt }}
-            </button>
-          </div>
-
-          <div v-else class="space-y-3">
-            <button 
-              v-for="(opt, idx) in currentQuiz.options" 
-              :key="opt"
-              @click="selectAnswer(opt)"
-              class="w-full text-left p-4 rounded-xl border-2 font-medium text-sm md:text-base transition-all duration-300 hover:scale-102 flex items-center"
-              :class="answers[currentQuiz.id] === opt 
-                ? 'bg-primary-50 border-primary-500 text-primary-700 shadow-sm' 
-                : 'bg-white border-slate-200 text-slate-600 hover:border-slate-300'"
-            >
-              <span 
-                class="w-6 h-6 rounded-full border flex items-center justify-center text-xs font-bold mr-3"
-                :class="answers[currentQuiz.id] === opt 
-                  ? 'bg-primary-600 border-primary-600 text-white' 
-                  : 'border-slate-300 text-slate-400 bg-slate-50'"
-              >
-                {{ idx + 1 }}
-              </span>
-              {{ opt }}
-            </button>
-          </div>
-        </div>
-
-        <!-- Navigation Buttons -->
-        <div class="flex items-center justify-between border-t border-slate-100 pt-6 mt-8">
-          <BaseButton 
-            variant="outline" 
-            @click="prevQuiz" 
-            :disabled="currentQuizIndex === 0"
-            class="py-2.5 px-4 rounded-xl font-bold text-sm"
-          >
-            이전 문제
-          </BaseButton>
-
-          <BaseButton 
-            v-if="currentQuizIndex < quizzes.length - 1"
-            variant="outline" 
-            @click="nextQuiz" 
-            class="py-2.5 px-4 rounded-xl font-bold text-sm"
-          >
-            다음 문제
-          </BaseButton>
-
-          <BaseButton 
-            v-else
-            variant="primary" 
-            @click="submitQuiz" 
-            :disabled="isSubmitting"
-            class="py-2.5 px-6 rounded-xl font-bold text-sm bg-primary-600 hover:bg-primary-700 text-white shadow-md shadow-primary-100"
-          >
-            {{ isSubmitting ? '제출 중...' : '답안 제출하기' }}
-          </BaseButton>
-        </div>
+        <button
+          v-else
+          class="btn-primary"
+          @click="submitQuiz"
+          :disabled="isSubmitting"
+        >
+          {{ isSubmitting ? '제출 중…' : '답안 제출하기' }}
+          <span class="submit-arrow">↗</span>
+        </button>
       </div>
     </div>
   </div>
 </template>
 
+<style scoped>
+.quiz-shell {
+  max-width: 720px;
+  margin: 0 auto;
+  padding: 32px 0 80px;
+}
+
+/* Top bar */
+.topbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 18px;
+}
+
+.qmeta {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 13px;
+  color: var(--ink-2, #4a5161);
+}
+.qmeta b { color: var(--ink, #0a0d12); font-weight: 600; }
+.dark .qmeta b { color: #f4f6fa; }
+
+.exit-btn {
+  font-size: 13px;
+  color: var(--ink-2, #4a5161);
+  background: rgba(255,255,255,0.6);
+  border: 1px solid rgba(0,0,0,0.08);
+  border-radius: 999px;
+  padding: 6px 14px;
+  cursor: pointer;
+  font-weight: 500;
+  backdrop-filter: blur(20px);
+  transition: color .15s, border-color .15s;
+}
+.exit-btn:hover { color: var(--ink, #0a0d12); border-color: rgba(0,0,0,0.2); }
+.dark .exit-btn {
+  background: rgba(20,24,34,0.55);
+  border-color: rgba(255,255,255,0.12);
+  color: #a4adbf;
+}
+.dark .exit-btn:hover { color: #f4f6fa; }
+
+/* Progress */
+.prog {
+  height: 8px;
+  background: rgba(0,0,0,0.06);
+  border-radius: 999px;
+  overflow: hidden;
+  margin-bottom: 10px;
+}
+.dark .prog { background: rgba(255,255,255,0.08); }
+
+.prog-fill {
+  height: 100%;
+  background: linear-gradient(90deg, #4FB3FF 0%, #0084ff 100%);
+  border-radius: 999px;
+  box-shadow: 0 0 12px rgba(0,132,255,0.45);
+  transition: width .35s ease;
+}
+
+.prog-dots {
+  display: flex;
+  gap: 6px;
+  margin-bottom: 28px;
+}
+.prog-dot {
+  flex: 1;
+  height: 4px;
+  border-radius: 2px;
+  background: rgba(0,0,0,0.08);
+  transition: background .25s;
+}
+.dark .prog-dot { background: rgba(255,255,255,0.10); }
+.prog-dot.done    { background: #0084ff; }
+.prog-dot.current { background: var(--ink, #0a0d12); }
+.dark .prog-dot.current { background: #f4f6fa; }
+.prog-dot.wrong   { background: #b02a2a; }
+
+/* Question card */
+.qcard {
+  padding: 32px 32px 28px;
+  background: rgba(255,255,255,0.65);
+  border: 1px solid rgba(0,0,0,0.07);
+  border-radius: 24px;
+  backdrop-filter: blur(40px) saturate(160%);
+  -webkit-backdrop-filter: blur(40px) saturate(160%);
+  box-shadow:
+    inset 0 4px 4px 0 rgba(255,255,255,0.4),
+    0 30px 60px -22px rgba(20,40,80,0.20);
+  margin-bottom: 24px;
+}
+.dark .qcard {
+  background: rgba(20,24,34,0.55);
+  border-color: rgba(255,255,255,0.10);
+  box-shadow:
+    inset 0 1px 0 0 rgba(255,255,255,0.10),
+    0 24px 60px -22px rgba(0,0,0,0.6);
+}
+
+.q-eyebrow {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 11px;
+  letter-spacing: 0.8px;
+  text-transform: uppercase;
+  color: #0084ff;
+  margin: 0 0 16px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.dot {
+  width: 6px; height: 6px;
+  border-radius: 50%;
+  background: #0084ff;
+  box-shadow: 0 0 0 3px rgba(0,132,255,0.18);
+}
+
+.q-text {
+  font-family: 'Fustat', sans-serif;
+  font-weight: 700;
+  font-size: 24px;
+  line-height: 1.35;
+  letter-spacing: -0.5px;
+  margin: 0 0 24px;
+  color: var(--ink, #0a0d12);
+}
+.dark .q-text { color: #f4f6fa; }
+
+/* Options */
+.opts { display: flex; flex-direction: column; gap: 10px; }
+
+.opt {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 15px 18px;
+  background: rgba(255,255,255,0.85);
+  border: 1.5px solid rgba(0,0,0,0.08);
+  border-radius: 16px;
+  cursor: pointer;
+  font: inherit;
+  text-align: left;
+  width: 100%;
+  transition: all .18s ease;
+}
+.opt:hover:not(:disabled) {
+  border-color: rgba(0,132,255,0.45);
+  background: #fff;
+  transform: translateY(-1px);
+  box-shadow: 0 8px 20px -10px rgba(0,132,255,0.30);
+}
+
+.dark .opt {
+  background: rgba(20,24,34,0.70);
+  border-color: rgba(255,255,255,0.10);
+  color: #f4f6fa;
+}
+.dark .opt:hover:not(:disabled) {
+  background: rgba(30,38,56,0.85);
+  border-color: rgba(0,132,255,0.55);
+}
+
+.opt.selected {
+  border-color: #0084ff;
+  background: #F4F8FF;
+  box-shadow: inset 0 0 0 1px #0084ff;
+}
+.dark .opt.selected {
+  background: rgba(0,132,255,0.12);
+  border-color: rgba(0,132,255,0.70);
+}
+
+.opt:disabled { cursor: default; }
+
+.opt-key {
+  width: 34px; height: 34px;
+  flex-shrink: 0;
+  border-radius: 10px;
+  background: #F4F8FF;
+  color: #0084ff;
+  border: 1px solid rgba(0,132,255,0.15);
+  display: flex; align-items: center; justify-content: center;
+  font-family: 'JetBrains Mono', monospace;
+  font-weight: 600;
+  font-size: 13px;
+}
+.dark .opt-key { background: rgba(0,132,255,0.15); color: #6CB8FF; border-color: rgba(0,132,255,0.30); }
+
+.opt-label {
+  flex: 1;
+  font-size: 15px;
+  color: var(--ink, #0a0d12);
+  font-weight: 500;
+  line-height: 1.4;
+}
+.dark .opt-label { color: #f4f6fa; }
+
+.opt.selected .opt-key { background: #0084ff; color: #fff; border-color: #0084ff; }
+.opt.selected .opt-label { color: #0056cc; }
+.dark .opt.selected .opt-label { color: #9BCBFF; }
+
+.opt-ind {
+  width: 22px; height: 22px;
+  flex-shrink: 0;
+  border-radius: 50%;
+  border: 2px solid rgba(0,0,0,0.12);
+  display: flex; align-items: center; justify-content: center;
+  color: #fff;
+  font-size: 12px;
+  transition: all .18s;
+}
+.dark .opt-ind { border-color: rgba(255,255,255,0.20); }
+.opt.selected .opt-ind { background: #0084ff; border-color: #0084ff; }
+.opt.selected .opt-ind::after { content: "✓"; }
+
+/* Footer nav */
+.quiz-foot {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.ghost-btn {
+  padding: 10px 20px;
+  background: rgba(255,255,255,0.6);
+  border: 1px solid rgba(0,0,0,0.08);
+  border-radius: 12px;
+  font-size: 13.5px;
+  font-weight: 600;
+  color: var(--ink-2, #4a5161);
+  cursor: pointer;
+  transition: all .15s;
+}
+.ghost-btn:hover:not(:disabled) { color: var(--ink, #0a0d12); border-color: rgba(0,0,0,0.18); }
+.ghost-btn:disabled { opacity: 0.35; cursor: default; }
+.dark .ghost-btn {
+  background: rgba(20,24,34,0.55);
+  border-color: rgba(255,255,255,0.12);
+  color: #a4adbf;
+}
+
+.submit-arrow {
+  font-size: 11px;
+}
+
+/* Center state (loading/empty) */
+.center-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 80px 0;
+  gap: 16px;
+}
+
+.spinner {
+  width: 32px; height: 32px;
+  border: 3px solid rgba(0, 132, 255, 0.15);
+  border-top-color: #0084ff;
+  border-radius: 50%;
+  animation: spin .7s linear infinite;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+
+/* Tag pills (local) */
+.tag-pill {
+  display: inline-flex;
+  align-items: center;
+  padding: 4px 10px;
+  border-radius: 999px;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.3px;
+}
+.tag-eco { background: #E8FBF1; color: #1f7a3a; }
+
+@media (max-width: 640px) {
+  .qcard { padding: 22px 18px 20px; }
+  .q-text { font-size: 20px; }
+  .quiz-shell { padding: 24px 0 60px; }
+}
+</style>

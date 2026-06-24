@@ -1,23 +1,21 @@
 <script setup>
 import { ref, computed } from 'vue'
-import { useRouter } from 'vue-router'
+import { useRouter, useRoute } from 'vue-router'
 import { storeToRefs } from 'pinia'
 import { useUserStore } from '../../stores/useUserStore'
 
 const router = useRouter()
+const route = useRoute()
 const userStore = useUserStore()
 const { isAuthenticated, userInfo } = storeToRefs(userStore)
 
 const showDropdown = ref(false)
-const showMobileMenu = ref(false)
 
-const toggleDropdown = () => {
-  showDropdown.value = !showDropdown.value
-}
+const nicknameFirstLetter = computed(() => {
+  return userInfo.value?.nickname?.substring(0, 1) ?? 'U'
+})
 
-const toggleMobileMenu = () => {
-  showMobileMenu.value = !showMobileMenu.value
-}
+const isActive = (path) => route.path === path
 
 const handleLogout = async () => {
   if (confirm('정말로 로그아웃 하시겠습니까?')) {
@@ -26,159 +24,252 @@ const handleLogout = async () => {
     router.push('/login')
   }
 }
-
-// removed duplicate toggleDropdown
-
-const nicknameFirstLetter = computed(() => {
-  if (userInfo.value?.nickname) {
-    return userInfo.value.nickname.substring(0, 1)
-  }
-  return 'U'
-})
 </script>
 
 <template>
-  <nav class="sticky top-0 z-50 glass-panel border-b border-slate-200/60 dark:border-white/5 bg-white/50 dark:bg-dark-950/50 backdrop-blur-md">
-    <div class="max-w-6xl mx-auto px-4">
-      <div class="flex items-center justify-between h-16">
-        
-        <!-- Logo -->
-        <div class="flex items-center gap-8">
-          <router-link to="/" class="text-xl font-extrabold bg-gradient-to-r from-primary-600 to-secondary-600 bg-clip-text text-transparent flex items-center gap-1.5">
-            <span>📰</span> Newsense
-          </router-link>
+  <div class="nav-wrap">
+    <nav class="nav glass-panel">
+      <!-- Brand -->
+      <router-link to="/" class="brand">
+        <span class="brand-mark"></span>
+        Newsense
+      </router-link>
 
-          <!-- Nav Menu (Desktop) -->
-          <div class="hidden md:flex items-center gap-1 text-sm font-semibold">
-            <router-link 
-              to="/" 
-              class="px-4 py-2 text-slate-600 dark:text-slate-300 hover:text-primary-600 dark:hover:text-primary-400 hover:bg-slate-100/50 dark:hover:bg-white/5 rounded-xl transition-all duration-200"
-              active-class="text-primary-600 dark:text-primary-400 bg-primary-50/50 dark:bg-primary-950/20"
-            >
-              뉴스 피드
-            </router-link>
-            <router-link 
-              to="/history" 
-              class="px-4 py-2 text-slate-600 dark:text-slate-300 hover:text-primary-600 dark:hover:text-primary-400 hover:bg-slate-100/50 dark:hover:bg-white/5 rounded-xl transition-all duration-200"
-              active-class="text-primary-600 dark:text-primary-400 bg-primary-50/50 dark:bg-primary-950/20"
-            >
-              학습 이력
-            </router-link>
-            <router-link 
-              to="/wrong-notes" 
-              class="px-4 py-2 text-slate-600 dark:text-slate-300 hover:text-primary-600 dark:hover:text-primary-400 hover:bg-slate-100/50 dark:hover:bg-white/5 rounded-xl transition-all duration-200"
-              active-class="text-primary-600 dark:text-primary-400 bg-primary-50/50 dark:bg-primary-950/20"
-            >
-              오답노트
-            </router-link>
-          </div>
-        </div>
-
-        <!-- Right: Auth controls -->
-        <div class="flex items-center gap-4">
-          <!-- Logged In profile dropdown -->
-          <div v-if="isAuthenticated" class="relative">
-            <button 
-              @click="toggleDropdown"
-              class="flex items-center gap-2 px-3 py-1.5 rounded-xl border border-slate-200 dark:border-white/5 bg-white dark:bg-white/5 hover:border-slate-300 dark:hover:border-white/10 hover:bg-slate-50 dark:hover:bg-white/10 text-slate-700 dark:text-slate-300 transition-all duration-200"
-            >
-              <span class="w-6 h-6 bg-gradient-to-tr from-primary-500 to-secondary-500 rounded-full flex items-center justify-center text-white text-xs font-bold">
-                {{ nicknameFirstLetter }}
-              </span>
-              <span class="text-xs font-bold text-slate-700 dark:text-slate-300 hidden sm:inline">{{ userInfo?.nickname || '회원' }}</span>
-              <span class="text-slate-400 dark:text-slate-500 text-xxs hidden sm:inline">&darr;</span>
-            </button>
-
-            <!-- Dropdown menu -->
-            <div 
-              v-if="showDropdown"
-              class="absolute right-0 mt-2 w-48 glass-panel rounded-2xl shadow-lg py-2 z-50 animate-[slideDown_0.2s_ease-out]"
-            >
-              <div class="px-4 py-2 border-b border-slate-100 dark:border-white/10 mb-1">
-                <p class="text-xs text-slate-400 dark:text-slate-500 font-light">로그인 계정</p>
-                <p class="text-sm font-bold text-slate-700 dark:text-slate-300 truncate">{{ userInfo?.email }}</p>
-              </div>
-              <router-link 
-                to="/mypage" 
-                @click="showDropdown = false"
-                class="block px-4 py-2 text-sm text-slate-600 dark:text-slate-300 hover:bg-slate-100/50 dark:hover:bg-white/5 hover:text-primary-600 dark:hover:text-primary-400 font-medium"
-              >
-                마이페이지 / 설정
-              </router-link>
-              <button 
-                @click="handleLogout"
-                class="w-full text-left px-4 py-2 text-sm text-accent-600 dark:text-accent-400 hover:bg-slate-100/50 dark:hover:bg-white/5 font-medium"
-              >
-                로그아웃
-              </button>
-            </div>
-          </div>
-
-          <!-- Logged Out login/signup buttons -->
-          <div v-else class="flex items-center gap-2">
-            <router-link 
-              to="/login" 
-              class="px-4 py-2 text-sm font-semibold text-slate-600 dark:text-slate-300 hover:text-primary-600 dark:hover:text-primary-400 transition-colors duration-200"
-            >
-              로그인
-            </router-link>
-            <router-link 
-              to="/register" 
-              class="px-4 py-2 text-sm font-bold text-white bg-primary-600 hover:bg-primary-700 rounded-xl shadow-md shadow-primary-100 transition-all duration-200"
-            >
-              회원가입
-            </router-link>
-          </div>
-
-          <!-- Mobile Menu Toggle Button -->
-          <button 
-            @click="toggleMobileMenu" 
-            class="md:hidden p-2 rounded-xl text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 hover:bg-slate-100/50 dark:hover:bg-white/5 transition-colors duration-200"
-            aria-label="Toggle mobile menu"
-          >
-            <span class="text-xl">{{ showMobileMenu ? '✕' : '☰' }}</span>
-          </button>
-        </div>
-
+      <!-- Nav links -->
+      <div class="nav-links">
+        <router-link to="/" :class="{ active: isActive('/') }">뉴스 피드</router-link>
+        <router-link to="/history" :class="{ active: isActive('/history') }">학습 이력</router-link>
+        <router-link to="/wrong-notes" :class="{ active: isActive('/wrong-notes') }">오답노트</router-link>
       </div>
 
-      <!-- Mobile Nav Menu (Collapsible) -->
-      <div 
-        v-if="showMobileMenu" 
-        class="md:hidden py-4 border-t border-slate-100 dark:border-white/10 animate-[slideDown_0.2s_ease-out] flex flex-col gap-1 text-sm font-semibold"
-      >
-        <router-link 
-          to="/" 
-          @click="showMobileMenu = false"
-          class="px-4 py-2 text-slate-600 dark:text-slate-300 hover:text-primary-600 dark:hover:text-primary-400 hover:bg-slate-100/50 dark:hover:bg-white/5 rounded-xl transition-all duration-200"
-          active-class="text-primary-600 dark:text-primary-400 bg-primary-50/50 dark:bg-primary-950/20"
-        >
-          뉴스 피드
-        </router-link>
-        <router-link 
-          to="/history" 
-          @click="showMobileMenu = false"
-          class="px-4 py-2 text-slate-600 dark:text-slate-300 hover:text-primary-600 dark:hover:text-primary-400 hover:bg-slate-100/50 dark:hover:bg-white/5 rounded-xl transition-all duration-200"
-          active-class="text-primary-600 dark:text-primary-400 bg-primary-50/50 dark:bg-primary-950/20"
-        >
-          학습 이력
-        </router-link>
-        <router-link 
-          to="/wrong-notes" 
-          @click="showMobileMenu = false"
-          class="px-4 py-2 text-slate-600 dark:text-slate-300 hover:text-primary-600 dark:hover:text-primary-400 hover:bg-slate-100/50 dark:hover:bg-white/5 rounded-xl transition-all duration-200"
-          active-class="text-primary-600 dark:text-primary-400 bg-primary-50/50 dark:bg-primary-950/20"
-        >
-          오답노트
+      <!-- Auth area -->
+      <div v-if="isAuthenticated" class="relative">
+        <button class="nav-cta" @click="showDropdown = !showDropdown">
+          <span class="avatar">{{ nicknameFirstLetter }}</span>
+          <span class="avatar-name">{{ userInfo?.nickname || '회원' }}</span>
+          <span class="arrow">↓</span>
+        </button>
+
+        <div v-if="showDropdown" class="nav-drop" @click.stop>
+          <div class="drop-header">
+            <p class="drop-sub">로그인 계정</p>
+            <p class="drop-email">{{ userInfo?.email }}</p>
+          </div>
+          <router-link to="/mypage" @click="showDropdown = false" class="drop-item">마이페이지</router-link>
+          <button @click="handleLogout" class="drop-item drop-logout">로그아웃</button>
+        </div>
+      </div>
+
+      <div v-else class="flex items-center gap-3">
+        <router-link to="/login" class="nav-login">로그인</router-link>
+        <router-link to="/register" class="btn-primary" style="padding: 8px 16px; font-size: 13px; border-radius: 10px;">
+          회원가입 <span style="font-size:11px;">↗</span>
         </router-link>
       </div>
-    </div>
-  </nav>
+    </nav>
+  </div>
+
+  <!-- Backdrop to close dropdown -->
+  <div v-if="showDropdown" class="fixed inset-0 z-40" @click="showDropdown = false" />
 </template>
 
 <style scoped>
-@keyframes slideDown {
-  from { opacity: 0; transform: translateY(-4px); }
-  to { opacity: 1; transform: translateY(0); }
+.nav-wrap {
+  position: sticky;
+  top: 20px;
+  z-index: 50;
+  display: flex;
+  justify-content: center;
+  pointer-events: none;
+  margin-top: 20px;
+  padding: 0 16px;
+}
+
+.nav {
+  pointer-events: auto;
+  display: flex;
+  align-items: center;
+  gap: 24px;
+  padding: 9px 12px 9px 20px;
+  width: fit-content;
+  max-width: calc(100vw - 32px);
+  border-radius: 16px;
+}
+
+.brand {
+  font-family: 'Fustat', sans-serif;
+  font-weight: 800;
+  font-size: 19px;
+  letter-spacing: -0.5px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--ink);
+  text-decoration: none;
+  white-space: nowrap;
+}
+
+.nav-links {
+  display: flex;
+  gap: 22px;
+  font-size: 13.5px;
+  font-weight: 500;
+}
+
+.nav-links a {
+  color: var(--ink);
+  text-decoration: none;
+  opacity: 0.75;
+  transition: opacity .15s, color .15s;
+  white-space: nowrap;
+}
+
+.nav-links a:hover,
+.nav-links a.active {
+  color: #0084ff;
+  opacity: 1;
+  font-weight: 700;
+}
+
+.nav-cta {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  padding: 7px 10px 7px 12px;
+  background: rgba(255, 255, 255, 0.55);
+  border: 1px solid rgba(0, 0, 0, 0.08);
+  border-radius: 10px;
+  font-weight: 600;
+  font-size: 13px;
+  color: var(--ink);
+  cursor: pointer;
+  box-shadow: inset 0 2px 3px 0 rgba(255, 255, 255, 0.5);
+  transition: background .15s;
+  white-space: nowrap;
+}
+.nav-cta:hover { background: rgba(255,255,255,0.75); }
+
+.dark .nav-cta {
+  background: rgba(20, 24, 34, 0.55);
+  border-color: rgba(255, 255, 255, 0.12);
+  color: #d6dceb;
+  box-shadow: inset 0 1px 0 0 rgba(255, 255, 255, 0.08);
+}
+
+.avatar {
+  width: 24px; height: 24px;
+  border-radius: 50%;
+  background: radial-gradient(circle at 30% 30%, #9CCBFF 0%, #0084ff 60%, #0a4a99 100%);
+  color: #fff;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 11px; font-weight: 700;
+  flex-shrink: 0;
+}
+
+.avatar-name {
+  max-width: 80px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.arrow { font-size: 10px; opacity: 0.5; }
+
+.nav-login {
+  font-size: 13.5px;
+  font-weight: 500;
+  color: var(--ink);
+  text-decoration: none;
+  opacity: 0.75;
+  transition: opacity .15s;
+  white-space: nowrap;
+}
+.nav-login:hover { opacity: 1; }
+
+/* Dropdown */
+.nav-drop {
+  position: absolute;
+  top: calc(100% + 10px);
+  right: 0;
+  min-width: 180px;
+  padding: 8px;
+  background: rgba(255, 255, 255, 0.90);
+  backdrop-filter: blur(40px) saturate(180%);
+  -webkit-backdrop-filter: blur(40px) saturate(180%);
+  border: 1px solid rgba(0, 0, 0, 0.08);
+  border-radius: 14px;
+  box-shadow: 0 18px 42px -22px rgba(20, 40, 80, 0.28);
+  z-index: 60;
+  animation: dropIn .15s ease-out;
+}
+
+.dark .nav-drop {
+  background: rgba(20, 24, 34, 0.92);
+  border-color: rgba(255, 255, 255, 0.12);
+}
+
+.drop-header {
+  padding: 8px 10px 10px;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.07);
+  margin-bottom: 4px;
+}
+.dark .drop-header { border-color: rgba(255, 255, 255, 0.10); }
+
+.drop-sub {
+  font-size: 11px;
+  color: var(--ink-3);
+  margin: 0 0 2px;
+  font-family: 'JetBrains Mono', monospace;
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
+}
+
+.drop-email {
+  font-size: 12.5px;
+  font-weight: 600;
+  color: var(--ink);
+  margin: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.drop-item {
+  display: block;
+  width: 100%;
+  padding: 9px 10px;
+  border-radius: 9px;
+  color: var(--ink);
+  text-decoration: none;
+  font-size: 13px;
+  font-weight: 500;
+  text-align: left;
+  background: none;
+  border: none;
+  cursor: pointer;
+  transition: background .12s;
+}
+.drop-item:hover {
+  background: rgba(0, 132, 255, 0.08);
+  color: #0084ff;
+}
+
+.dark .drop-item { color: #f4f6fa; }
+.dark .drop-item:hover { background: rgba(0, 132, 255, 0.16); color: #4FB3FF; }
+
+.drop-logout { color: #b02a2a; }
+.dark .drop-logout { color: #ff8a8a; }
+.drop-logout:hover { background: rgba(176, 42, 42, 0.08) !important; color: #b02a2a !important; }
+
+@keyframes dropIn {
+  from { opacity: 0; transform: translateY(-6px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+@media (max-width: 640px) {
+  .nav { gap: 14px; padding: 8px 10px 8px 14px; }
+  .nav-links { gap: 14px; }
+  .nav-links a { font-size: 12.5px; }
+  .brand { font-size: 17px; }
+  .avatar-name { display: none; }
 }
 </style>
