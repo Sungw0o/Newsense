@@ -41,8 +41,7 @@ public class RagRetrievalService {
     private static final int MIN_QUERY_LENGTH = 2;
     private static final Set<String> STOP_WORDS = Set.of(
             "그리고", "그러나", "하지만", "관련", "기사", "뉴스", "내용", "대한", "대해",
-            "으로", "에서", "이다", "있는", "하는", "했다", "한다", "이번", "최근"
-    );
+            "으로", "에서", "이다", "있는", "하는", "했다", "한다", "이번", "최근");
 
     private final ArticleMetaRepository articleMetaRepository;
     private final ArticleContentRepository articleContentRepository;
@@ -57,8 +56,7 @@ public class RagRetrievalService {
         return new RagSearchResponse(
                 query.trim(),
                 keywords,
-                retrieveByKeywords(keywords, normalizeLimit(limit), "검색어와 기사 청크가 매칭되었습니다.")
-        );
+                retrieveByKeywords(keywords, normalizeLimit(limit), "검색어와 기사 청크가 매칭되었습니다."));
     }
 
     @Transactional(readOnly = true)
@@ -69,8 +67,7 @@ public class RagRetrievalService {
                         .stream()
                         .flatMap(note -> note.getRelatedTerms().stream())
                         .map(String::trim)
-                        .filter(term -> !term.isBlank())
-        )
+                        .filter(term -> !term.isBlank()))
                 .stream()
                 .limit(10)
                 .toList();
@@ -81,24 +78,20 @@ public class RagRetrievalService {
 
         List<String> keywords = toDistinctList(
                 weaknessTerms.stream()
-                        .flatMap(term -> extractKeywords(term).stream())
-        );
+                        .flatMap(term -> extractKeywords(term).stream()));
 
         return new RagRecommendationResponse(
                 weaknessTerms,
                 retrieveByKeywords(
                         keywords.isEmpty() ? weaknessTerms : keywords,
                         normalizeLimit(limit),
-                        "오답노트의 취약 경제 용어와 관련된 기사입니다."
-                )
-        );
+                        "오답노트의 취약 경제 용어와 관련된 기사입니다."));
     }
 
     public List<String> retrieveQuizEvidence(
             String title,
             ArticleContent content,
-            List<EconomicTermContext> economicTerms
-    ) {
+            List<EconomicTermContext> economicTerms) {
         List<String> keywords = new ArrayList<>(extractKeywords(title));
         if (economicTerms != null) {
             economicTerms.stream()
@@ -127,9 +120,7 @@ public class RagRetrievalService {
                 Sort.by(
                         Sort.Order.desc("publishedAt").nullsLast(),
                         Sort.Order.desc("collectedAt"),
-                        Sort.Order.desc("id")
-                )
-        );
+                        Sort.Order.desc("id")));
 
         return articleMetaRepository.findAll(pageRequest).stream()
                 .map(article -> scoreArticle(article, keywords, reason))
@@ -166,13 +157,11 @@ public class RagRetrievalService {
                         .map(chunk -> new RagMatchedChunkResponse(
                                 chunk.index(),
                                 createSnippet(chunk.text(), keywords),
-                                chunk.score()
-                        ))
+                                chunk.score()))
                         .toList(),
                 matchedKeywords,
                 totalScore,
-                reason
-        );
+                reason);
     }
 
     private List<ScoredChunk> scoreChunks(List<String> chunks, List<String> keywords) {
@@ -242,10 +231,9 @@ public class RagRetrievalService {
 
     private List<String> toDistinctList(java.util.stream.Stream<String> stream) {
         return stream.collect(
-                        LinkedHashSet<String>::new,
-                        LinkedHashSet::add,
-                        LinkedHashSet::addAll
-                )
+                LinkedHashSet<String>::new,
+                LinkedHashSet::add,
+                LinkedHashSet::addAll)
                 .stream()
                 .toList();
     }

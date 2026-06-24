@@ -26,11 +26,9 @@ public class ArticleFeedController implements ArticleFeedApiDocs {
             String keyword,
             int page,
             int size,
-            ArticleFeedSort sort
-    ) {
+            ArticleFeedSort sort) {
         return ResponseEntity.ok(ApiResponse.success(
-                articleFeedService.getArticles(category, difficulty, keyword, page, size, sort)
-        ));
+                articleFeedService.getArticles(category, difficulty, keyword, page, size, sort)));
     }
 
     @Override
