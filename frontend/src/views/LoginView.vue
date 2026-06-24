@@ -149,9 +149,18 @@ const startSocialLogin = (provider) => {
       <div class="social-login">
         <div class="social-divider"><span>또는 소셜 계정으로 계속</span></div>
         <div class="social-buttons">
-          <button type="button" class="social-btn kakao" @click="startSocialLogin('kakao')">카카오</button>
-          <button type="button" class="social-btn naver" @click="startSocialLogin('naver')">네이버</button>
-          <button type="button" class="social-btn google" @click="startSocialLogin('google')">Google</button>
+          <button type="button" class="social-btn kakao" @click="startSocialLogin('kakao')">
+            <img class="social-favicon" src="https://www.kakaocorp.com/page/favicon.ico" alt="" />
+            카카오
+          </button>
+          <button type="button" class="social-btn naver" @click="startSocialLogin('naver')">
+            <img class="social-favicon" src="https://www.naver.com/favicon.ico" alt="" />
+            네이버
+          </button>
+          <button type="button" class="social-btn google" @click="startSocialLogin('google')">
+            <img class="social-favicon" src="https://www.google.com/favicon.ico" alt="" />
+            Google
+          </button>
         </div>
       </div>
 
@@ -439,6 +448,10 @@ form {
   gap: 8px;
 }
 .social-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
   min-height: 42px;
   border-radius: 12px;
   border: 1px solid rgba(0,0,0,0.08);
@@ -452,6 +465,13 @@ form {
 .social-btn.naver { background: #03C75A; color: #fff; }
 .social-btn.google { background: #fff; color: #1f2937; }
 .dark .social-btn.google { background: rgba(255,255,255,0.08); color: #f4f6fa; border-color: rgba(255,255,255,0.12); }
+.social-favicon {
+  width: 16px;
+  height: 16px;
+  border-radius: 4px;
+  object-fit: cover;
+  flex-shrink: 0;
+}
 .dark .auth-foot { border-color: rgba(255,255,255,0.10); color: #a4adbf; }
 .auth-foot a {
   color: #0084ff;

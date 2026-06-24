@@ -17,25 +17,6 @@ const currentYear = new Date().getFullYear()
         <p class="brand-desc">경제 뉴스로 키우는 금융 문해력</p>
       </div>
 
-      <!-- Nav links -->
-      <nav class="footer-nav">
-        <div class="footer-nav-group">
-          <p class="nav-group-title">서비스</p>
-          <router-link to="/" class="nav-link">뉴스 피드</router-link>
-          <router-link to="/community" class="nav-link">커뮤니티</router-link>
-          <router-link to="/history" class="nav-link">학습 이력</router-link>
-        </div>
-        <div class="footer-nav-group">
-          <p class="nav-group-title">계정</p>
-          <router-link to="/mypage" class="nav-link">마이페이지</router-link>
-          <router-link to="/login" class="nav-link">로그인</router-link>
-          <router-link to="/register" class="nav-link">회원가입</router-link>
-        </div>
-      </nav>
-    </div>
-
-    <div class="footer-bottom">
-      <p class="copyright">© {{ currentYear }} Newsense. 삼성 청년 SW 아카데미 관통 프로젝트.</p>
       <div class="footer-legal">
         <a href="#" class="legal-link">고객센터</a>
         <span class="legal-sep">|</span>
@@ -45,6 +26,10 @@ const currentYear = new Date().getFullYear()
         <span class="legal-sep">|</span>
         <a href="#" class="legal-link">금융소비자포털</a>
       </div>
+    </div>
+
+    <div class="footer-bottom">
+      <p class="copyright">© {{ currentYear }} Newsense. 삼성 청년 SW 아카데미 관통 프로젝트.</p>
     </div>
   </footer>
 </template>
@@ -106,37 +91,6 @@ const currentYear = new Date().getFullYear()
   margin: 0;
 }
 
-.footer-nav {
-  display: flex;
-  gap: 48px;
-  flex-wrap: wrap;
-}
-
-.footer-nav-group {
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
-  min-width: 80px;
-}
-
-.nav-group-title {
-  font-size: 11px;
-  font-weight: 600;
-  color: var(--ink-3);
-  text-transform: uppercase;
-  letter-spacing: 0.8px;
-  margin: 0 0 2px;
-  font-family: 'Nanum Gothic', monospace;
-}
-
-.nav-link {
-  font-size: 13.5px;
-  color: var(--ink-2);
-  text-decoration: none;
-  transition: color 0.15s;
-}
-.nav-link:hover { color: #0084ff; }
-
 .footer-bottom {
   max-width: 1152px;
   margin: 24px auto 0;
@@ -178,7 +132,6 @@ const currentYear = new Date().getFullYear()
 
 @media (max-width: 640px) {
   .footer-inner { flex-direction: column; gap: 28px; }
-  .footer-nav { gap: 28px; }
   .footer-bottom { flex-direction: column; align-items: flex-start; gap: 10px; }
   .footer-legal { gap: 4px; }
 }

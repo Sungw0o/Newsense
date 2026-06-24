@@ -19,7 +19,7 @@ onMounted(async () => {
 
 <template>
   <div class="min-h-screen flex flex-col w-full">
-    <AppHeader />
+    <AppHeader v-if="userStore.isAuthenticated" />
 
     <div class="layout-body">
       <main class="layout-main">
