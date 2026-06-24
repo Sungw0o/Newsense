@@ -17,6 +17,13 @@ export const learningApi = {
    */
   getStats() {
     return axiosInstance.get('/learning/stats')
+  },
+
+  /**
+   * 북마크된 기사 목록 조회
+   */
+  getBookmarks() {
+    return axiosInstance.get('/learning/bookmarks')
   }
 }
 

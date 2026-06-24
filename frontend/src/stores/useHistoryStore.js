@@ -3,17 +3,13 @@ import { learningApi } from '../api/learningApi'
 
 export const useHistoryStore = defineStore('history', {
   state: () => ({
-    /** 학습 이력 응답 (LearningHistoryResponse: { days, ... }) */
     history: null,
-    /** 종합 통계 */
     stats: null,
+    bookmarks: [],
     isLoading: false,
     error: null
   }),
   actions: {
-    /**
-     * 날짜 범위 학습 이력 로드
-     */
     async fetchHistory(params = {}) {
       this.isLoading = true
       this.error = null
@@ -28,9 +24,6 @@ export const useHistoryStore = defineStore('history', {
       }
     },
 
-    /**
-     * 종합 학습 통계 로드
-     */
     async fetchStats() {
       this.isLoading = true
       this.error = null
@@ -42,6 +35,15 @@ export const useHistoryStore = defineStore('history', {
         throw err
       } finally {
         this.isLoading = false
+      }
+    },
+
+    async fetchBookmarks() {
+      try {
+        const response = await learningApi.getBookmarks()
+        this.bookmarks = response.data || response || []
+      } catch {
+        this.bookmarks = []
       }
     }
   }

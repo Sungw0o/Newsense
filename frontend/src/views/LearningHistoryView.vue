@@ -4,274 +4,624 @@ import { useRouter } from 'vue-router'
 import { storeToRefs } from 'pinia'
 import { useHistoryStore } from '../stores/useHistoryStore'
 import { useWrongNoteStore } from '../stores/useWrongNoteStore'
-import BaseBadge from '../components/common/BaseBadge.vue'
 
 const router = useRouter()
 const historyStore = useHistoryStore()
 const wrongNoteStore = useWrongNoteStore()
 
-// storeToRefs를 사용하여 Pinia 상태의 반응성을 유지하며 추출
-const { history, stats, isLoading, error } = storeToRefs(historyStore)
+const { history, stats, bookmarks, isLoading, error } = storeToRefs(historyStore)
 const { wrongNotes, isLoading: isWrongNoteLoading } = storeToRefs(wrongNoteStore)
 
 const unresolvedWrongNotes = computed(() => wrongNotes.value.filter(note => !note.isResolved))
 
 onMounted(async () => {
-  try {
-    await Promise.all([
-      historyStore.fetchHistory(),
-      historyStore.fetchStats(),
-      wrongNoteStore.fetchWrongNotes()
-    ])
-  } catch (err) {
-    console.error('Failed to load history or stats:', err)
-  }
+  await Promise.all([
+    historyStore.fetchHistory(),
+    historyStore.fetchStats(),
+    historyStore.fetchBookmarks(),
+    wrongNoteStore.fetchWrongNotes()
+  ]).catch(() => {})
 })
 
-const navigateToDetail = (id) => {
-  router.push(`/articles/${id}`)
-}
+const typeLabel = { ARTICLE_READ: '기사 읽기', QUIZ: '퀴즈', REVIEW: '리뷰' }
+const typeColor = { ARTICLE_READ: '#0084ff', QUIZ: '#d97706', REVIEW: '#059669' }
 
-const navigateToWrongNote = () => {
-  router.push('/wrong-notes')
-}
+const formatTime = (str) => (str && str.length >= 16) ? str.substring(11, 16) : ''
 
-const navigateToReview = (id) => {
-  router.push(`/articles/${id}/review`)
-}
+const navigate = (path) => router.push(path)
 </script>
 
 <template>
-  <div class="max-w-6xl mx-auto px-4 py-8">
-    <header class="mb-8">
-      <h1 class="text-3xl font-extrabold text-slate-800 dark:text-white mb-2">내 학습 관리</h1>
-      <p class="text-slate-500 dark:text-slate-400 font-light">지금까지 뉴스엔스에서 차곡차곡 쌓아올린 나의 경제 근육을 확인해 보세요.</p>
+  <div class="history-shell">
+    <!-- Page header -->
+    <header class="history-head">
+      <div>
+        <p class="eyebrow">내 학습 관리</p>
+        <h1 class="history-title">학습 이력</h1>
+        <p class="history-sub">뉴스센스에서 차곡차곡 쌓아온 경제 지식을 확인하세요.</p>
+      </div>
     </header>
 
-    <!-- Error State -->
-    <div v-if="error" class="mb-8 p-4 bg-accent-50/50 dark:bg-accent-950/20 border border-accent-200 dark:border-accent-800/30 rounded-2xl text-accent-700 dark:text-accent-400 text-sm">
-      ⚠️ {{ error }}
-    </div>
+    <!-- Error banner -->
+    <div v-if="error" class="error-banner">⚠️ {{ error }}</div>
 
-    <!-- Stats Dashboard -->
-    <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-10">
-      <!-- Read count card -->
-      <div class="glass-panel rounded-2xl p-6 flex items-center justify-between shadow-sm">
+    <!-- Stats grid (4 cards) -->
+    <div class="stats-grid">
+      <div class="stat-card">
+        <div class="stat-icon" style="background: rgba(0,132,255,0.10); color:#0084ff;">📰</div>
         <div>
-          <span class="text-slate-400 dark:text-slate-400 text-xs font-semibold uppercase tracking-wider block mb-1">총 읽은 기사</span>
-          <span class="text-3xl font-black text-slate-800 dark:text-white">
-            <template v-if="isLoading">
-              <span class="inline-block w-12 h-8 bg-slate-100 dark:bg-slate-800 animate-pulse rounded"></span>
-            </template>
-            <template v-else>
-              {{ stats?.totalReadArticleCount || 0 }}
-            </template>
-            <span class="text-lg font-light text-slate-400 dark:text-slate-500 ml-1">개</span>
-          </span>
-        </div>
-        <div class="w-12 h-12 bg-primary-100 dark:bg-primary-950/40 rounded-xl flex items-center justify-center text-primary-600 dark:text-primary-400 text-xl font-bold transition-colors">
-          📰
+          <p class="stat-label">총 읽은 기사</p>
+          <p class="stat-value">
+            <template v-if="isLoading"><span class="skel"></span></template>
+            <template v-else>{{ stats?.totalReadArticleCount ?? 0 }}<span class="stat-unit">개</span></template>
+          </p>
         </div>
       </div>
-
-      <!-- Accuracy card -->
-      <div class="glass-panel rounded-2xl p-6 flex items-center justify-between shadow-sm">
+      <div class="stat-card">
+        <div class="stat-icon" style="background: rgba(217,119,6,0.10); color:#d97706;">🎯</div>
         <div>
-          <span class="text-slate-400 dark:text-slate-400 text-xs font-semibold uppercase tracking-wider block mb-1">퀴즈 평균 정답률</span>
-          <span class="text-3xl font-black text-slate-800 dark:text-white">
-            <template v-if="isLoading">
-              <span class="inline-block w-12 h-8 bg-slate-100 dark:bg-slate-800 animate-pulse rounded"></span>
-            </template>
-            <template v-else>
-              {{ stats?.quizAccuracyRate || 0 }}
-            </template>
-            <span class="text-lg font-light text-slate-400 dark:text-slate-500 ml-1">%</span>
-          </span>
-        </div>
-        <div class="w-12 h-12 bg-brand-100 dark:bg-brand-950/40 rounded-xl flex items-center justify-center text-brand-600 dark:text-brand-400 text-xl font-bold transition-colors">
-          🎯
+          <p class="stat-label">퀴즈 정답률</p>
+          <p class="stat-value">
+            <template v-if="isLoading"><span class="skel"></span></template>
+            <template v-else>{{ stats?.quizAccuracyRate ?? 0 }}<span class="stat-unit">%</span></template>
+          </p>
         </div>
       </div>
-
-      <!-- Streak card -->
-      <div class="glass-panel rounded-2xl p-6 flex items-center justify-between shadow-sm">
+      <div class="stat-card">
+        <div class="stat-icon" style="background: rgba(255,128,30,0.10); color:#FF801E;">🔥</div>
         <div>
-          <span class="text-slate-400 dark:text-slate-400 text-xs font-semibold uppercase tracking-wider block mb-1">연속 학습 일수</span>
-          <span class="text-3xl font-black text-slate-800 dark:text-white">
-            <template v-if="isLoading">
-              <span class="inline-block w-12 h-8 bg-slate-100 dark:bg-slate-800 animate-pulse rounded"></span>
-            </template>
-            <template v-else>
-              {{ stats?.consecutiveLearningDays || 0 }}
-            </template>
-            <span class="text-lg font-light text-slate-400 dark:text-slate-500 ml-1">일째</span>
-          </span>
+          <p class="stat-label">연속 학습 일수</p>
+          <p class="stat-value">
+            <template v-if="isLoading"><span class="skel"></span></template>
+            <template v-else>{{ stats?.consecutiveLearningDays ?? 0 }}<span class="stat-unit">일째</span></template>
+          </p>
         </div>
-        <div class="w-12 h-12 bg-accent-100 dark:bg-accent-950/40 rounded-xl flex items-center justify-center text-accent-600 dark:text-accent-400 text-xl font-bold transition-colors">
-          🔥
+      </div>
+      <div class="stat-card">
+        <div class="stat-icon" style="background: rgba(5,150,105,0.10); color:#059669;">📅</div>
+        <div>
+          <p class="stat-label">이번 주 학습일</p>
+          <p class="stat-value">
+            <template v-if="isLoading"><span class="skel"></span></template>
+            <template v-else>{{ stats?.weeklyLearningDays ?? 0 }}<span class="stat-unit">일</span></template>
+          </p>
         </div>
       </div>
     </div>
 
-    <!-- History List -->
-    <div class="glass-panel rounded-3xl p-8 shadow-premium">
-      <h2 class="text-lg font-bold text-slate-800 dark:text-slate-100 mb-6 border-b border-slate-100 dark:border-white/10 pb-4">
-        최근 읽은 뉴스 & 퀴즈 이력
-      </h2>
+    <!-- History timeline -->
+    <section class="section-card">
+      <h2 class="section-title">최근 학습 타임라인</h2>
 
-      <!-- Loading skeleton -->
-      <div v-if="isLoading" class="space-y-4">
-        <div v-for="n in 3" :key="n" class="py-5 animate-pulse flex justify-between items-center gap-4">
-          <div class="flex-1 space-y-2">
-            <div class="h-4 bg-slate-100 dark:bg-slate-800 rounded w-1/4"></div>
-            <div class="h-6 bg-slate-100 dark:bg-slate-800 rounded w-3/4"></div>
-          </div>
-          <div class="w-24 h-8 bg-slate-100 dark:bg-slate-800 rounded"></div>
+      <div v-if="isLoading" class="timeline-skel">
+        <div v-for="n in 3" :key="n" class="skel-row">
+          <span class="skel" style="width:80px;height:14px;"></span>
+          <span class="skel" style="width:60%;height:18px;margin-top:6px;"></span>
         </div>
       </div>
 
-      <!-- Empty state -->
-      <div v-else-if="!history || !history.days || history.days.length === 0" class="text-center py-16">
-        <div class="text-4xl mb-4">📚</div>
-        <p class="text-slate-400 dark:text-slate-500 font-light">아직 학습한 뉴스 이력이 없습니다.</p>
-        <p class="text-slate-400 dark:text-slate-500 text-sm font-light mt-1">관심 경제 뉴스를 읽고 학습을 시작해 보세요!</p>
+      <div v-else-if="!history?.days?.length" class="empty-state">
+        <p class="empty-icon">📚</p>
+        <p class="empty-title">아직 학습 이력이 없습니다</p>
+        <p class="empty-desc">관심 경제 뉴스를 읽고 학습을 시작해 보세요!</p>
+        <button class="btn-primary" style="margin-top:16px;" @click="navigate('/')">뉴스 피드 보기</button>
       </div>
 
-      <!-- Real Data List -->
-      <div v-else class="space-y-8">
-        <div 
-          v-for="day in history.days" 
-          :key="day.date"
-          class="space-y-4"
-        >
-          <!-- Date Header -->
-          <div class="flex items-center gap-3">
-            <span class="text-sm font-bold text-slate-800 dark:text-slate-200">{{ day.date }}</span>
-            <div class="h-px bg-slate-100 dark:bg-white/10 flex-1"></div>
-            <span class="text-xs text-slate-400 dark:text-slate-500 font-light">
-              기사 {{ day.articleReadCount }} • 퀴즈 {{ day.quizCount }} • 리뷰 {{ day.reviewCount }}
-            </span>
+      <div v-else class="timeline">
+        <div v-for="day in history.days" :key="day.date" class="day-group">
+          <div class="day-header">
+            <span class="day-label">{{ day.date }}</span>
+            <div class="day-divider"></div>
+            <span class="day-counts">기사 {{ day.articleReadCount }} · 퀴즈 {{ day.quizCount }} · 리뷰 {{ day.reviewCount }}</span>
           </div>
 
-          <!-- Timeline Items for this Day -->
-          <div class="divide-y divide-slate-100 dark:divide-white/10 pl-2">
-            <div 
-              v-for="item in day.timeline" 
-              :key="item.historyId"
-              class="py-4 flex flex-col sm:flex-row sm:items-center justify-between gap-4 first:pt-0 last:pb-0"
-            >
-              <div>
-                <div class="flex items-center gap-2 mb-1.5">
-                  <span 
-                    class="text-xxs px-2 py-0.5 rounded font-bold uppercase tracking-wider"
-                    :class="{
-                      'bg-primary-100 text-primary-800 dark:bg-primary-950/40 dark:text-primary-400': item.type === 'ARTICLE_READ',
-                      'bg-brand-100 text-brand-800 dark:bg-brand-950/40 dark:text-brand-400': item.type === 'QUIZ',
-                      'bg-secondary-100 text-secondary-800 dark:bg-secondary-950/40 dark:text-secondary-400': item.type === 'REVIEW'
-                    }"
-                  >
-                    {{ item.typeName }}
+          <div class="timeline-items">
+            <div v-for="item in day.timeline" :key="item.historyId" class="timeline-item">
+              <div class="item-left">
+                <div class="type-badges">
+                  <span class="type-badge" :style="{ background: (typeColor[item.type] ?? '#0084ff') + '18', color: typeColor[item.type] ?? '#0084ff' }">
+                    {{ typeLabel[item.type] ?? item.type }}
                   </span>
-                  <BaseBadge :value="item.articleCategory" />
-                  <span class="text-xs text-slate-400 font-light">{{ item.learnedAt && typeof item.learnedAt === 'string' && item.learnedAt.length >= 16 ? item.learnedAt.substring(11, 16) : '' }}</span>
+                  <span v-if="item.articleCategory" class="category-badge">{{ item.articleCategory }}</span>
+                  <span class="time-badge">{{ formatTime(item.learnedAt) }}</span>
                 </div>
-                <h3 
-                  @click="navigateToDetail(item.articleId)"
-                  class="text-base font-bold text-slate-800 dark:text-slate-200 hover:text-primary-600 dark:hover:text-primary-400 cursor-pointer leading-snug"
-                >
-                  {{ item.articleTitle }}
-                </h3>
-                <div
-                  v-if="item.type === 'REVIEW' && (item.reviewSummary || item.reviewLearned || item.reviewDifficultTerms?.length)"
-                  class="mt-3 rounded-2xl border border-slate-100 dark:border-white/10 bg-slate-50/80 dark:bg-slate-900/40 p-4 space-y-3"
-                >
+                <p class="item-title" @click="navigate(`/articles/${item.articleId}`)">{{ item.articleTitle }}</p>
+                <div v-if="item.type === 'REVIEW' && (item.reviewSummary || item.reviewLearned)" class="review-card">
                   <div v-if="item.reviewSummary">
-                    <p class="text-xs font-bold text-slate-400 dark:text-slate-500 mb-1">요약</p>
-                    <p class="text-sm text-slate-700 dark:text-slate-300 leading-relaxed">{{ item.reviewSummary }}</p>
+                    <p class="review-label">요약</p>
+                    <p class="review-text">{{ item.reviewSummary }}</p>
                   </div>
                   <div v-if="item.reviewLearned">
-                    <p class="text-xs font-bold text-slate-400 dark:text-slate-500 mb-1">배운 점</p>
-                    <p class="text-sm text-slate-700 dark:text-slate-300 leading-relaxed">{{ item.reviewLearned }}</p>
-                  </div>
-                  <div v-if="item.reviewDifficultTerms?.length" class="flex flex-wrap gap-2">
-                    <span
-                      v-for="term in item.reviewDifficultTerms"
-                      :key="term"
-                      class="text-xs px-2 py-1 rounded-lg bg-white dark:bg-slate-950 border border-slate-100 dark:border-white/10 text-slate-500 dark:text-slate-400"
-                    >
-                      {{ term }}
-                    </span>
+                    <p class="review-label">배운 점</p>
+                    <p class="review-text">{{ item.reviewLearned }}</p>
                   </div>
                 </div>
               </div>
-
-              <!-- Extra meta / status -->
-              <div v-if="item.type === 'QUIZ'" class="flex items-center">
-                <span 
-                  class="text-xs px-2.5 py-1 rounded-lg border font-semibold"
-                  :class="item.quizCorrect 
-                    ? 'bg-brand-50 border-brand-200 text-brand-700 dark:bg-brand-950/40 dark:border-brand-800 dark:text-brand-400' 
-                    : 'bg-accent-50 border-accent-200 text-accent-700 dark:bg-accent-950/40 dark:border-accent-800 dark:text-accent-400'"
-                >
+              <div class="item-right">
+                <span v-if="item.type === 'QUIZ'" class="quiz-result" :class="item.quizCorrect ? 'correct' : 'wrong'">
                   {{ item.quizCorrect ? '🎯 정답' : '❌ 오답' }}
                 </span>
+                <button v-else-if="item.type === 'REVIEW'" class="btn-ghost" @click="navigate(`/articles/${item.articleId}/review`)">
+                  리뷰 보기
+                </button>
               </div>
-              <button
-                v-else-if="item.type === 'REVIEW'"
-                class="shrink-0 px-3 py-1.5 rounded-lg border border-slate-200 dark:border-white/10 text-xs font-bold text-slate-500 dark:text-slate-300 hover:border-primary-300 hover:text-primary-600 dark:hover:text-primary-400 transition-colors"
-                @click="navigateToReview(item.articleId)"
-              >
-                리뷰 보기
-              </button>
             </div>
           </div>
         </div>
       </div>
-    </div>
+    </section>
 
-    <section class="glass-panel rounded-3xl p-8 shadow-premium mt-8">
-      <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-6 border-b border-slate-100 dark:border-white/10 pb-4">
+    <!-- Bookmarked articles -->
+    <section class="section-card">
+      <div class="section-head-row">
         <div>
-          <h2 class="text-lg font-bold text-slate-800 dark:text-slate-100">오답노트</h2>
-          <p class="text-sm text-slate-400 dark:text-slate-500 mt-1">학습 이력에서 바로 복습할 문제를 확인하세요.</p>
+          <h2 class="section-title">북마크한 기사</h2>
+          <p class="section-sub">저장해 둔 기사를 빠르게 다시 읽어보세요.</p>
         </div>
-        <button
-          class="px-4 py-2 rounded-xl bg-primary-600 hover:bg-primary-700 text-white text-sm font-bold transition-colors"
-          @click="navigateToWrongNote"
+      </div>
+
+      <div v-if="!bookmarks.length" class="empty-state small">
+        <p class="empty-icon">🔖</p>
+        <p class="empty-desc">북마크한 기사가 없습니다.</p>
+      </div>
+
+      <div v-else class="bookmark-list">
+        <div
+          v-for="article in bookmarks"
+          :key="article.articleId"
+          class="bookmark-item"
+          @click="navigate(`/articles/${article.articleId}`)"
         >
-          전체 보기
-        </button>
-      </div>
-
-      <div v-if="isWrongNoteLoading" class="space-y-3">
-        <div v-for="n in 3" :key="n" class="h-16 rounded-2xl bg-slate-100 dark:bg-slate-800 animate-pulse"></div>
-      </div>
-
-      <div v-else-if="unresolvedWrongNotes.length === 0" class="text-center py-10">
-        <p class="text-slate-400 dark:text-slate-500 font-light">아직 복습할 오답이 없습니다.</p>
-      </div>
-
-      <div v-else class="divide-y divide-slate-100 dark:divide-white/10">
-        <article
-          v-for="note in unresolvedWrongNotes.slice(0, 5)"
-          :key="note.id"
-          class="py-4 first:pt-0 last:pb-0"
-        >
-          <div class="flex flex-col sm:flex-row sm:items-start justify-between gap-3">
-            <div>
-              <p class="text-sm font-bold text-slate-800 dark:text-slate-100 leading-snug">
-                {{ note.question || note.quizQuestion || '복습 문제' }}
-              </p>
-              <p class="text-xs text-slate-400 dark:text-slate-500 mt-1">
-                {{ note.articleTitle || '연결된 기사' }}
-              </p>
-            </div>
-            <span class="shrink-0 text-xs px-2.5 py-1 rounded-lg bg-accent-50 border border-accent-200 text-accent-700 dark:bg-accent-950/40 dark:border-accent-800 dark:text-accent-400 font-semibold">
-              복습 필요
-            </span>
+          <div class="bookmark-meta">
+            <span class="bookmark-category">{{ article.category }}</span>
+            <span class="bookmark-source">{{ article.source }}</span>
           </div>
-        </article>
+          <p class="bookmark-title">{{ article.title }}</p>
+          <p class="bookmark-summary">{{ article.summary }}</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- Wrong notes preview -->
+    <section class="section-card">
+      <div class="section-head-row">
+        <div>
+          <h2 class="section-title">오답 노트</h2>
+          <p class="section-sub">학습 이력에서 복습할 문제를 확인하세요.</p>
+        </div>
+        <button class="btn-primary" @click="navigate('/wrong-notes')">전체 보기</button>
+      </div>
+
+      <div v-if="isWrongNoteLoading" class="timeline-skel">
+        <div v-for="n in 3" :key="n" class="skel-row">
+          <span class="skel" style="width:75%;height:16px;"></span>
+          <span class="skel" style="width:50%;height:12px;margin-top:6px;"></span>
+        </div>
+      </div>
+
+      <div v-else-if="unresolvedWrongNotes.length === 0" class="empty-state small">
+        <p class="empty-icon">✅</p>
+        <p class="empty-desc">복습할 오답이 없습니다.</p>
+      </div>
+
+      <div v-else class="wrong-list">
+        <div v-for="note in unresolvedWrongNotes.slice(0, 5)" :key="note.id" class="wrong-item">
+          <div class="wrong-content">
+            <p class="wrong-question">{{ note.question || note.quizQuestion || '복습 문제' }}</p>
+            <p class="wrong-article">{{ note.articleTitle || '연결된 기사' }}</p>
+          </div>
+          <span class="wrong-badge">복습 필요</span>
+        </div>
       </div>
     </section>
   </div>
 </template>
+
+<style scoped>
+.history-shell {
+  max-width: 900px;
+  margin: 0 auto;
+  padding: 48px 0 80px;
+  display: flex;
+  flex-direction: column;
+  gap: 28px;
+}
+
+.eyebrow {
+  font-family: 'Nanum Gothic', monospace;
+  font-size: 11.5px;
+  letter-spacing: 1px;
+  color: var(--ink-3);
+  text-transform: uppercase;
+  margin: 0 0 10px;
+}
+
+.history-head { margin-bottom: 4px; }
+
+.history-title {
+  font-family: 'Fustat', sans-serif;
+  font-weight: 800;
+  font-size: 44px;
+  letter-spacing: -1.5px;
+  color: var(--ink);
+  margin: 0 0 6px;
+}
+.dark .history-title { color: #f4f6fa; }
+
+.history-sub { font-size: 14px; color: var(--ink-2); margin: 0; }
+.dark .history-sub { color: #a4adbf; }
+
+.error-banner {
+  padding: 12px 16px;
+  border-radius: 12px;
+  background: var(--no-bg);
+  border: 1px solid var(--no-border);
+  color: var(--no);
+  font-size: 13.5px;
+}
+
+/* Stats */
+.stats-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 14px;
+}
+
+.stat-card {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 20px;
+  background: rgba(255, 255, 255, 0.65);
+  border: 1px solid rgba(0, 0, 0, 0.07);
+  border-radius: 18px;
+  backdrop-filter: blur(40px) saturate(160%);
+  -webkit-backdrop-filter: blur(40px) saturate(160%);
+  box-shadow: inset 0 1px 0 rgba(255,255,255,0.85), 0 4px 16px -6px rgba(20,40,80,0.08);
+}
+.dark .stat-card {
+  background: rgba(20,24,34,0.55);
+  border-color: rgba(255,255,255,0.10);
+  box-shadow: inset 0 1px 0 rgba(255,255,255,0.08), 0 4px 16px -6px rgba(0,0,0,0.3);
+}
+
+.stat-icon {
+  width: 42px; height: 42px;
+  border-radius: 12px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 18px;
+  flex-shrink: 0;
+}
+
+.stat-label {
+  font-size: 11.5px;
+  color: var(--ink-3);
+  font-family: 'Nanum Gothic', monospace;
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
+  margin: 0 0 4px;
+}
+
+.stat-value {
+  font-family: 'Fustat', sans-serif;
+  font-weight: 800;
+  font-size: 28px;
+  color: var(--ink);
+  margin: 0;
+  line-height: 1;
+}
+.dark .stat-value { color: #f4f6fa; }
+
+.stat-unit {
+  font-size: 14px;
+  font-weight: 400;
+  color: var(--ink-3);
+  margin-left: 3px;
+}
+
+/* Section card */
+.section-card {
+  padding: 28px;
+  background: rgba(255, 255, 255, 0.65);
+  border: 1px solid rgba(0, 0, 0, 0.07);
+  border-radius: 24px;
+  backdrop-filter: blur(40px) saturate(160%);
+  -webkit-backdrop-filter: blur(40px) saturate(160%);
+  box-shadow: inset 0 1px 0 rgba(255,255,255,0.85), 0 4px 20px -8px rgba(20,40,80,0.10);
+}
+.dark .section-card {
+  background: rgba(20,24,34,0.55);
+  border-color: rgba(255,255,255,0.10);
+  box-shadow: inset 0 1px 0 rgba(255,255,255,0.08), 0 4px 20px -8px rgba(0,0,0,0.35);
+}
+
+.section-head-row {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 20px;
+  padding-bottom: 16px;
+  border-bottom: 1px solid var(--line);
+}
+
+.section-title {
+  font-family: 'Fustat', sans-serif;
+  font-weight: 700;
+  font-size: 18px;
+  color: var(--ink);
+  margin: 0 0 4px;
+}
+.dark .section-title { color: #f4f6fa; }
+
+.section-sub { font-size: 13px; color: var(--ink-3); margin: 0; }
+
+/* Timeline */
+.timeline { display: flex; flex-direction: column; gap: 24px; }
+.day-group {}
+
+.day-header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 12px;
+}
+
+.day-label {
+  font-family: 'Fustat', sans-serif;
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--ink);
+  white-space: nowrap;
+}
+.dark .day-label { color: #f4f6fa; }
+
+.day-divider { flex: 1; height: 1px; background: var(--line); }
+
+.day-counts {
+  font-size: 11.5px;
+  color: var(--ink-3);
+  white-space: nowrap;
+  font-family: 'Nanum Gothic', monospace;
+}
+
+.timeline-items { display: flex; flex-direction: column; }
+
+.timeline-item {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 14px 0;
+  border-bottom: 1px solid var(--line);
+}
+.timeline-item:last-child { border-bottom: none; }
+
+.item-left { flex: 1; min-width: 0; }
+
+.type-badges { display: flex; align-items: center; gap: 7px; margin-bottom: 6px; flex-wrap: wrap; }
+
+.type-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 2px 8px;
+  border-radius: 5px;
+  font-size: 11px;
+  font-weight: 700;
+  font-family: 'Nanum Gothic', monospace;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.category-badge {
+  font-size: 11.5px;
+  color: var(--ink-3);
+  background: var(--bg-soft);
+  padding: 2px 8px;
+  border-radius: 5px;
+  font-family: 'Nanum Gothic', monospace;
+}
+
+.time-badge { font-size: 11.5px; color: var(--ink-3); font-family: 'Nanum Gothic', monospace; }
+
+.item-title {
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--ink);
+  margin: 0;
+  cursor: pointer;
+  transition: color .15s;
+  line-height: 1.4;
+}
+.item-title:hover { color: #0084ff; }
+.dark .item-title { color: #e0e4ef; }
+
+.review-card {
+  margin-top: 10px;
+  padding: 12px 14px;
+  background: var(--bg-soft);
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.review-label {
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--ink-3);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin: 0 0 3px;
+}
+
+.review-text {
+  font-size: 13.5px;
+  color: var(--ink-2);
+  line-height: 1.6;
+  margin: 0;
+}
+.dark .review-text { color: #a4adbf; }
+
+.item-right { flex-shrink: 0; }
+
+.quiz-result {
+  display: inline-block;
+  font-size: 12px;
+  font-weight: 700;
+  padding: 5px 12px;
+  border-radius: 8px;
+}
+.quiz-result.correct { background: var(--ok-bg); color: var(--ok); border: 1px solid var(--ok-border); }
+.quiz-result.wrong { background: var(--no-bg); color: var(--no); border: 1px solid var(--no-border); }
+
+.btn-ghost {
+  padding: 6px 14px;
+  border-radius: 9px;
+  border: 1px solid rgba(0,0,0,0.10);
+  background: none;
+  font-size: 12.5px;
+  font-weight: 600;
+  color: var(--ink-2);
+  cursor: pointer;
+  transition: border-color .12s, color .12s;
+}
+.btn-ghost:hover { border-color: #0084ff; color: #0084ff; }
+.dark .btn-ghost { border-color: rgba(255,255,255,0.12); color: #a4adbf; }
+.dark .btn-ghost:hover { border-color: #4FB3FF; color: #4FB3FF; }
+
+/* Bookmarks */
+.bookmark-list { display: flex; flex-direction: column; gap: 10px; }
+
+.bookmark-item {
+  padding: 14px 16px;
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  cursor: pointer;
+  transition: border-color .15s, transform .15s;
+}
+.bookmark-item:hover { border-color: #0084ff; transform: translateY(-1px); }
+
+.bookmark-meta {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 6px;
+}
+
+.bookmark-category {
+  font-size: 11.5px;
+  font-weight: 600;
+  color: #0084ff;
+  background: rgba(0,132,255,0.10);
+  padding: 2px 8px;
+  border-radius: 5px;
+  font-family: 'Nanum Gothic', monospace;
+}
+
+.bookmark-source { font-size: 11.5px; color: var(--ink-3); }
+
+.bookmark-title {
+  font-size: 14.5px;
+  font-weight: 700;
+  color: var(--ink);
+  margin: 0 0 4px;
+  line-height: 1.4;
+}
+.dark .bookmark-title { color: #f4f6fa; }
+
+.bookmark-summary {
+  font-size: 12.5px;
+  color: var(--ink-3);
+  margin: 0;
+  overflow: hidden;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  line-height: 1.5;
+}
+
+/* Wrong notes */
+.wrong-list { display: flex; flex-direction: column; }
+
+.wrong-item {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 14px 0;
+  border-bottom: 1px solid var(--line);
+}
+.wrong-item:last-child { border-bottom: none; }
+
+.wrong-question {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--ink);
+  margin: 0 0 4px;
+  line-height: 1.4;
+}
+.dark .wrong-question { color: #f4f6fa; }
+
+.wrong-article { font-size: 12px; color: var(--ink-3); margin: 0; }
+
+.wrong-badge {
+  flex-shrink: 0;
+  font-size: 11.5px;
+  font-weight: 700;
+  padding: 4px 10px;
+  border-radius: 8px;
+  background: var(--no-bg);
+  border: 1px solid var(--no-border);
+  color: var(--no);
+}
+
+/* Skeleton */
+.skel {
+  display: inline-block;
+  background: linear-gradient(90deg, var(--line) 25%, rgba(0,0,0,0.04) 50%, var(--line) 75%);
+  background-size: 200% 100%;
+  animation: shimmer 1.2s infinite;
+  border-radius: 6px;
+  height: 22px;
+  width: 120px;
+}
+.dark .skel {
+  background: linear-gradient(90deg, rgba(255,255,255,0.06) 25%, rgba(255,255,255,0.10) 50%, rgba(255,255,255,0.06) 75%);
+  background-size: 200% 100%;
+}
+@keyframes shimmer { 0% { background-position: 200% 0; } 100% { background-position: -200% 0; } }
+
+.timeline-skel { display: flex; flex-direction: column; gap: 20px; }
+.skel-row { display: flex; flex-direction: column; gap: 0; }
+
+/* Empty */
+.empty-state {
+  text-align: center;
+  padding: 48px 24px;
+}
+.empty-state.small { padding: 24px; }
+.empty-icon { font-size: 36px; margin: 0 0 12px; }
+.empty-title { font-size: 16px; font-weight: 700; color: var(--ink); margin: 0 0 6px; }
+.empty-desc { font-size: 13.5px; color: var(--ink-3); margin: 0; }
+.dark .empty-title { color: #f4f6fa; }
+
+/* History section title (no section-head-row) */
+.section-card > .section-title:first-child {
+  margin-bottom: 20px;
+  padding-bottom: 16px;
+  border-bottom: 1px solid var(--line);
+}
+
+@media (max-width: 768px) {
+  .stats-grid { grid-template-columns: repeat(2, 1fr); }
+  .history-title { font-size: 34px; }
+}
+
+@media (max-width: 480px) {
+  .stats-grid { grid-template-columns: 1fr 1fr; gap: 10px; }
+  .stat-card { padding: 14px; gap: 10px; }
+  .stat-value { font-size: 24px; }
+}
+</style>

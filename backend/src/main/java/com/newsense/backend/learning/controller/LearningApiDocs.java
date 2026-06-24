@@ -1,5 +1,6 @@
 package com.newsense.backend.learning.controller;
 
+import com.newsense.backend.article.dto.ArticleCardResponse;
 import com.newsense.backend.auth.security.UserPrincipal;
 import com.newsense.backend.common.response.ApiResponse;
 import com.newsense.backend.learning.dto.LearningHistoryResponse;
@@ -15,6 +16,7 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 
 import java.time.LocalDate;
+import java.util.List;
 
 @Tag(name = "Learning", description = "사용자 학습 이력 및 누적 통계")
 @SecurityRequirement(name = "BearerAuth")
@@ -37,6 +39,12 @@ public interface LearningApiDocs {
     @Operation(summary = "학습 통계 조회", description = "총 읽은 기사 수, 퀴즈 정답률, 연속 학습일, 주간 학습일수를 조회합니다.")
     @GetMapping("/api/v1/learning/stats")
     ResponseEntity<ApiResponse<LearningStatsResponse>> getStats(
+            @AuthenticationPrincipal UserPrincipal userPrincipal
+    );
+
+    @Operation(summary = "북마크된 기사 목록 조회", description = "사용자가 북마크한 기사 목록을 최신순으로 반환합니다.")
+    @GetMapping("/api/v1/learning/bookmarks")
+    ResponseEntity<ApiResponse<List<ArticleCardResponse>>> getBookmarks(
             @AuthenticationPrincipal UserPrincipal userPrincipal
     );
 }

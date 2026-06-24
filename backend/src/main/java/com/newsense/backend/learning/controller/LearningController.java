@@ -1,5 +1,6 @@
 package com.newsense.backend.learning.controller;
 
+import com.newsense.backend.article.dto.ArticleCardResponse;
 import com.newsense.backend.auth.security.UserPrincipal;
 import com.newsense.backend.common.response.ApiResponse;
 import com.newsense.backend.learning.dto.LearningHistoryResponse;
@@ -10,6 +11,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.RestController;
 
 import java.time.LocalDate;
+import java.util.List;
 
 @RestController
 @RequiredArgsConstructor
@@ -34,6 +36,14 @@ public class LearningController implements LearningApiDocs {
         return ResponseEntity.ok(ApiResponse.success(
                 "학습 통계 조회에 성공했습니다.",
                 learningHistoryService.getStats(userPrincipal.id())
+        ));
+    }
+
+    @Override
+    public ResponseEntity<ApiResponse<List<ArticleCardResponse>>> getBookmarks(UserPrincipal userPrincipal) {
+        return ResponseEntity.ok(ApiResponse.success(
+                "북마크 목록 조회에 성공했습니다.",
+                learningHistoryService.getBookmarks(userPrincipal.id())
         ));
     }
 }

@@ -2,9 +2,11 @@ package com.newsense.backend.learning.service;
 
 import com.newsense.backend.article.domain.ArticleMeta;
 import com.newsense.backend.article.domain.ArticleRead;
+import com.newsense.backend.article.dto.ArticleCardResponse;
 import com.newsense.backend.article.event.ArticleReadCompletedEvent;
 import com.newsense.backend.article.repository.ArticleMetaRepository;
 import com.newsense.backend.article.repository.ArticleReadRepository;
+import com.newsense.backend.bookmark.repository.BookmarkRepository;
 import com.newsense.backend.common.exception.CustomException;
 import com.newsense.backend.common.exception.ErrorCode;
 import com.newsense.backend.learning.domain.LearningHistory;
@@ -51,6 +53,7 @@ public class LearningHistoryService {
     private final ReviewRepository reviewRepository;
     private final QuizAnswerRepository quizAnswerRepository;
     private final UserRepository userRepository;
+    private final BookmarkRepository bookmarkRepository;
 
     @Transactional
     public void recordArticleRead(ArticleReadCompletedEvent event) {
@@ -276,6 +279,13 @@ public class LearningHistoryService {
             }
             throw exception;
         }
+    }
+
+    @Transactional(readOnly = true)
+    public List<ArticleCardResponse> getBookmarks(Long userId) {
+        return bookmarkRepository.findAllByUserIdWithArticle(userId).stream()
+                .map(bookmark -> ArticleCardResponse.from(bookmark.getArticle()))
+                .toList();
     }
 
     private ArticleMeta getArticle(Long articleId) {
