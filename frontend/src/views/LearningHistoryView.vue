@@ -35,6 +35,10 @@ const navigateToDetail = (id) => {
 const navigateToWrongNote = () => {
   router.push('/wrong-notes')
 }
+
+const navigateToReview = (id) => {
+  router.push(`/articles/${id}/review`)
+}
 </script>
 
 <template>
@@ -177,6 +181,28 @@ const navigateToWrongNote = () => {
                 >
                   {{ item.articleTitle }}
                 </h3>
+                <div
+                  v-if="item.type === 'REVIEW' && (item.reviewSummary || item.reviewLearned || item.reviewDifficultTerms?.length)"
+                  class="mt-3 rounded-2xl border border-slate-100 dark:border-white/10 bg-slate-50/80 dark:bg-slate-900/40 p-4 space-y-3"
+                >
+                  <div v-if="item.reviewSummary">
+                    <p class="text-xs font-bold text-slate-400 dark:text-slate-500 mb-1">요약</p>
+                    <p class="text-sm text-slate-700 dark:text-slate-300 leading-relaxed">{{ item.reviewSummary }}</p>
+                  </div>
+                  <div v-if="item.reviewLearned">
+                    <p class="text-xs font-bold text-slate-400 dark:text-slate-500 mb-1">배운 점</p>
+                    <p class="text-sm text-slate-700 dark:text-slate-300 leading-relaxed">{{ item.reviewLearned }}</p>
+                  </div>
+                  <div v-if="item.reviewDifficultTerms?.length" class="flex flex-wrap gap-2">
+                    <span
+                      v-for="term in item.reviewDifficultTerms"
+                      :key="term"
+                      class="text-xs px-2 py-1 rounded-lg bg-white dark:bg-slate-950 border border-slate-100 dark:border-white/10 text-slate-500 dark:text-slate-400"
+                    >
+                      {{ term }}
+                    </span>
+                  </div>
+                </div>
               </div>
 
               <!-- Extra meta / status -->
@@ -190,6 +216,13 @@ const navigateToWrongNote = () => {
                   {{ item.quizCorrect ? '🎯 정답' : '❌ 오답' }}
                 </span>
               </div>
+              <button
+                v-else-if="item.type === 'REVIEW'"
+                class="shrink-0 px-3 py-1.5 rounded-lg border border-slate-200 dark:border-white/10 text-xs font-bold text-slate-500 dark:text-slate-300 hover:border-primary-300 hover:text-primary-600 dark:hover:text-primary-400 transition-colors"
+                @click="navigateToReview(item.articleId)"
+              >
+                리뷰 보기
+              </button>
             </div>
           </div>
         </div>
