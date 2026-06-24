@@ -173,7 +173,7 @@ const handleLoadMore = () => articleStore.fetchArticles()
 }
 
 .eyebrow {
-  font-family: 'Black Han Sans', monospace;
+  font-family: 'Nanum Gothic', monospace;
   font-size: 11.5px;
   letter-spacing: 1px;
   color: var(--ink-3, #8a93a3);
@@ -282,7 +282,7 @@ const handleLoadMore = () => articleStore.fetchArticles()
 .dark .chip.active { background: #f4f6fa; color: #07090f; border-color: #f4f6fa; }
 
 .chip-count {
-  font-family: 'Black Han Sans', monospace;
+  font-family: 'Nanum Gothic', monospace;
   font-size: 11px;
   padding: 2px 6px;
   border-radius: 5px;

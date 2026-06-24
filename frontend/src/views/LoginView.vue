@@ -349,7 +349,7 @@ form {
   font-size: 12px;
   cursor: pointer;
   padding: 6px 8px;
-  font-family: 'Black Han Sans', monospace;
+  font-family: 'Nanum Gothic', monospace;
 }
 
 .error-msg {

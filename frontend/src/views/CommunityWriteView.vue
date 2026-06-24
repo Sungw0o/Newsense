@@ -168,7 +168,7 @@ const categoryColor = {
 }
 
 .eyebrow {
-  font-family: 'Black Han Sans', monospace;
+  font-family: 'Nanum Gothic', monospace;
   font-size: 11.5px;
   letter-spacing: 1px;
   color: var(--ink-3, #8a93a3);
@@ -252,7 +252,7 @@ const categoryColor = {
 .scrap-head-row { display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px; }
 .scrap-cat-badge {
   display: inline-flex; padding: 3px 10px; border-radius: 999px;
-  font-size: 11.5px; font-weight: 600; font-family: 'Black Han Sans', monospace;
+  font-size: 11.5px; font-weight: 600; font-family: 'Nanum Gothic', monospace;
 }
 .remove-scrap {
   display: inline-flex; align-items: center; gap: 5px;
@@ -355,7 +355,7 @@ const categoryColor = {
 .dark .picker-item { background: rgba(20,24,34,0.55); border-color: rgba(255,255,255,0.10); }
 .dark .picker-item:hover { border-color: #0084ff; background: rgba(0,132,255,0.10); }
 
-.pick-cat { font-family: 'Black Han Sans', monospace; font-size: 11px; font-weight: 600; flex-shrink: 0; padding-top: 2px; }
+.pick-cat { font-family: 'Nanum Gothic', monospace; font-size: 11px; font-weight: 600; flex-shrink: 0; padding-top: 2px; }
 .pick-title { font-size: 14px; font-weight: 500; color: var(--ink, #0a0d12); line-height: 1.45; }
 .dark .pick-title { color: #e0e4ef; }
 

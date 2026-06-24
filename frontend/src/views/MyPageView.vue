@@ -192,7 +192,7 @@ const nicknameFirst = () => (nickname.value || 'U').substring(0, 1)
 .settings-head { margin-bottom: 32px; }
 
 .eyebrow {
-  font-family: 'Black Han Sans', monospace;
+  font-family: 'Nanum Gothic', monospace;
   font-size: 11.5px;
   letter-spacing: 1px;
   color: var(--ink-3, #8a93a3);
@@ -301,7 +301,7 @@ const nicknameFirst = () => (nickname.value || 'U').substring(0, 1)
   font-size: 12.5px;
   color: var(--ink-3, #8a93a3);
   margin: 0 0 20px;
-  font-family: 'Black Han Sans', monospace;
+  font-family: 'Nanum Gothic', monospace;
   word-break: break-all;
 }
 
@@ -328,7 +328,7 @@ const nicknameFirst = () => (nickname.value || 'U').substring(0, 1)
   border-radius: 999px;
   font-size: 12.5px;
   font-weight: 600;
-  font-family: 'Black Han Sans', monospace;
+  font-family: 'Nanum Gothic', monospace;
 }
 .dark .plan-badge { background: rgba(0,132,255,0.18); color: #9BCBFF; }
 

@@ -140,7 +140,7 @@ const publishedDate = computed(() => {
   background: var(--ink, #0a0d12);
   color: #fff;
   border-radius: 6px;
-  font-family: 'Black Han Sans', monospace;
+  font-family: 'Nanum Gothic', monospace;
   font-size: 10.5px;
   letter-spacing: 0.8px;
   text-transform: uppercase;
@@ -196,7 +196,7 @@ const publishedDate = computed(() => {
 .dark .tag.finance { background: rgba(0,132,255,0.18); color: #9BCBFF; }
 
 .meta-time {
-  font-family: 'Black Han Sans', monospace;
+  font-family: 'Nanum Gothic', monospace;
   font-size: 11px;
   color: var(--ink-3, #8a93a3);
   letter-spacing: 0.3px;
@@ -273,7 +273,7 @@ h3 {
 .diff-bar.on { background: #0084ff; }
 
 .study b {
-  font-family: 'Black Han Sans', monospace;
+  font-family: 'Nanum Gothic', monospace;
   font-weight: 500;
   color: var(--ink, #0a0d12);
   font-size: 12px;
@@ -286,7 +286,7 @@ h3 {
   gap: 5px;
   font-size: 11.5px;
   color: var(--ink-3, #8a93a3);
-  font-family: 'Black Han Sans', monospace;
+  font-family: 'Nanum Gothic', monospace;
 }
 .q-dot {
   width: 6px; height: 6px;

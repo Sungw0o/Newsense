@@ -169,7 +169,7 @@ onMounted(async () => {
   display: inline-flex;
   align-items: center;
   gap: 10px;
-  font-family: 'Black Han Sans', monospace;
+  font-family: 'Nanum Gothic', monospace;
   font-size: 13px;
   color: var(--ink-2, #4a5161);
 }
@@ -254,7 +254,7 @@ onMounted(async () => {
 }
 
 .q-eyebrow {
-  font-family: 'Black Han Sans', monospace;
+  font-family: 'Nanum Gothic', monospace;
   font-size: 11px;
   letter-spacing: 0.8px;
   text-transform: uppercase;
@@ -336,7 +336,7 @@ onMounted(async () => {
   color: #0084ff;
   border: 1px solid rgba(0,132,255,0.15);
   display: flex; align-items: center; justify-content: center;
-  font-family: 'Black Han Sans', monospace;
+  font-family: 'Nanum Gothic', monospace;
   font-weight: 600;
   font-size: 13px;
 }
@@ -424,7 +424,7 @@ onMounted(async () => {
   align-items: center;
   padding: 4px 10px;
   border-radius: 999px;
-  font-family: 'Black Han Sans', monospace;
+  font-family: 'Nanum Gothic', monospace;
   font-size: 11px;
   font-weight: 600;
   letter-spacing: 0.3px;

@@ -183,7 +183,7 @@ const categoryColor = {
 }
 
 .eyebrow {
-  font-family: 'Black Han Sans', monospace;
+  font-family: 'Nanum Gothic', monospace;
   font-size: 11.5px;
   letter-spacing: 1px;
   color: var(--ink-3, #8a93a3);
@@ -230,7 +230,7 @@ const categoryColor = {
   border-radius: 999px;
   font-size: 11.5px;
   font-weight: 600;
-  font-family: 'Black Han Sans', monospace;
+  font-family: 'Nanum Gothic', monospace;
 }
 
 .scrap-title {
@@ -313,7 +313,7 @@ const categoryColor = {
 .meta-date, .meta-views {
   font-size: 12.5px;
   color: var(--ink-3, #8a93a3);
-  font-family: 'Black Han Sans', monospace;
+  font-family: 'Nanum Gothic', monospace;
   display: inline-flex;
   align-items: center;
   gap: 4px;
@@ -398,7 +398,7 @@ const categoryColor = {
   justify-content: space-between;
   margin-top: 10px;
 }
-.comment-hint { font-size: 11.5px; color: var(--ink-3, #8a93a3); font-family: 'Black Han Sans', monospace; }
+.comment-hint { font-size: 11.5px; color: var(--ink-3, #8a93a3); font-family: 'Nanum Gothic', monospace; }
 .comment-submit { padding: 9px 18px; font-size: 13px; display: inline-flex; align-items: center; gap: 6px; }
 .comment-submit:disabled { opacity: 0.5; cursor: default; }
 
