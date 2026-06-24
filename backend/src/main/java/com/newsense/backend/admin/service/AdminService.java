@@ -1,8 +1,14 @@
 package com.newsense.backend.admin.service;
 
+import com.newsense.backend.admin.dto.AdminArticleResponse;
 import com.newsense.backend.admin.dto.AdminStatsResponse;
 import com.newsense.backend.admin.dto.PostReportResponse;
+import com.newsense.backend.ai.article.ArticleClassificationResult;
+import com.newsense.backend.ai.article.OpenAiArticleClassifierClient;
+import com.newsense.backend.article.document.ArticleContent;
 import com.newsense.backend.article.repository.ArticleMetaRepository;
+import com.newsense.backend.article.repository.ArticleContentRepository;
+import com.newsense.backend.article.domain.ArticleMeta;
 import com.newsense.backend.common.exception.CustomException;
 import com.newsense.backend.common.exception.ErrorCode;
 import com.newsense.backend.community.domain.Post;
@@ -26,6 +32,8 @@ public class AdminService {
     private final PostRepository postRepository;
     private final PostReportRepository postReportRepository;
     private final ArticleMetaRepository articleMetaRepository;
+    private final ArticleContentRepository articleContentRepository;
+    private final OpenAiArticleClassifierClient articleClassifierClient;
 
     @Transactional(readOnly = true)
     public AdminStatsResponse getStats() {
@@ -59,5 +67,36 @@ public class AdminService {
     @Transactional(readOnly = true)
     public Page<PostReportResponse> getReports(Pageable pageable) {
         return postReportRepository.findAllWithDetails(pageable).map(PostReportResponse::from);
+    }
+
+    @Transactional(readOnly = true)
+    public Page<AdminArticleResponse> getArticles(Pageable pageable) {
+        return articleMetaRepository.findAll(pageable)
+                .map(article -> AdminArticleResponse.of(article, getContentLength(article)));
+    }
+
+    @Transactional
+    public AdminArticleResponse refreshArticleSummary(Long articleId) {
+        ArticleMeta article = articleMetaRepository.findById(articleId)
+                .orElseThrow(() -> new CustomException(ErrorCode.ARTICLE_NOT_FOUND));
+        ArticleContent content = articleContentRepository.findById(article.getMongoDocumentId())
+                .or(() -> articleContentRepository.findBySourceUrl(article.getSourceUrl()))
+                .orElseThrow(() -> new CustomException(ErrorCode.ARTICLE_NOT_FOUND));
+        String articleText = content.getCleanText() == null || content.getCleanText().isBlank()
+                ? content.getRawText()
+                : content.getCleanText();
+        ArticleClassificationResult result = articleClassifierClient.classify(article.getTitle(), articleText);
+        article.updateSummary(result.summary());
+        return AdminArticleResponse.of(article, articleText == null ? 0 : articleText.length());
+    }
+
+    private int getContentLength(ArticleMeta article) {
+        return articleContentRepository.findById(article.getMongoDocumentId())
+                .or(() -> articleContentRepository.findBySourceUrl(article.getSourceUrl()))
+                .map(content -> {
+                    String text = content.getCleanText() == null ? content.getRawText() : content.getCleanText();
+                    return text == null ? 0 : text.length();
+                })
+                .orElse(0);
     }
 }

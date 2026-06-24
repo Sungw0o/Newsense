@@ -24,6 +24,7 @@ onMounted(async () => {
 
 const tabs = [
   { key: 'stats', label: '통계' },
+  { key: 'articles', label: '기사 관리' },
   { key: 'users', label: '사용자 관리' },
   { key: 'reports', label: '신고 목록' },
 ]
@@ -56,6 +57,24 @@ const loadReports = async () => {
 const handleTabChange = (key) => {
   activeTab.value = key
   if (key === 'reports') loadReports()
+  if (key === 'articles' && store.articles.length === 0) store.fetchArticles({ size: 50, sort: 'collectedAt,desc' })
+}
+
+const formatArticleDate = (value) => {
+  if (!value) return '-'
+  return String(value).substring(0, 10).replaceAll('-', '.')
+}
+
+const formatLength = (length) => `${Number(length ?? 0).toLocaleString()}자`
+
+const canRequestSummary = (article) => !article.hasAiSummary
+
+const handleRefreshSummary = async (articleId) => {
+  try {
+    await store.refreshArticleSummary(articleId)
+  } catch {
+    alert(store.error || 'AI 요약 생성에 실패했습니다.')
+  }
 }
 
 const formatDate = (iso) => {
@@ -151,6 +170,63 @@ const handleDeleteReportedPost = async (postId) => {
             </tr>
           </tbody>
         </table>
+      </div>
+    </section>
+
+    <!-- Articles tab -->
+    <section v-if="activeTab === 'articles'" class="tab-content">
+      <div class="section-toolbar">
+        <p class="section-help">본문 길이와 AI 요약본 저장 상태를 확인하고, 누락된 요약을 수동으로 생성할 수 있습니다.</p>
+        <button class="action-btn" :disabled="store.isLoadingArticles" @click="store.fetchArticles({ size: 50, sort: 'collectedAt,desc' })">
+          새로고침
+        </button>
+      </div>
+      <div v-if="store.isLoadingArticles" class="loading-state"><div class="spinner"></div></div>
+      <div v-else class="user-table-wrap">
+        <table class="user-table">
+          <thead>
+            <tr>
+              <th>ID</th>
+              <th>기사</th>
+              <th>출처</th>
+              <th>작성일</th>
+              <th>본문 길이</th>
+              <th>AI 요약</th>
+              <th>조회수</th>
+              <th>작업</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr v-for="article in store.articles" :key="article.articleId">
+              <td class="td-id">{{ article.articleId }}</td>
+              <td class="td-article">
+                <strong>{{ article.title }}</strong>
+                <span>{{ article.category }}</span>
+              </td>
+              <td class="td-email">{{ article.source }}</td>
+              <td class="td-email">{{ formatArticleDate(article.publishedAt) }}</td>
+              <td>{{ formatLength(article.contentLength) }}</td>
+              <td>
+                <span class="role-badge" :class="article.hasAiSummary ? 'badge-admin' : 'badge-user'">
+                  {{ article.hasAiSummary ? '있음' : '없음' }}
+                </span>
+              </td>
+              <td>{{ Number(article.viewCount ?? 0).toLocaleString() }}</td>
+              <td>
+                <button
+                  class="action-btn"
+                  :disabled="!canRequestSummary(article) || store.summarizingArticleIds.includes(article.articleId)"
+                  @click="handleRefreshSummary(article.articleId)"
+                >
+                  {{ store.summarizingArticleIds.includes(article.articleId) ? '생성 중' : '요약 생성' }}
+                </button>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+        <div v-if="store.articles.length === 0" class="empty">
+          <p class="eyebrow" style="text-align:center;">수집된 기사가 없습니다</p>
+        </div>
       </div>
     </section>
 
@@ -255,6 +331,20 @@ const handleDeleteReportedPost = async (postId) => {
 
 .tab-content { margin-top: 8px; }
 
+.section-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 14px;
+}
+
+.section-help {
+  margin: 0;
+  font-size: 13px;
+  color: var(--ink-3, #8a93a3);
+}
+
 .error-banner {
   padding: 12px 16px;
   background: rgba(239, 68, 68, 0.08);
@@ -357,6 +447,24 @@ const handleDeleteReportedPost = async (postId) => {
 .td-email { color: var(--ink-2, #4a5161); font-size: 13px; }
 .dark .td-email { color: #a4adbf; }
 
+.td-article {
+  max-width: 320px;
+}
+.td-article strong {
+  display: block;
+  font-size: 13.5px;
+  line-height: 1.35;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.td-article span {
+  display: block;
+  margin-top: 3px;
+  font-size: 11.5px;
+  color: var(--ink-3, #8a93a3);
+}
+
 .role-badge {
   display: inline-flex;
   align-items: center;
@@ -383,6 +491,7 @@ const handleDeleteReportedPost = async (postId) => {
   transition: background .12s, border-color .12s;
   white-space: nowrap;
 }
+.action-btn:disabled { opacity: 0.45; cursor: not-allowed; }
 .action-btn:hover { background: rgba(0,132,255,0.14); border-color: rgba(0,132,255,0.35); }
 .dark .action-btn { color: #4FB3FF; background: rgba(0,132,255,0.10); border-color: rgba(0,132,255,0.25); }
 .dark .action-btn:hover { background: rgba(0,132,255,0.18); }

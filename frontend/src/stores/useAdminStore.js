@@ -5,8 +5,11 @@ export const useAdminStore = defineStore('admin', {
   state: () => ({
     stats: null,
     users: [],
+    articles: [],
     isLoadingStats: false,
     isLoadingUsers: false,
+    isLoadingArticles: false,
+    summarizingArticleIds: [],
     error: null,
   }),
 
@@ -53,6 +56,38 @@ export const useAdminStore = defineStore('admin', {
 
     async deletePost(postId) {
       await adminApi.deletePost(postId)
+    },
+
+    async fetchArticles(params = {}) {
+      this.isLoadingArticles = true
+      this.error = null
+      try {
+        const res = await adminApi.getArticles(params)
+        const data = res?.data ?? res
+        this.articles = Array.isArray(data) ? data : (data?.content ?? [])
+      } catch (e) {
+        this.error = e?.response?.data?.message ?? '기사 목록 조회에 실패했습니다.'
+      } finally {
+        this.isLoadingArticles = false
+      }
+    },
+
+    async refreshArticleSummary(articleId) {
+      if (this.summarizingArticleIds.includes(articleId)) return null
+      this.summarizingArticleIds.push(articleId)
+      this.error = null
+      try {
+        const res = await adminApi.refreshArticleSummary(articleId)
+        const updated = res?.data ?? res
+        const idx = this.articles.findIndex(article => article.articleId === articleId)
+        if (idx !== -1) this.articles[idx] = updated
+        return updated
+      } catch (e) {
+        this.error = e?.response?.data?.message ?? 'AI 요약 생성에 실패했습니다.'
+        throw e
+      } finally {
+        this.summarizingArticleIds = this.summarizingArticleIds.filter(id => id !== articleId)
+      }
     },
   },
 })

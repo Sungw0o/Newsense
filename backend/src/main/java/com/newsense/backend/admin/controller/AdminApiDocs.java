@@ -1,6 +1,7 @@
 package com.newsense.backend.admin.controller;
 
 import com.newsense.backend.admin.dto.AdminStatsResponse;
+import com.newsense.backend.admin.dto.AdminArticleResponse;
 import com.newsense.backend.admin.dto.PostReportResponse;
 import com.newsense.backend.common.response.ApiResponse;
 import com.newsense.backend.user.dto.UserProfileResponse;
@@ -46,5 +47,17 @@ public interface AdminApiDocs {
     @GetMapping("/api/v1/admin/reports")
     ResponseEntity<ApiResponse<Page<PostReportResponse>>> getReports(
             @PageableDefault(size = 20) Pageable pageable
+    );
+
+    @Operation(summary = "수집 기사 목록 조회 (관리자)")
+    @GetMapping("/api/v1/admin/articles")
+    ResponseEntity<ApiResponse<Page<AdminArticleResponse>>> getArticles(
+            @PageableDefault(size = 20) Pageable pageable
+    );
+
+    @Operation(summary = "AI 요약 강제 생성/갱신 (관리자)")
+    @PatchMapping("/api/v1/admin/articles/{articleId}/summary")
+    ResponseEntity<ApiResponse<AdminArticleResponse>> refreshArticleSummary(
+            @PathVariable Long articleId
     );
 }

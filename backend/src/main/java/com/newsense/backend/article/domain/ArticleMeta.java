@@ -76,6 +76,10 @@ public class ArticleMeta {
         this.viewCount++;
     }
 
+    public void updateSummary(String summary) {
+        this.summary = summary == null ? "" : summary.trim();
+    }
+
     public static ArticleMeta create(
             String title,
             String summary,

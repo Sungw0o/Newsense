@@ -16,6 +16,12 @@ const adminApi = {
   getReports(params = {}) {
     return axiosInstance.get('/admin/reports', { params })
   },
+  getArticles(params = {}) {
+    return axiosInstance.get('/admin/articles', { params })
+  },
+  refreshArticleSummary(articleId) {
+    return axiosInstance.patch(`/admin/articles/${articleId}/summary`)
+  },
 }
 
 export default adminApi

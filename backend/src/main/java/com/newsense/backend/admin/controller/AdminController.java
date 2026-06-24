@@ -1,6 +1,7 @@
 package com.newsense.backend.admin.controller;
 
 import com.newsense.backend.admin.dto.AdminStatsResponse;
+import com.newsense.backend.admin.dto.AdminArticleResponse;
 import com.newsense.backend.admin.dto.PostReportResponse;
 import com.newsense.backend.admin.service.AdminService;
 import com.newsense.backend.common.response.ApiResponse;
@@ -43,5 +44,15 @@ public class AdminController implements AdminApiDocs {
     @GetMapping("/api/v1/admin/reports")
     public ResponseEntity<ApiResponse<Page<PostReportResponse>>> getReports(Pageable pageable) {
         return ResponseEntity.ok(ApiResponse.success("신고 목록 조회에 성공했습니다.", adminService.getReports(pageable)));
+    }
+
+    @Override
+    public ResponseEntity<ApiResponse<Page<AdminArticleResponse>>> getArticles(Pageable pageable) {
+        return ResponseEntity.ok(ApiResponse.success("기사 목록 조회에 성공했습니다.", adminService.getArticles(pageable)));
+    }
+
+    @Override
+    public ResponseEntity<ApiResponse<AdminArticleResponse>> refreshArticleSummary(Long articleId) {
+        return ResponseEntity.ok(ApiResponse.success("AI 요약본이 갱신되었습니다.", adminService.refreshArticleSummary(articleId)));
     }
 }
