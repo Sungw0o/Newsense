@@ -1,5 +1,5 @@
 <script setup>
-import { computed, onMounted, ref, watch } from 'vue'
+import { computed, onMounted, ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { storeToRefs } from 'pinia'
 import { useArticleStore } from '../stores/useArticleStore'
@@ -16,6 +16,11 @@ let searchDebounce = null
 const displayArticles = computed(() => articles.value)
 const activeCategory = computed(() => filters.value.category || '전체')
 const hasKeyword = computed(() => !!filters.value.keyword)
+
+const todayLabel = computed(() => {
+  const d = new Date()
+  return `${d.getFullYear()}년 ${d.getMonth() + 1}월 ${d.getDate()}일`
+})
 
 onMounted(() => {
   if (articles.value.length === 0) articleStore.fetchArticles()
@@ -44,26 +49,8 @@ const clearSearch = () => {
 
 <template>
   <div class="feed-shell">
-    <!-- Page header -->
-    <header class="feed-head">
-      <div>
-        <p class="eyebrow">
-          <span class="live-dot"></span>
-          오늘의 브리프
-        </p>
-        <h1 class="feed-title">
-          경제를 읽고,<br>
-          <span class="accent">문해력</span>을 키우세요
-        </h1>
-      </div>
-      <div class="feed-meta">
-        <b>2026년 6월 24일</b><br>
-        뉴스 <span>{{ displayArticles.length }}</span>건 업데이트됨
-      </div>
-    </header>
-
-    <!-- Search bar -->
-    <div class="search-row">
+    <!-- Feed header row: search (left) + date meta (right) -->
+    <div class="feed-header-row">
       <div class="search-wrap">
         <span class="search-icon">🔎</span>
         <input
@@ -75,6 +62,9 @@ const clearSearch = () => {
           @keydown.enter="handleSearch"
         />
         <button v-if="hasKeyword" class="search-clear" @click="clearSearch" aria-label="검색어 지우기">✕</button>
+      </div>
+      <div class="feed-meta">
+        {{ todayLabel }} · 뉴스 <span>{{ displayArticles.length }}</span>건 업데이트됨
       </div>
     </div>
 
@@ -99,7 +89,7 @@ const clearSearch = () => {
     <!-- Loading -->
     <div v-if="isLoading && displayArticles.length === 0" class="loading-state">
       <div class="spinner"></div>
-      <p class="eyebrow" style="margin-top:16px;">기사를 불러오는 중</p>
+      <p class="loading-label">기사를 불러오는 중</p>
     </div>
 
     <!-- Error -->
@@ -149,86 +139,31 @@ const clearSearch = () => {
   padding: 48px 0 80px;
 }
 
-/* Header */
-.feed-head {
-  display: flex;
-  align-items: flex-end;
-  justify-content: space-between;
-  gap: 24px;
-  margin-bottom: 28px;
-}
-
-.eyebrow {
-  font-family: 'Nanum Gothic', monospace;
-  font-size: 11.5px;
-  letter-spacing: 1px;
-  color: var(--ink-3, #8a93a3);
-  text-transform: uppercase;
-  margin: 0 0 10px;
+/* Feed header row */
+.feed-header-row {
   display: flex;
   align-items: center;
-  gap: 10px;
-}
-
-.live-dot {
-  width: 7px; height: 7px;
-  border-radius: 50%;
-  background: #FF801E;
-  box-shadow: 0 0 0 4px rgba(255, 128, 30, 0.18);
-  animation: pulse 2s infinite;
-}
-
-@keyframes pulse {
-  0%, 100% { box-shadow: 0 0 0 4px rgba(255, 128, 30, 0.18); }
-  50%       { box-shadow: 0 0 0 8px rgba(255, 128, 30, 0.06); }
-}
-
-.feed-title {
-  font-family: 'Fustat', sans-serif;
-  font-weight: 800;
-  font-size: 52px;
-  line-height: 1.05;
-  letter-spacing: -1.5px;
-  margin: 0;
-  color: var(--ink, #0a0d12);
-}
-
-.dark .feed-title { color: #f4f6fa; }
-
-.accent {
-  background: linear-gradient(95deg, #0084ff 0%, #4FB3FF 60%, #0a4a99 100%);
-  -webkit-background-clip: text;
-  background-clip: text;
-  color: transparent;
-}
-
-.dark .accent {
-  background: linear-gradient(95deg, #6CB8FF 0%, #B8DAFF 60%, #FFFFFF 100%);
-  -webkit-background-clip: text;
-  background-clip: text;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 16px;
+  flex-wrap: wrap;
 }
 
 .feed-meta {
-  text-align: right;
   font-size: 13px;
-  color: var(--ink-2, #4a5161);
-  line-height: 1.65;
+  color: var(--ink-3, #8a93a3);
+  white-space: nowrap;
   flex-shrink: 0;
 }
-.feed-meta b { color: var(--ink, #0a0d12); font-weight: 600; }
-.dark .feed-meta { color: #a4adbf; }
-.dark .feed-meta b { color: #f4f6fa; }
 .feed-meta span { color: #0084ff; font-weight: 600; }
+.dark .feed-meta { color: #7a8299; }
 
 /* Search */
-.search-row {
-  margin-bottom: 16px;
-}
-
 .search-wrap {
   position: relative;
   display: flex;
   align-items: center;
+  flex: 1;
   max-width: 520px;
 }
 
@@ -399,6 +334,14 @@ const clearSearch = () => {
   align-items: center;
   padding: 80px 0;
 }
+.loading-label {
+  font-family: 'Nanum Gothic', monospace;
+  font-size: 11.5px;
+  letter-spacing: 1px;
+  color: var(--ink-3, #8a93a3);
+  text-transform: uppercase;
+  margin: 16px 0 0;
+}
 .spinner {
   width: 32px; height: 32px;
   border: 3px solid rgba(0, 132, 255, 0.15);
@@ -411,13 +354,12 @@ const clearSearch = () => {
 /* Responsive */
 @media (max-width: 1100px) {
   .feed-grid { grid-template-columns: repeat(2, 1fr); }
-  .feed-title { font-size: 42px; }
 }
 @media (max-width: 640px) {
   .feed-shell { padding: 32px 0 60px; }
-  .feed-head { flex-direction: column; align-items: flex-start; }
-  .feed-meta { text-align: left; }
-  .feed-title { font-size: 34px; letter-spacing: -1px; }
+  .feed-header-row { flex-direction: column; align-items: flex-start; }
+  .feed-meta { align-self: flex-end; }
+  .search-wrap { max-width: 100%; }
   .feed-grid { grid-template-columns: 1fr; }
 }
 </style>

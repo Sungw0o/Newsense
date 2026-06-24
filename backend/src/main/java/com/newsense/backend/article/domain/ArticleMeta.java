@@ -69,6 +69,13 @@ public class ArticleMeta {
     @Column(name = "collected_at", nullable = false)
     private LocalDateTime collectedAt;
 
+    @Column(name = "view_count", nullable = false)
+    private long viewCount = 0;
+
+    public void incrementViewCount() {
+        this.viewCount++;
+    }
+
     public static ArticleMeta create(
             String title,
             String summary,

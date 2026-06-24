@@ -182,10 +182,11 @@ watch(articleId, async (newId) => {
               :href="selectedArticle.sourceUrl"
               target="_blank"
               rel="noopener noreferrer"
-              class="inline-flex items-center gap-1.5 text-xs font-semibold text-slate-400 hover:text-primary-600 transition-colors duration-200 border border-slate-200 hover:border-primary-300 rounded-full px-3 py-1"
+              class="inline-flex items-center gap-1.5 text-xs font-semibold text-slate-500 hover:text-primary-600 transition-colors duration-200 border border-slate-200 hover:border-primary-300 rounded-full px-3 py-1.5 bg-slate-50 hover:bg-primary-50"
             >
-              <span>{{ selectedArticle.source }}</span>
-              <span>↗ 원문 읽기</span>
+              <span class="font-medium">{{ selectedArticle.source }}</span>
+              <span class="opacity-60">·</span>
+              <span>원문 보기 ↗</span>
             </a>
           </div>
 

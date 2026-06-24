@@ -22,15 +22,12 @@ onMounted(async () => {
     <AppHeader />
 
     <div class="layout-body">
-      <aside class="sidebar-left">
-        <StreakWidget v-if="userStore.isAuthenticated" />
-      </aside>
-
       <main class="layout-main">
         <router-view />
       </main>
 
       <aside class="sidebar-right">
+        <StreakWidget v-if="userStore.isAuthenticated" />
         <IndicatorWidget />
       </aside>
     </div>
@@ -43,7 +40,7 @@ onMounted(async () => {
 .layout-body {
   flex: 1;
   display: grid;
-  grid-template-columns: 220px 1fr 220px;
+  grid-template-columns: 1fr 220px;
   gap: 24px;
   max-width: 1400px;
   margin: 0 auto;
@@ -54,9 +51,10 @@ onMounted(async () => {
   z-index: 10;
 }
 
-.sidebar-left,
 .sidebar-right {
-  display: block;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
 }
 
 .layout-main {
@@ -67,7 +65,6 @@ onMounted(async () => {
   .layout-body {
     grid-template-columns: 1fr;
   }
-  .sidebar-left,
   .sidebar-right {
     display: none;
   }

@@ -59,7 +59,7 @@ crawler:
       date-selector: .dataInfo .date
       body-selector: meta[property=description]
       body-attribute: content
-      enabled: true
+      enabled: false
     - key: moef
       name: 기획재정부
       base-url: https://www.moef.go.kr

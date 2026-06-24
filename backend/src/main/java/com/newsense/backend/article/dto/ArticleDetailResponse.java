@@ -17,6 +17,7 @@ public record ArticleDetailResponse(
         String sourceUrl,
         LocalDate publishedAt,
         int estimatedMinutes,
+        long viewCount,
         boolean isRead,
         boolean isBookmarked,
         List<RelatedStockResponse> relatedStocks
@@ -49,6 +50,7 @@ public record ArticleDetailResponse(
                 article.getSourceUrl(),
                 article.getPublishedAt(),
                 article.getEstimatedMinutes(),
+                article.getViewCount(),
                 isRead,
                 isBookmarked,
                 relatedStocks

@@ -12,7 +12,8 @@ public record ArticleCardResponse(
         String difficulty,
         String source,
         int estimatedMinutes,
-        LocalDate publishedAt
+        LocalDate publishedAt,
+        long viewCount
 ) {
     public static ArticleCardResponse from(ArticleMeta article) {
         return new ArticleCardResponse(
@@ -23,7 +24,8 @@ public record ArticleCardResponse(
                 article.getDifficulty().getDisplayName(),
                 article.getSource(),
                 article.getEstimatedMinutes(),
-                article.getPublishedAt()
+                article.getPublishedAt(),
+                article.getViewCount()
         );
     }
 }

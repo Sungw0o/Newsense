@@ -167,45 +167,12 @@ const isExpanded = (dayDate, articleId) => expanded.value.has(`${dayDate}__${art
           </div>
 
           <div class="timeline-items">
-            <!-- Grouped by article -->
+            <!-- Grouped by article — all groups are collapsible -->
             <div v-for="group in day.groups" :key="group.articleId ?? group.items[0].historyId" class="article-group">
-              <!-- Single event — show inline as before -->
-              <div v-if="group.items.length === 1" class="timeline-item">
-                <div class="item-left">
-                  <div class="type-badges">
-                    <span class="type-badge" :style="{ background: (typeColor[group.items[0].type] ?? '#0084ff') + '18', color: typeColor[group.items[0].type] ?? '#0084ff' }">
-                      {{ typeLabel[group.items[0].type] ?? group.items[0].type }}
-                    </span>
-                    <span v-if="group.articleCategory" class="category-badge">{{ group.articleCategory }}</span>
-                    <span class="time-badge">{{ formatTime(group.items[0].learnedAt) }}</span>
-                  </div>
-                  <p class="item-title" @click="navigate(`/articles/${group.articleId}`)">{{ group.articleTitle }}</p>
-                  <div v-if="group.items[0].type === 'REVIEW' && (group.items[0].reviewSummary || group.items[0].reviewLearned)" class="review-card">
-                    <div v-if="group.items[0].reviewSummary">
-                      <p class="review-label">요약</p>
-                      <p class="review-text">{{ group.items[0].reviewSummary }}</p>
-                    </div>
-                    <div v-if="group.items[0].reviewLearned">
-                      <p class="review-label">배운 점</p>
-                      <p class="review-text">{{ group.items[0].reviewLearned }}</p>
-                    </div>
-                  </div>
-                </div>
-                <div class="item-right">
-                  <span v-if="group.items[0].type === 'QUIZ'" class="quiz-result" :class="group.items[0].quizCorrect ? 'correct' : 'wrong'">
-                    {{ group.items[0].quizCorrect ? '🎯 정답' : '❌ 오답' }}
-                  </span>
-                  <button v-else-if="group.items[0].type === 'REVIEW'" class="btn-ghost" @click="navigate(`/articles/${group.articleId}/review`)">
-                    리뷰 보기
-                  </button>
-                </div>
-              </div>
-
-              <!-- Multiple events for same article — collapsible toggle -->
-              <div v-else class="group-toggle">
+              <div class="group-toggle">
                 <div
                   class="group-toggle-header"
-                  @click="toggleGroup(day.date, group.articleId)"
+                  @click="toggleGroup(day.date, group.articleId ?? group.items[0].historyId)"
                 >
                   <div class="item-left">
                     <div class="type-badges">
@@ -216,16 +183,17 @@ const isExpanded = (dayDate, articleId) => expanded.value.has(`${dayDate}__${art
                         :style="{ background: (typeColor[item.type] ?? '#0084ff') + '18', color: typeColor[item.type] ?? '#0084ff' }"
                       >{{ typeLabel[item.type] ?? item.type }}</span>
                       <span v-if="group.articleCategory" class="category-badge">{{ group.articleCategory }}</span>
+                      <span v-if="group.items.length === 1" class="time-badge">{{ formatTime(group.items[0].learnedAt) }}</span>
                     </div>
                     <p class="item-title" @click.stop="navigate(`/articles/${group.articleId}`)">{{ group.articleTitle }}</p>
                   </div>
                   <div class="item-right">
-                    <span class="toggle-arrow" :class="{ open: isExpanded(day.date, group.articleId) }">▾</span>
+                    <span class="toggle-arrow" :class="{ open: isExpanded(day.date, group.articleId ?? group.items[0].historyId) }">▾</span>
                   </div>
                 </div>
 
                 <!-- Expanded sub-items -->
-                <div v-if="isExpanded(day.date, group.articleId)" class="group-sub-items">
+                <div v-if="isExpanded(day.date, group.articleId ?? group.items[0].historyId)" class="group-sub-items">
                   <div v-for="item in group.items" :key="item.historyId" class="sub-item">
                     <div class="sub-item-left">
                       <div class="type-badges">

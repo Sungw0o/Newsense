@@ -49,9 +49,10 @@ public class ArticleDetailService {
     private final MongoTemplate mongoTemplate;
     private final ArticleRelatedStockRepository articleRelatedStockRepository;
 
-    @Transactional(readOnly = true)
+    @Transactional
     public ArticleDetailResponse getArticleDetail(Long articleId, Long userId) {
         ArticleMeta article = getArticle(articleId);
+        article.incrementViewCount();
         String content = getArticleContent(article)
                 .map(ArticleContent::getCleanText)
                 .orElse(article.getSummary());

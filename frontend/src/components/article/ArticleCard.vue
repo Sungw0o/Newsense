@@ -19,12 +19,6 @@ const categoryTag = computed(() => {
   return map[props.article.category] ?? 'default'
 })
 
-const difficultyBars = computed(() => {
-  const levels = { '초급': 1, '중급': 2, '고급': 3 }
-  const count = levels[props.article.difficulty] ?? 1
-  return [1, 2, 3].map(i => i <= count)
-})
-
 const readTime = computed(() => {
   return props.article.estimatedMinutes ?? props.article.readTime ?? 3
 })
@@ -33,6 +27,11 @@ const publishedDate = computed(() => {
   const d = props.article.publishedAt ?? props.article.createdAt
   if (!d) return ''
   return new Date(d).toLocaleDateString('ko-KR', { month: 'short', day: 'numeric' })
+})
+
+const viewCount = computed(() => {
+  const v = props.article.viewCount ?? 0
+  return v >= 1000 ? `${(v / 1000).toFixed(1)}k` : String(v)
 })
 </script>
 
@@ -64,23 +63,13 @@ const publishedDate = computed(() => {
 
     <!-- Card footer -->
     <div class="card-foot">
-      <span class="study">
-        <svg viewBox="0 0 14 14" xmlns="http://www.w3.org/2000/svg">
-          <circle cx="7" cy="7" r="5.5"/>
-          <path d="M7 4v3.5l2 1.5" stroke-linecap="round"/>
+      <span class="pub-date">{{ publishedDate }}</span>
+      <span class="view-count">
+        <svg viewBox="0 0 14 14" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <circle cx="7" cy="7" r="4.5" stroke="currentColor" stroke-width="1.5"/>
+          <circle cx="7" cy="7" r="2" fill="currentColor"/>
         </svg>
-        난이도
-        <span class="difficulty">
-          <span v-for="(on, i) in difficultyBars" :key="i" class="diff-bar" :class="{ on }"></span>
-        </span>
-        <b>{{ article.difficulty }}</b>
-      </span>
-
-      <span class="quiz-info">
-        <span class="q-dot"></span>
-        퀴즈 {{ article.quizCount ?? 3 }}문항
-        <span style="opacity:0.35; margin:0 2px;">·</span>
-        <span>{{ publishedDate }}</span>
+        {{ viewCount }}
       </span>
     </div>
   </article>
@@ -100,7 +89,7 @@ const publishedDate = computed(() => {
   color: inherit;
   transition: transform .25s ease, box-shadow .25s ease, border-color .25s ease;
   box-shadow: 0 1px 0 rgba(255, 255, 255, 0.6) inset;
-  min-height: 300px;
+  min-height: 260px;
 }
 .card:hover {
   transform: translateY(-3px);
@@ -124,7 +113,7 @@ const publishedDate = computed(() => {
   background:
     radial-gradient(120% 140% at 0% 0%, rgba(0, 132, 255, 0.08) 0%, rgba(0, 132, 255, 0) 60%),
     #fff;
-  min-height: 340px;
+  min-height: 300px;
 }
 .dark .card.featured {
   background:
@@ -244,57 +233,24 @@ h3 {
 }
 .dark .card-foot { border-color: rgba(255, 255, 255, 0.10); }
 
-.study {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  font-size: 12.5px;
-  color: var(--ink-2, #4a5161);
-  font-weight: 500;
-}
-.dark .study { color: #a4adbf; }
-
-.study svg {
-  width: 14px; height: 14px;
-  stroke: #0084ff;
-  fill: none;
-  stroke-width: 2;
-  flex-shrink: 0;
-}
-
-.difficulty {
-  display: inline-flex;
-  gap: 2px;
-  align-items: center;
-}
-.diff-bar {
-  width: 4px; height: 10px;
-  border-radius: 2px;
-  background: rgba(0, 0, 0, 0.12);
-}
-.dark .diff-bar { background: rgba(255,255,255,0.15); }
-.diff-bar.on { background: #0084ff; }
-
-.study b {
+.pub-date {
   font-family: 'Nanum Gothic', monospace;
-  font-weight: 500;
-  color: var(--ink, #0a0d12);
   font-size: 12px;
+  color: var(--ink-3, #8a93a3);
 }
-.dark .study b { color: #f4f6fa; }
 
-.quiz-info {
+.view-count {
   display: inline-flex;
   align-items: center;
-  gap: 5px;
-  font-size: 11.5px;
-  color: var(--ink-3, #8a93a3);
+  gap: 4px;
   font-family: 'Nanum Gothic', monospace;
+  font-size: 12px;
+  color: var(--ink-3, #8a93a3);
 }
-.q-dot {
-  width: 6px; height: 6px;
-  border-radius: 50%;
-  background: #0084ff;
+.view-count svg {
+  width: 13px; height: 13px;
+  color: var(--ink-3, #8a93a3);
+  flex-shrink: 0;
 }
 
 @media (max-width: 640px) {

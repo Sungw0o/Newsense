@@ -56,7 +56,7 @@ crawler:
       date-selector: ${BOK_CRAWLER_DATE_SELECTOR:.dataInfo .date}
       body-selector: ${BOK_CRAWLER_BODY_SELECTOR:meta[property=description]}
       body-attribute: ${BOK_CRAWLER_BODY_ATTRIBUTE:content}
-      enabled: ${BOK_CRAWLER_ENABLED:true}
+      enabled: ${BOK_CRAWLER_ENABLED:false}
     - key: moef
       name: 기획재정부
       base-url: https://www.moef.go.kr

@@ -11,6 +11,7 @@ const { isAuthenticated, userInfo } = storeToRefs(userStore)
 
 const showDropdown = ref(false)
 const showStartMenu = ref(false)
+const showMobileMenu = ref(false)
 
 const nicknameFirstLetter = computed(() => {
   return userInfo.value?.nickname?.substring(0, 1) ?? 'U'
@@ -21,14 +22,20 @@ const isActive = (path) => route.path === path
 const closeMenus = () => {
   showDropdown.value = false
   showStartMenu.value = false
+  showMobileMenu.value = false
 }
 
 const handleLogout = async () => {
   if (confirm('정말로 로그아웃 하시겠습니까?')) {
     await userStore.logout()
-    showDropdown.value = false
+    closeMenus()
     router.push('/login')
   }
+}
+
+const handleMobileNav = (path) => {
+  closeMenus()
+  router.push(path)
 }
 </script>
 
@@ -36,20 +43,20 @@ const handleLogout = async () => {
   <div class="nav-wrap">
     <nav class="nav glass-panel">
       <!-- Brand -->
-      <router-link to="/" class="brand">
+      <router-link to="/" class="brand" @click="closeMenus">
         <span class="brand-mark"></span>
         Newsense
       </router-link>
 
-      <!-- Nav links -->
+      <!-- Nav links (desktop) -->
       <div class="nav-links">
         <router-link to="/" :class="{ active: isActive('/') }">뉴스 피드</router-link>
         <router-link to="/community" :class="{ active: route.path.startsWith('/community') }">커뮤니티</router-link>
         <router-link to="/history" :class="{ active: isActive('/history') }">학습 이력</router-link>
       </div>
 
-      <!-- Auth area -->
-      <div v-if="isAuthenticated" class="relative">
+      <!-- Auth area (desktop) -->
+      <div v-if="isAuthenticated" class="relative desktop-auth">
         <button class="nav-cta" @click="showDropdown = !showDropdown">
           <span class="avatar">{{ nicknameFirstLetter }}</span>
           <span class="avatar-name">{{ userInfo?.nickname || '회원' }}</span>
@@ -67,7 +74,7 @@ const handleLogout = async () => {
         </div>
       </div>
 
-      <div v-else class="relative">
+      <div v-else class="relative desktop-auth">
         <button class="btn-primary nav-start" @click="showStartMenu = !showStartMenu">
           시작하기 <span class="arrow">▾</span>
         </button>
@@ -81,11 +88,35 @@ const handleLogout = async () => {
           <router-link to="/register" @click="showStartMenu = false" class="drop-item">회원가입</router-link>
         </div>
       </div>
+
+      <!-- Hamburger (mobile) -->
+      <button class="hamburger" @click="showMobileMenu = !showMobileMenu" aria-label="메뉴">
+        <span class="ham-line" :class="{ open: showMobileMenu }"></span>
+        <span class="ham-line" :class="{ open: showMobileMenu }"></span>
+        <span class="ham-line" :class="{ open: showMobileMenu }"></span>
+      </button>
     </nav>
+
+    <!-- Mobile menu -->
+    <div v-if="showMobileMenu" class="mobile-menu glass-panel" @click.stop>
+      <button class="mobile-link" @click="handleMobileNav('/')">뉴스 피드</button>
+      <button class="mobile-link" @click="handleMobileNav('/community')">커뮤니티</button>
+      <button class="mobile-link" @click="handleMobileNav('/history')">학습 이력</button>
+      <div class="mobile-divider"></div>
+      <template v-if="isAuthenticated">
+        <button class="mobile-link" @click="handleMobileNav('/mypage')">마이페이지</button>
+        <button v-if="userInfo?.role === 'ADMIN'" class="mobile-link" @click="handleMobileNav('/admin')">관리자 페이지</button>
+        <button class="mobile-link mobile-logout" @click="handleLogout">로그아웃</button>
+      </template>
+      <template v-else>
+        <button class="mobile-link" @click="handleMobileNav('/login')">로그인</button>
+        <button class="mobile-link" @click="handleMobileNav('/register')">회원가입</button>
+      </template>
+    </div>
   </div>
 
-  <!-- Backdrop to close dropdown -->
-  <div v-if="showDropdown || showStartMenu" class="fixed inset-0 z-40" @click="closeMenus" />
+  <!-- Backdrop to close dropdowns -->
+  <div v-if="showDropdown || showStartMenu || showMobileMenu" class="fixed inset-0 z-40" @click="closeMenus" />
 </template>
 
 <style scoped>
@@ -94,10 +125,12 @@ const handleLogout = async () => {
   top: 20px;
   z-index: 50;
   display: flex;
-  justify-content: center;
+  flex-direction: column;
+  align-items: center;
   pointer-events: none;
   margin-top: 20px;
   padding: 0 16px;
+  gap: 8px;
 }
 
 .nav {
@@ -189,17 +222,6 @@ const handleLogout = async () => {
 
 .arrow { font-size: 10px; opacity: 0.5; }
 
-.nav-login {
-  font-size: 13.5px;
-  font-weight: 500;
-  color: var(--ink);
-  text-decoration: none;
-  opacity: 0.75;
-  transition: opacity .15s;
-  white-space: nowrap;
-}
-.nav-login:hover { opacity: 1; }
-
 .nav-start {
   display: inline-flex;
   align-items: center;
@@ -209,6 +231,69 @@ const handleLogout = async () => {
   border-radius: 10px;
   white-space: nowrap;
 }
+
+/* Hamburger */
+.hamburger {
+  display: none;
+  flex-direction: column;
+  gap: 4px;
+  padding: 8px;
+  background: none;
+  border: none;
+  cursor: pointer;
+  margin-left: auto;
+}
+.ham-line {
+  display: block;
+  width: 20px; height: 2px;
+  border-radius: 2px;
+  background: var(--ink);
+  transition: transform .2s, opacity .2s;
+}
+.ham-line.open:nth-child(1) { transform: translateY(6px) rotate(45deg); }
+.ham-line.open:nth-child(2) { opacity: 0; }
+.ham-line.open:nth-child(3) { transform: translateY(-6px) rotate(-45deg); }
+.dark .ham-line { background: #f4f6fa; }
+
+/* Mobile menu */
+.mobile-menu {
+  pointer-events: auto;
+  display: flex;
+  flex-direction: column;
+  width: calc(100vw - 32px);
+  max-width: 360px;
+  border-radius: 16px;
+  overflow: hidden;
+  animation: dropIn .15s ease-out;
+}
+
+.mobile-link {
+  display: block;
+  width: 100%;
+  padding: 13px 20px;
+  background: none;
+  border: none;
+  text-align: left;
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--ink);
+  cursor: pointer;
+  transition: background .12s, color .12s;
+}
+.mobile-link:hover { background: rgba(0,132,255,0.07); color: #0084ff; }
+.dark .mobile-link { color: #f4f6fa; }
+.dark .mobile-link:hover { background: rgba(0,132,255,0.14); color: #4FB3FF; }
+
+.mobile-logout { color: #b02a2a; }
+.dark .mobile-logout { color: #ff8a8a; }
+.mobile-logout:hover { background: rgba(176,42,42,0.08) !important; color: #b02a2a !important; }
+
+.mobile-divider {
+  height: 1px;
+  background: rgba(0,0,0,0.08);
+  margin: 4px 0;
+}
+.dark .mobile-divider { background: rgba(255,255,255,0.10); }
 
 /* Dropdown */
 .nav-drop {
@@ -293,11 +378,12 @@ const handleLogout = async () => {
   to   { opacity: 1; transform: translateY(0); }
 }
 
+/* Responsive */
 @media (max-width: 640px) {
-  .nav { gap: 14px; padding: 8px 10px 8px 14px; }
-  .nav-links { gap: 14px; }
-  .nav-links a { font-size: 12.5px; }
+  .nav { gap: 8px; padding: 8px 8px 8px 14px; }
+  .nav-links { display: none; }
+  .desktop-auth { display: none; }
+  .hamburger { display: flex; }
   .brand { font-size: 17px; }
-  .avatar-name { display: none; }
 }
 </style>
