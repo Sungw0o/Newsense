@@ -17,6 +17,7 @@ import com.newsense.backend.article.event.ArticleStoredEvent;
 import com.newsense.backend.article.repository.ArticleContentRepository;
 import com.newsense.backend.article.repository.ArticleMetaRepository;
 import com.newsense.backend.article.repository.ArticleRelatedStockRepository;
+import com.newsense.backend.rag.service.ArticleEmbeddingService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.ApplicationEventPublisher;
@@ -46,6 +47,7 @@ public class ArticlePersistenceService {
     private final CrawlerProperties properties;
     private final ApplicationEventPublisher eventPublisher;
     private final OpenAiArticleClassifierClient articleClassifierClient;
+    private final ArticleEmbeddingService articleEmbeddingService;
 
     @Transactional
     public boolean saveIfNew(CrawledArticle article) {
@@ -100,6 +102,9 @@ public class ArticlePersistenceService {
             ArticleMeta savedMeta = articleMetaRepository.save(meta);
             saveRelatedStocks(savedMeta, classification.relatedStocks());
             eventPublisher.publishEvent(new ArticleStoredEvent(savedMeta.getId()));
+            // 임베딩 생성은 비동기 처리 — 실패해도 기사 저장에 영향 없음
+            articleEmbeddingService.generateAndStoreAsync(
+                    savedContent.getId(), article.title(), cleanText);
             return true;
         } catch (RuntimeException exception) {
             articleContentRepository.deleteById(savedContent.getId());
