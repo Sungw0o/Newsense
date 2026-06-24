@@ -417,6 +417,44 @@ npm run dev
 
 ---
 
+## 테스트 구조 및 커버리지
+
+### 백엔드 (Spring Boot / JUnit 5 / Mockito)
+
+커버리지 리포트 생성: `./gradlew test jacocoTestReport`
+
+| 테스트 파일 | 대상 | 주요 케이스 |
+|---|---|---|
+| `AuthServiceTest` | 회원가입·로그인·토큰 갱신·로그아웃 | 이메일 정규화, 중복 검사, 비밀번호 불일치, 토큰 로테이션 |
+| `ArticleDetailServiceTest` | 기사 상세·용어·읽기·북마크 | 컨텐츠 없음 예외, 용어 추출 캐싱, 첫 읽기 이벤트 |
+| `ArticleFeedServiceTest` | 기사 목록 필터·카테고리 집계 | Specification 제외 키워드 검증, 카운트 반영 |
+| `ArticleUtilityTest` | 해시·청크·정제 유틸 | SHA-256 재현성, 청크 경계 |
+| `QuizServiceTest` | 퀴즈 조회·생성·제출 | Lazy 생성, OX/객관식 채점, 오답노트 기록 |
+| `ReviewServiceTest` | 리뷰 CRUD | 중복 방지, 용어 정규화, 이벤트 발행 |
+| `WrongNoteServiceTest` | 오답노트 기록·수정·삭제 | 누적 오답, 해결 토글, 소프트 삭제 |
+| `LearningHistoryServiceTest` | 학습 이력 기록 | 이벤트 리스너, 중복 저장 방지 |
+| `UserServiceTest` | 프로필 조회·수정·탈퇴 | 닉네임 중복, 동일 닉네임 건너뜀 |
+| `PostServiceTest` | 게시글·댓글·반응 | NOTICE 권한, 좋아요 토글, 댓글 소유권 |
+| `RagRetrievalServiceTest` | 키워드 + 하이브리드 검색 | 벡터 fallback, 빈 임베딩 처리, 취약 개념 추천 |
+| `ArticleEmbeddingServiceTest` | 비동기 임베딩 저장 | enabled guard, MongoDB 업데이트, 예외 격리 |
+| `RagVectorSearchServiceTest` | 코사인 유사도 / Atlas 전략 | 직교 벡터 필터, limit 준수 |
+
+### 프론트엔드 (Vue 3 / Vitest / @vitest/coverage-v8)
+
+커버리지 리포트 생성: `cd frontend && npm run coverage`
+
+커버리지 대상: `src/stores/**`, `src/api/**`
+
+| 테스트 파일 | 대상 스토어 | 주요 케이스 |
+|---|---|---|
+| `useUserStore.test.js` | 인증 상태 관리 | 로그인 성공/실패, 로그아웃, initAuth 복구 |
+| `useQuizStore.test.js` | 퀴즈 제출 DTO | 필드명 계약, 채점 결과 매핑 |
+| `useArticleStore.test.js` | 기사 목록·상세 | 페이지 로드, 필터 초기화, 북마크 토글, 경쟁 요청 방지 |
+| `useWrongNoteStore.test.js` | 오답노트 | 목록 로드, 해결 토글, 즉시 삭제 |
+| `useHistoryStore.test.js` | 학습 이력·통계·추천 | 성공/실패 분기, 파라미터 전달 |
+
+---
+
 ## 개발 컨벤션
 
-Git 브랜치 전략, 커밋 메시지, PR 규칙, Java/Vue 코딩 컨벤션, DB 컨벤션은 [하네스.md](하네스.md)를 참조하세요.
+Git 브랜치 전략, 커밋 메시지, PR 규칙, Java/Vue 코딩 컨벤션, DB 컨벤션은 [harness.md](harness.md)를 참조하세요.
