@@ -204,46 +204,36 @@ flowchart TD
 
 ## 기술 스택
 
-### 백엔드
+**Backend**
 
-| 분류 | 기술 | 버전 |
-|---|---|---|
-| 언어 / 런타임 | Java | 21 |
-| 프레임워크 | Spring Boot | 4.1.0 |
-| ORM | Spring Data JPA (Hibernate) | - |
-| 문서 DB 클라이언트 | Spring Data MongoDB | - |
-| 캐시 클라이언트 | Spring Data Redis | - |
-| 보안 | Spring Security + JWT (jjwt 0.13.0) | - |
-| HTML 크롤링 | Jsoup | 1.22.2 |
-| PDF 텍스트 추출 | Apache PDFBox | 3.0.1 |
-| PDF OCR | Tess4J (Tesseract) | 5.8.0 |
-| AI (퀴즈/분류) | SSAFY GMS / OpenAI API (gpt-4o-mini) | - |
-| API 문서화 | SpringDoc OpenAPI (Swagger UI) | 3.0.3 |
-| 빌드 도구 | Gradle | - |
-| 테스트 | JUnit 5 + Testcontainers + JaCoCo | - |
+![Java](https://img.shields.io/badge/Java-21-orange?style=flat-square&logo=openjdk&logoColor=white)
+![Spring Boot](https://img.shields.io/badge/Spring_Boot-3.x-brightgreen?style=flat-square&logo=springboot&logoColor=white)
+![Spring Security](https://img.shields.io/badge/Spring_Security-JWT-6DB33F?style=flat-square&logo=springsecurity&logoColor=white)
+![Spring Data JPA](https://img.shields.io/badge/Spring_Data_JPA-Hibernate-59666C?style=flat-square&logo=hibernate&logoColor=white)
+![Gradle](https://img.shields.io/badge/Gradle-build-02303A?style=flat-square&logo=gradle&logoColor=white)
+![OpenAI](https://img.shields.io/badge/OpenAI-gpt--4o--mini-412991?style=flat-square&logo=openai&logoColor=white)
+![Swagger](https://img.shields.io/badge/Swagger_UI-3.0.3-85EA2D?style=flat-square&logo=swagger&logoColor=black)
+![JUnit5](https://img.shields.io/badge/JUnit5-test-25A162?style=flat-square&logo=junit5&logoColor=white)
 
-### 프론트엔드
+> Jsoup 1.22.2 (HTML 크롤링) · Apache PDFBox 3.0.1 (PDF 추출) · Tess4J 5.8.0 (OCR)
 
-| 분류 | 기술 | 비고 |
-|---|---|---|
-| 프레임워크 | Vue 3 | Composition API (`<script setup>`) |
-| 번들러 | Vite | - |
-| 상태 관리 | Pinia | - |
-| HTTP 클라이언트 | Axios | - |
-| CSS | Tailwind CSS | 유틸리티 중심 반응형 |
-| 라우팅 | Vue Router | - |
+**Frontend**
 
-### 인프라
+![Vue 3](https://img.shields.io/badge/Vue-3-4FC08D?style=flat-square&logo=vue.js&logoColor=white)
+![Vite](https://img.shields.io/badge/Vite-bundler-646CFF?style=flat-square&logo=vite&logoColor=white)
+![Pinia](https://img.shields.io/badge/Pinia-state-FFD859?style=flat-square&logo=pinia&logoColor=black)
+![Tailwind CSS](https://img.shields.io/badge/Tailwind_CSS-utility-06B6D4?style=flat-square&logo=tailwindcss&logoColor=white)
+![Axios](https://img.shields.io/badge/Axios-http-5A29E4?style=flat-square&logo=axios&logoColor=white)
 
-| 분류 | 기술 | 버전 |
-|---|---|---|
-| 컨테이너 오케스트레이션 | Docker Compose | - |
-| 웹 서버 / 리버스 프록시 | Nginx | 1.27-alpine |
-| 관계형 DB | MySQL | 8.0 |
-| 문서 DB | MongoDB | 7.0 |
-| 인메모리 캐시 | Redis | 7.4-alpine |
-| DNS / SSL | Cloudflare (Tunnel + 네임서버) | - |
-| 클라우드 | AWS EC2 | - |
+**Infra**
+
+![Docker](https://img.shields.io/badge/Docker_Compose-orchestration-2496ED?style=flat-square&logo=docker&logoColor=white)
+![Nginx](https://img.shields.io/badge/Nginx-1.27--alpine-009639?style=flat-square&logo=nginx&logoColor=white)
+![MySQL](https://img.shields.io/badge/MySQL-8.0-4479A1?style=flat-square&logo=mysql&logoColor=white)
+![MongoDB](https://img.shields.io/badge/MongoDB-7.0-47A248?style=flat-square&logo=mongodb&logoColor=white)
+![Redis](https://img.shields.io/badge/Redis-7.4--alpine-DC382D?style=flat-square&logo=redis&logoColor=white)
+![Cloudflare](https://img.shields.io/badge/Cloudflare-Tunnel_+_DNS-F38020?style=flat-square&logo=cloudflare&logoColor=white)
+![AWS EC2](https://img.shields.io/badge/AWS-EC2-FF9900?style=flat-square&logo=amazonec2&logoColor=white)
 
 ---
 
@@ -421,99 +411,12 @@ npm run dev
 
 ## API 주요 엔드포인트
 
-| 메서드 | 경로 | 설명 |
-|---|---|---|
-| GET | `/api/v1/health` | 헬스 체크 |
-| POST | `/api/v1/auth/signup` | 회원가입 |
-| POST | `/api/v1/auth/login` | 로그인 |
-| POST | `/api/v1/auth/logout` | 로그아웃 |
-| GET | `/api/v1/articles` | 기사 목록 (필터·페이징) |
-| GET | `/api/v1/articles/{id}` | 기사 상세 |
-| GET | `/api/v1/articles/{id}/terms` | 기사 경제 용어 |
-| POST | `/api/v1/articles/{id}/read` | 기사 읽음 완료 |
-| POST | `/api/v1/articles/{id}/bookmark` | 북마크 토글 |
-| GET | `/api/v1/articles/{id}/quiz` | 퀴즈 조회 (없으면 자동 생성) |
-| POST | `/api/v1/quiz/{id}/answer` | 퀴즈 답안 제출 |
-| GET | `/api/v1/wrong-notes` | 오답노트 목록 |
-| GET | `/api/v1/learning/history` | 학습 이력 |
-| GET | `/api/v1/rag/search` | 기사 키워드 검색 |
-| GET | `/api/v1/rag/recommendations` | 취약 개념 기반 기사 추천 |
-| GET | `/api/v1/users/me` | 내 프로필 조회 |
-| PUT | `/api/v1/users/me` | 프로필 수정 |
+[![Swagger UI](https://img.shields.io/badge/Swagger_UI-전체_API_명세_확인-85EA2D?style=flat-square&logo=swagger&logoColor=black)](http://localhost:8080/swagger-ui/index.html)
 
-전체 API 명세는 `http://localhost:8080/swagger-ui/index.html`에서 확인할 수 있습니다.
+`http://localhost:8080/swagger-ui/index.html`
 
 ---
 
-## 공통 응답 구조
+## 개발 컨벤션
 
-모든 API 응답은 `ApiResponse<T>` 래퍼 형식을 따릅니다.
-
-```json
-{
-  "success": true,
-  "code": 200,
-  "message": "퀴즈 결과 조회 성공",
-  "data": {
-    "quizResultId": 12,
-    "isCorrect": true
-  }
-}
-```
-
----
-
-## 개발 및 협업 컨벤션
-
-### Git 브랜치 전략 (Git Flow)
-
-- **`main`**: 프로덕션 배포 전용 최종 안정 브랜치 (직접 push 금지)
-- **`develop`**: 개발 통합 브랜치
-- **`feature/*`**: 기능 단위 분기 브랜치 (`feature/기능명` 또는 `feature/issue-번호`)
-
-### 커밋 메시지 컨벤션 (Gitmoji)
-
-```
-:gitmoji: type : subject (#이슈번호)
-```
-
-| Gitmoji | 용도 |
-|:---:|:---|
-| ✨ | 새로운 기능 추가 (feat) |
-| 🐛 | 버그 수정 (fix) |
-| 📝 | 문서 추가 및 수정 (docs) |
-| 💄 | UI 스타일 수정 (style) |
-| ♻️ | 리팩토링 (refactor) |
-| ✅ | 테스트 코드 (test) |
-| 🔧 | 빌드/의존성 설정 (chore) |
-| ⚡️ | 성능 개선 (perf) |
-| 💚 | CI/CD 설정 (ci) |
-
-### PR 규칙
-
-- 모든 작업은 GitHub 이슈를 생성한 뒤 분기하여 진행합니다.
-- 변경 라인은 가급적 300줄 이하를 지향합니다.
-
-```markdown
-## 📌 작업 내용
-<!-- 이번 PR에서 작업한 내용을 간단히 작성해주세요. -->
-
-## ✅ 변경 사항
-- [ ] TODO 1
-- [ ] TODO 2
-```
-
-### Java / Spring Boot 코드 규칙
-
-- **클래스**: `PascalCase` — `QuizService`, `ArticleMetaRepository`
-- **메서드 / 변수**: `camelCase` — `findByUserIdAndQuizId()`, `totalScore`
-- **상수**: `UPPER_SNAKE_CASE` — `MAX_RETRY_COUNT`
-- **레이어드 아키텍처**: Controller(요청/응답) → Service(비즈니스 로직, `@Transactional`) → Repository(DB 접근)
-
-### Vue 3 / Frontend 코드 규칙
-
-- **컴포넌트 파일**: `PascalCase` — `QuizCard.vue`, `ArticleFeedList.vue`
-- **페이지 뷰**: `PascalCase` + `View` 접미사 — `HomeView.vue`, `QuizResultView.vue`
-- **Composition API** (`<script setup>`) 필수 사용
-- **Pinia 스토어**: `use` 접두사 + `camelCase` — `useUserStore.js`, `useQuizStore.js`
-- **스타일**: Tailwind CSS 유틸리티 클래스 사용
+Git 브랜치 전략, 커밋 메시지, PR 규칙, Java/Vue 코딩 컨벤션, DB 컨벤션은 [하네스.md](하네스.md)를 참조하세요.
