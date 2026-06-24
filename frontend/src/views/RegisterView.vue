@@ -2,8 +2,6 @@
 import { ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { useUserStore } from '../stores/useUserStore'
-import BaseButton from '../components/common/BaseButton.vue'
-import ErrorMessage from '../components/common/ErrorMessage.vue'
 
 const router = useRouter()
 const userStore = useUserStore()
@@ -20,28 +18,18 @@ const handleRegister = async () => {
     errorMsg.value = '모든 필드를 입력해 주세요.'
     return
   }
-
   if (password.value !== passwordConfirm.value) {
     errorMsg.value = '비밀번호가 일치하지 않습니다.'
     return
   }
-
   if (password.value.length < 8) {
     errorMsg.value = '비밀번호는 최소 8자 이상이어야 합니다.'
     return
   }
-
   errorMsg.value = ''
   isLoading.value = true
-
   try {
-    await userStore.register({
-      email: email.value,
-      nickname: nickname.value,
-      password: password.value
-    })
-    
-    // Redirect to login upon successful registration
+    await userStore.register({ email: email.value, nickname: nickname.value, password: password.value })
     alert('회원가입이 완료되었습니다! 로그인 해 주세요.')
     router.push('/login')
   } catch (err) {
@@ -53,95 +41,258 @@ const handleRegister = async () => {
 </script>
 
 <template>
-  <div class="min-h-[80vh] flex items-center justify-center px-4 py-12">
-    <div class="w-full max-w-md bg-white rounded-3xl border border-slate-200/80 p-8 shadow-premium relative overflow-hidden">
-      <!-- Background decoration -->
-      <div class="absolute -top-12 -right-12 w-32 h-32 bg-primary-100 rounded-full blur-2xl opacity-60"></div>
-      <div class="absolute -bottom-12 -left-12 w-32 h-32 bg-secondary-100 rounded-full blur-2xl opacity-60"></div>
+  <div class="auth-wrap">
+    <!-- Left showcase -->
+    <div class="showcase">
+      <router-link to="/" class="brand-mini">
+        <span class="brand-mark"></span>
+        <span class="brand-name">Newsense</span>
+      </router-link>
 
-      <div class="relative z-10">
-        <!-- Brand Title -->
-        <div class="text-center mb-8">
-          <h2 class="text-3xl font-extrabold bg-gradient-to-r from-primary-600 to-secondary-600 bg-clip-text text-transparent">
-            Newsense
-          </h2>
-          <p class="text-slate-400 text-sm mt-2">새로운 경제 학습의 시작</p>
+      <h1 class="sc-title">
+        새로운<br>
+        <span class="accent">경제 학습</span>의<br>
+        시작
+      </h1>
+      <p class="sc-sub">
+        가입하면 AI 퀴즈, 오답노트, 맞춤 피드 등 모든 기능을 무료로 이용할 수 있습니다.
+      </p>
+
+      <div class="sc-points">
+        <div class="sc-point">
+          <span class="ic">📰</span>
+          <div>
+            <b>매일 새로운 기사</b>
+            <span>기획재정부·한국은행 경제 기사가 매일 업데이트됩니다</span>
+          </div>
+        </div>
+        <div class="sc-point">
+          <span class="ic">🧠</span>
+          <div>
+            <b>AI 퀴즈 자동 생성</b>
+            <span>기사를 읽은 직후 핵심 개념을 점검하는 퀴즈</span>
+          </div>
+        </div>
+        <div class="sc-point">
+          <span class="ic">📈</span>
+          <div>
+            <b>학습 통계 대시보드</b>
+            <span>연속 학습 스트릭과 정답률로 성장 과정을 추적</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Right form card -->
+    <div class="auth-card">
+      <h2 class="auth-title">회원가입</h2>
+      <p class="auth-desc">무료 계정을 만들어 바로 시작하세요.</p>
+
+      <form @submit.prevent="handleRegister">
+        <div class="field">
+          <label for="nickname">닉네임</label>
+          <input id="nickname" type="text" v-model="nickname" placeholder="경제왕" autocomplete="nickname" required />
         </div>
 
-        <form @submit.prevent="handleRegister" class="space-y-5">
-          <!-- Nickname Input -->
-          <div>
-            <label for="nickname" class="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-2">닉네임</label>
-            <input 
-              id="nickname" 
-              type="text" 
-              v-model="nickname" 
-              placeholder="뉴스엔서"
-              required
-              class="w-full px-4 py-3 rounded-xl border border-slate-200 focus:border-primary-500 focus:ring-2 focus:ring-primary-100 outline-none transition-all duration-300 placeholder:text-slate-300 text-slate-800 text-sm"
-            />
-          </div>
-
-          <!-- Email Input -->
-          <div>
-            <label for="email" class="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-2">이메일 주소</label>
-            <input 
-              id="email" 
-              type="email" 
-              v-model="email" 
-              placeholder="name@example.com"
-              required
-              class="w-full px-4 py-3 rounded-xl border border-slate-200 focus:border-primary-500 focus:ring-2 focus:ring-primary-100 outline-none transition-all duration-300 placeholder:text-slate-300 text-slate-800 text-sm"
-            />
-          </div>
-
-          <!-- Password Input -->
-          <div>
-            <label for="password" class="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-2">비밀번호 (8자 이상)</label>
-            <input 
-              id="password" 
-              type="password" 
-              v-model="password" 
-              placeholder="••••••••"
-              required
-              class="w-full px-4 py-3 rounded-xl border border-slate-200 focus:border-primary-500 focus:ring-2 focus:ring-primary-100 outline-none transition-all duration-300 placeholder:text-slate-300 text-slate-800 text-sm"
-            />
-          </div>
-
-          <!-- Password Confirm Input -->
-          <div>
-            <label for="passwordConfirm" class="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-2">비밀번호 확인</label>
-            <input 
-              id="passwordConfirm" 
-              type="password" 
-              v-model="passwordConfirm" 
-              placeholder="••••••••"
-              required
-              class="w-full px-4 py-3 rounded-xl border border-slate-200 focus:border-primary-500 focus:ring-2 focus:ring-primary-100 outline-none transition-all duration-300 placeholder:text-slate-300 text-slate-800 text-sm"
-            />
-          </div>
-
-          <!-- Error Alert -->
-          <ErrorMessage v-if="errorMsg" :message="errorMsg" />
-
-          <!-- Submit Button -->
-          <BaseButton 
-            type="submit" 
-            :loading="isLoading" 
-            class="w-full py-3.5 rounded-xl font-bold transition-all duration-300 shadow-md hover:shadow-lg"
-          >
-            회원가입
-          </BaseButton>
-        </form>
-
-        <!-- Navigation link to Login -->
-        <div class="text-center mt-6 pt-6 border-t border-slate-100 text-sm text-slate-500">
-          이미 계정이 있으신가요? 
-          <router-link to="/login" class="text-primary-600 hover:text-primary-700 font-bold ml-1 transition-colors duration-200">
-            로그인 하기
-          </router-link>
+        <div class="field">
+          <label for="email">이메일</label>
+          <input id="email" type="email" v-model="email" placeholder="name@example.com" autocomplete="email" required />
         </div>
+
+        <div class="field">
+          <label for="password">비밀번호 <span class="field-hint">(8자 이상)</span></label>
+          <input id="password" type="password" v-model="password" placeholder="••••••••" autocomplete="new-password" required />
+        </div>
+
+        <div class="field">
+          <label for="passwordConfirm">비밀번호 확인</label>
+          <input id="passwordConfirm" type="password" v-model="passwordConfirm" placeholder="••••••••" autocomplete="new-password" required />
+        </div>
+
+        <div v-if="errorMsg" class="error-msg">
+          <span>⚠</span> {{ errorMsg }}
+        </div>
+
+        <button type="submit" class="btn-primary submit-btn" :disabled="isLoading">
+          <span v-if="isLoading" class="spinner-sm"></span>
+          <span>{{ isLoading ? '가입 중…' : '회원가입' }}</span>
+          <span v-if="!isLoading" class="submit-arrow">→</span>
+        </button>
+      </form>
+
+      <div class="auth-foot">
+        이미 계정이 있으신가요?
+        <router-link to="/login">로그인</router-link>
       </div>
     </div>
   </div>
 </template>
+
+<style scoped>
+.auth-wrap {
+  display: grid;
+  grid-template-columns: 1.1fr 1fr;
+  gap: 60px;
+  max-width: 1100px;
+  margin: 0 auto;
+  align-items: center;
+  padding: 40px 0 80px;
+  min-height: 70vh;
+}
+
+.brand-mini {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  text-decoration: none;
+  color: var(--ink, #0a0d12);
+  margin-bottom: 32px;
+}
+.brand-mark {
+  width: 28px; height: 28px;
+  border-radius: 9px;
+  background: radial-gradient(circle at 30% 30%, #9CCBFF 0%, #0084ff 60%, #0a4a99 100%);
+  box-shadow: inset 0 2px 3px rgba(255,255,255,0.6), 0 2px 8px rgba(0,132,255,0.40);
+}
+.brand-name {
+  font-family: 'Fustat', sans-serif;
+  font-weight: 800;
+  font-size: 20px;
+  letter-spacing: -0.5px;
+  color: var(--ink, #0a0d12);
+}
+.dark .brand-name { color: #f4f6fa; }
+
+.sc-title {
+  font-family: 'Fustat', sans-serif;
+  font-weight: 800;
+  font-size: 48px;
+  line-height: 1.08;
+  letter-spacing: -1.5px;
+  margin: 0 0 16px;
+  color: var(--ink, #0a0d12);
+}
+.dark .sc-title { color: #f4f6fa; }
+
+.accent {
+  background: linear-gradient(95deg, #0084ff 0%, #4FB3FF 60%, #0a4a99 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+.dark .accent {
+  background: linear-gradient(95deg, #6CB8FF 0%, #B8DAFF 60%, #fff 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+}
+
+.sc-sub {
+  font-size: 15px;
+  color: var(--ink-2, #4a5161);
+  line-height: 1.55;
+  margin: 0 0 30px;
+}
+.dark .sc-sub { color: #a4adbf; }
+
+.sc-points { display: flex; flex-direction: column; gap: 16px; }
+.sc-point { display: flex; align-items: flex-start; gap: 14px; }
+.ic {
+  width: 36px; height: 36px;
+  flex-shrink: 0;
+  border-radius: 10px;
+  background: rgba(255,255,255,0.65);
+  border: 1px solid rgba(0,0,0,0.07);
+  backdrop-filter: blur(20px);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 16px;
+  box-shadow: inset 0 1px 0 rgba(255,255,255,0.6);
+}
+.dark .ic { background: rgba(20,24,34,0.55); border-color: rgba(255,255,255,0.12); }
+.sc-point b { font-family: 'Fustat', sans-serif; font-weight: 700; font-size: 14.5px; color: var(--ink, #0a0d12); display: block; margin-bottom: 2px; }
+.dark .sc-point b { color: #f4f6fa; }
+.sc-point span { font-size: 13px; color: var(--ink-2, #4a5161); line-height: 1.45; }
+.dark .sc-point span { color: #a4adbf; }
+
+.auth-card {
+  padding: 36px 36px 32px;
+  background: rgba(255,255,255,0.70);
+  border: 1px solid rgba(0,0,0,0.07);
+  border-radius: 24px;
+  backdrop-filter: blur(48px) saturate(180%);
+  -webkit-backdrop-filter: blur(48px) saturate(180%);
+  box-shadow:
+    inset 0 1px 0 0 rgba(255,255,255,0.85),
+    inset 0 4px 8px 0 rgba(255,255,255,0.35),
+    0 30px 80px -22px rgba(20,40,80,0.25);
+}
+.dark .auth-card {
+  background: rgba(20,24,34,0.55);
+  border-color: rgba(255,255,255,0.12);
+  box-shadow: inset 0 1px 0 0 rgba(255,255,255,0.10), 0 30px 80px -22px rgba(0,0,0,0.6);
+}
+
+.auth-title { font-family: 'Fustat', sans-serif; font-weight: 800; font-size: 26px; letter-spacing: -0.8px; margin: 0 0 6px; color: var(--ink, #0a0d12); }
+.dark .auth-title { color: #f4f6fa; }
+.auth-desc { font-size: 14px; color: var(--ink-2, #4a5161); margin: 0 0 26px; }
+.dark .auth-desc { color: #a4adbf; }
+
+form { display: flex; flex-direction: column; gap: 14px; }
+.field { display: flex; flex-direction: column; gap: 6px; }
+.field label { font-size: 13px; font-weight: 500; color: var(--ink-2, #4a5161); display: flex; align-items: center; gap: 6px; }
+.dark .field label { color: #a4adbf; }
+.field-hint { font-size: 11.5px; color: var(--ink-3, #8a93a3); font-family: 'JetBrains Mono', monospace; }
+
+.field input {
+  appearance: none;
+  padding: 12px 16px;
+  background: rgba(255,255,255,0.85);
+  border: 1.5px solid rgba(0,0,0,0.08);
+  border-radius: 12px;
+  font: inherit;
+  font-size: 14px;
+  color: var(--ink, #0a0d12);
+  outline: none;
+  transition: all .15s;
+  width: 100%;
+}
+.field input:focus { border-color: #0084ff; background: #fff; box-shadow: 0 0 0 4px rgba(0,132,255,0.12); }
+.field input::placeholder { color: var(--ink-3, #8a93a3); }
+.dark .field input { background: rgba(20,24,34,0.70); border-color: rgba(255,255,255,0.12); color: #f4f6fa; }
+.dark .field input:focus { background: rgba(20,24,34,0.90); }
+
+.error-msg {
+  display: flex; align-items: center; gap: 8px;
+  padding: 12px 14px;
+  background: rgba(255,237,237,0.85);
+  border: 1px solid rgba(176,42,42,0.25);
+  border-radius: 10px;
+  font-size: 13.5px;
+  color: #b02a2a;
+}
+.dark .error-msg { background: rgba(255,106,106,0.13); border-color: rgba(255,106,106,0.40); color: #ff8a8a; }
+
+.submit-btn { width: 100%; justify-content: center; padding: 12px 20px; font-size: 14.5px; border-radius: 13px; gap: 8px; }
+.submit-btn:disabled { opacity: 0.65; cursor: default; }
+.submit-arrow { font-size: 14px; }
+
+.spinner-sm {
+  width: 16px; height: 16px;
+  border: 2.5px solid rgba(255,255,255,0.3);
+  border-top-color: #fff;
+  border-radius: 50%;
+  animation: spin .65s linear infinite;
+  flex-shrink: 0;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+
+.auth-foot { margin-top: 22px; padding-top: 18px; border-top: 1px solid rgba(0,0,0,0.07); text-align: center; font-size: 13.5px; color: var(--ink-2, #4a5161); }
+.dark .auth-foot { border-color: rgba(255,255,255,0.10); color: #a4adbf; }
+.auth-foot a { color: #0084ff; font-weight: 600; text-decoration: none; margin-left: 4px; }
+.auth-foot a:hover { text-decoration: underline; }
+
+@media (max-width: 900px) {
+  .auth-wrap { grid-template-columns: 1fr; gap: 40px; min-height: auto; }
+  .sc-title { font-size: 36px; }
+  .auth-card { padding: 28px 22px; }
+}
+</style>

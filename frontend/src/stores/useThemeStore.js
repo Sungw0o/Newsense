@@ -7,13 +7,7 @@ export const useThemeStore = defineStore('theme', {
   actions: {
     initTheme() {
       const savedTheme = localStorage.getItem('theme')
-      if (savedTheme) {
-        this.theme = savedTheme
-      } else {
-        // System preference default check
-        const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches
-        this.theme = prefersDark ? 'dark' : 'light'
-      }
+      this.theme = savedTheme ?? 'dark'
       this.applyThemeToDOM()
     },
     toggleTheme() {

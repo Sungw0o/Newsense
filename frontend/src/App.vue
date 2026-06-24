@@ -13,18 +13,15 @@ onMounted(() => {
 
 <template>
   <div class="relative overflow-x-hidden min-h-screen w-full">
-    <!-- Liquid Background Elements -->
-    <div class="fixed inset-0 z-0 overflow-hidden pointer-events-none">
-      <div class="liquid-orb liquid-orb-primary -top-40 -left-40"></div>
-      <div class="liquid-orb liquid-orb-secondary top-1/3 -right-60"></div>
-      <div class="liquid-orb liquid-orb-accent -bottom-40 left-1/4"></div>
-    </div>
-    
+    <!-- Static glow orbs -->
+    <div class="glow-orb glow-orb-1"></div>
+    <div class="glow-orb glow-orb-2"></div>
+    <div class="glow-orb glow-orb-3"></div>
+
     <div class="relative z-10 min-h-screen flex flex-col w-full">
       <AppLayout />
     </div>
 
-    <!-- Theme Switcher floating component -->
     <ThemeSwitcher />
   </div>
 </template>
