@@ -32,18 +32,18 @@ jobs:
 
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
         with:
           fetch-depth: 0   # SonarQube 이슈 추적에 전체 히스토리 필요
 
       - name: Set up Java 21 (Temurin)
-        uses: actions/setup-java@v4
+        uses: actions/setup-java@c1e323688fd81a25caa38c78aa6df2d33d3e20d9 # v4
         with:
           distribution: temurin
           java-version: '21'
 
       - name: Cache Gradle
-        uses: gradle/actions/setup-gradle@v4
+        uses: gradle/actions/setup-gradle@0b6dd653ba04f4f93bf581ec31e66cbd7dcb644d # v4
 
       - name: Ensure Gradle wrapper executable
         run: chmod +x ./gradlew
@@ -75,16 +75,16 @@ jobs:
 
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
 
       - name: Set up Java 21 (Temurin)
-        uses: actions/setup-java@v4
+        uses: actions/setup-java@c1e323688fd81a25caa38c78aa6df2d33d3e20d9 # v4
         with:
           distribution: temurin
           java-version: '21'
 
       - name: Cache Gradle
-        uses: gradle/actions/setup-gradle@v4
+        uses: gradle/actions/setup-gradle@0b6dd653ba04f4f93bf581ec31e66cbd7dcb644d # v4
 
       - name: Ensure Gradle wrapper executable
         run: chmod +x ./gradlew
@@ -94,7 +94,7 @@ jobs:
         run: ./gradlew bootJar --no-daemon
 
       - name: Copy Docker Compose manifests to EC2 via SCP
-        uses: appleboy/scp-action@v0.1.7
+        uses: appleboy/scp-action@917f8b81dfc1ccd331fef9e2d61bdc6c8be94634 # v0.1.7
         with:
           host: ${{ secrets.EC2_HOST }}
           username: ${{ secrets.EC2_USERNAME }}
@@ -105,7 +105,7 @@ jobs:
       # EC2 /opt/newsense/backend/build/libs/ 로 JAR 전송
       # strip_components: 3 → backend/build/libs/{jar} → {jar} → target 디렉터리에 적재
       - name: Copy JAR to EC2 via SCP
-        uses: appleboy/scp-action@v0.1.7
+        uses: appleboy/scp-action@917f8b81dfc1ccd331fef9e2d61bdc6c8be94634 # v0.1.7
         with:
           host: ${{ secrets.EC2_HOST }}
           username: ${{ secrets.EC2_USERNAME }}
@@ -116,7 +116,7 @@ jobs:
 
       # Docker Compose로 app 서비스만 리빌드 후 재시작, 이미지 정리
       - name: Restart app via Docker Compose
-        uses: appleboy/ssh-action@v1
+        uses: appleboy/ssh-action@0ff4204d59e8e51228ff73bce53f80d53301dee2 # v1
         with:
           host: ${{ secrets.EC2_HOST }}
           username: ${{ secrets.EC2_USERNAME }}
@@ -125,6 +125,8 @@ jobs:
             set -e
             cd /opt/newsense
             mkdir -p backend/build/libs infra/nginx
+            : > .env
+            chmod 600 .env
             cat > .env <<'EOF'
             SPRING_PROFILES_ACTIVE=prod
             SERVER_FORWARD_HEADERS_STRATEGY=framework
@@ -156,6 +158,9 @@ jobs:
             GMS_KEY=${{ secrets.GMS_KEY }}
             GMS_BASE_URL=${{ vars.GMS_BASE_URL || 'https://gms.ssafy.io/gmsapi/api.openai.com/v1' }}
             GMS_MODEL=${{ vars.GMS_MODEL || 'gpt-4o-mini' }}
+            OPENAI_API_KEY=${{ secrets.OPENAI_API_KEY || secrets.GMS_KEY }}
+            OPENAI_BASE_URL=${{ vars.OPENAI_BASE_URL || vars.GMS_BASE_URL || 'https://gms.ssafy.io/gmsapi/api.openai.com/v1' }}
+            OPENAI_MODEL=${{ vars.OPENAI_MODEL || vars.GMS_MODEL || 'gpt-4o-mini' }}
             AI_PIPELINE_MAX_QUIZ_RETRIES=${{ vars.AI_PIPELINE_MAX_QUIZ_RETRIES || '2' }}
             AI_EMBEDDING_MODEL=${{ vars.AI_EMBEDDING_MODEL || 'text-embedding-3-large' }}
             AI_FACT_EXTRACTOR_MODEL=${{ vars.AI_FACT_EXTRACTOR_MODEL || 'gemini-2.5-flash-lite' }}

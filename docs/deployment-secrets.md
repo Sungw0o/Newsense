@@ -5,6 +5,8 @@ Do not commit real secret values. Store sensitive values in GitHub Actions Secre
 
 ## GitHub Actions Secrets
 
+These keys are read directly by GitHub Actions. Do not store them in the repo.
+
 ### Backend deploy
 
 - `EC2_HOST`
@@ -20,6 +22,7 @@ Do not commit real secret values. Store sensitive values in GitHub Actions Secre
 - `MONGO_INITDB_ROOT_PASSWORD`
 - `JWT_SECRET`
 - `GMS_KEY`
+- `OPENAI_API_KEY`
 - `NAVER_CLIENT_ID`
 - `NAVER_CLIENT_SECRET`
 - `NEWS_API_KEY`
@@ -44,10 +47,14 @@ Do not commit real secret values. Store sensitive values in GitHub Actions Secre
 
 ## GitHub Actions Variables
 
+These keys are read directly by GitHub Actions and written into `/opt/newsense/.env` during backend deployment when needed.
+
 ### Domains
 
 - `APP_FRONTEND_URL=https://new5ense.site`
 - `VITE_API_BASE_URL=https://api.new5ense.site/api/v1`
+- `NGINX_BIND_ADDRESS=127.0.0.1`
+- `NGINX_HTTP_PORT=8080`
 
 ### SonarCloud
 
@@ -58,6 +65,8 @@ Do not commit real secret values. Store sensitive values in GitHub Actions Secre
 
 ### Backend defaults
 
+- `SPRING_PROFILES_ACTIVE=prod`
+- `SERVER_FORWARD_HEADERS_STRATEGY=framework`
 - `MYSQL_DATABASE=newsense`
 - `MONGO_DATABASE=newsense`
 - `SPRING_JPA_DDL_AUTO=validate`
@@ -65,6 +74,8 @@ Do not commit real secret values. Store sensitive values in GitHub Actions Secre
 - `JWT_REFRESH_EXPIRATION=1209600000`
 - `GMS_BASE_URL=https://gms.ssafy.io/gmsapi/api.openai.com/v1`
 - `GMS_MODEL=gpt-4o-mini`
+- `OPENAI_BASE_URL=https://gms.ssafy.io/gmsapi/api.openai.com/v1`
+- `OPENAI_MODEL=gpt-4o-mini`
 - `AI_PIPELINE_MAX_QUIZ_RETRIES=2`
 - `AI_EMBEDDING_MODEL=text-embedding-3-large`
 - `AI_FACT_EXTRACTOR_MODEL=gemini-2.5-flash-lite`
@@ -83,6 +94,76 @@ Do not commit real secret values. Store sensitive values in GitHub Actions Secre
 - `RAG_VECTOR_SEARCH_NUM_CANDIDATES=200`
 - `RAG_VECTOR_SEARCH_DIMENSIONS=3072`
 - `RAG_EMBEDDING_BACKFILL_ENABLED=false`
+
+## Docker Compose runtime environment
+
+The deployment workflow writes `/opt/newsense/.env`, and Docker Compose expands it into the Spring container. These effective runtime keys are used by `docker-compose.yml` and `backend/src/main/resources/application*.yml`.
+
+- `SPRING_PROFILES_ACTIVE`
+- `SERVER_FORWARD_HEADERS_STRATEGY`
+- `SPRING_DATASOURCE_URL` (derived from `MYSQL_DATABASE`)
+- `SPRING_DATASOURCE_USERNAME` (from `MYSQL_USER`)
+- `SPRING_DATASOURCE_PASSWORD` (from `MYSQL_PASSWORD`)
+- `SPRING_JPA_DDL_AUTO`
+- `SPRING_DATA_MONGODB_URI` (derived from Mongo credentials and `MONGO_DATABASE`)
+- `SPRING_DATA_REDIS_HOST=redis`
+- `SPRING_DATA_REDIS_PORT=6379`
+- `JWT_SECRET`
+- `JWT_ACCESS_EXPIRATION`
+- `JWT_REFRESH_EXPIRATION`
+- `APP_FRONTEND_URL`
+- `GOOGLE_CLIENT_ID`
+- `GOOGLE_CLIENT_SECRET`
+- `NAVER_OAUTH_CLIENT_ID`
+- `NAVER_OAUTH_CLIENT_SECRET`
+- `KAKAO_CLIENT_ID`
+- `KAKAO_CLIENT_SECRET`
+- `GMS_KEY`
+- `GMS_BASE_URL`
+- `GMS_MODEL`
+- `OPENAI_API_KEY`
+- `OPENAI_BASE_URL`
+- `OPENAI_MODEL`
+- `AI_PIPELINE_MAX_QUIZ_RETRIES`
+- `AI_EMBEDDING_MODEL`
+- `AI_FACT_EXTRACTOR_MODEL`
+- `AI_ARTICLE_CLASSIFIER_MODEL`
+- `AI_QUIZ_GENERATOR_MODEL`
+- `AI_QUIZ_CRITIC_MODEL`
+- `CRAWLER_ENABLED`
+- `CRAWLER_BOOTSTRAP_ENABLED`
+- `CRAWLER_MINIMUM_ARTICLES`
+- `CRAWLER_MAX_ITEMS`
+- `NAVER_CLIENT_ID`
+- `NAVER_CLIENT_SECRET`
+- `NEWS_API_KEY`
+- `BOK_CRAWLER_LIST_URL`
+- `MOEF_CRAWLER_LIST_URL`
+- `RAG_VECTOR_SEARCH_ENABLED`
+- `RAG_VECTOR_SEARCH_MODE`
+- `RAG_VECTOR_SEARCH_INDEX_NAME`
+- `RAG_VECTOR_SEARCH_NUM_CANDIDATES`
+- `RAG_VECTOR_SEARCH_DIMENSIONS`
+- `RAG_EMBEDDING_BACKFILL_ENABLED`
+
+## Workflow-only values
+
+These values are intentionally not runtime application environment variables.
+
+- `EC2_HOST`
+- `EC2_USERNAME`
+- `EC2_SSH_KEY`
+- `AWS_ACCESS_KEY_ID`
+- `AWS_SECRET_ACCESS_KEY`
+- `AWS_REGION`
+- `AWS_S3_BUCKET_NAME`
+- `AWS_CLOUDFRONT_DISTRIBUTION_ID`
+- `SONAR_TOKEN`
+- `SONAR_HOST_URL`
+- `SONAR_PROJECT_KEY`
+- `SONAR_PROJECT_NAME`
+- `SONAR_ORGANIZATION`
+- `VITE_API_BASE_URL`
 
 ## OAuth provider redirect URIs
 
