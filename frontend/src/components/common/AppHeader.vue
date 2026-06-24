@@ -10,12 +10,18 @@ const userStore = useUserStore()
 const { isAuthenticated, userInfo } = storeToRefs(userStore)
 
 const showDropdown = ref(false)
+const showStartMenu = ref(false)
 
 const nicknameFirstLetter = computed(() => {
   return userInfo.value?.nickname?.substring(0, 1) ?? 'U'
 })
 
 const isActive = (path) => route.path === path
+
+const closeMenus = () => {
+  showDropdown.value = false
+  showStartMenu.value = false
+}
 
 const handleLogout = async () => {
   if (confirm('정말로 로그아웃 하시겠습니까?')) {
@@ -40,7 +46,6 @@ const handleLogout = async () => {
         <router-link to="/" :class="{ active: isActive('/') }">뉴스 피드</router-link>
         <router-link to="/community" :class="{ active: route.path.startsWith('/community') }">커뮤니티</router-link>
         <router-link to="/history" :class="{ active: isActive('/history') }">학습 이력</router-link>
-        <router-link to="/wrong-notes" :class="{ active: isActive('/wrong-notes') }">오답노트</router-link>
       </div>
 
       <!-- Auth area -->
@@ -61,17 +66,25 @@ const handleLogout = async () => {
         </div>
       </div>
 
-      <div v-else class="flex items-center gap-3">
-        <router-link to="/login" class="nav-login">로그인</router-link>
-        <router-link to="/register" class="btn-primary" style="padding: 8px 16px; font-size: 13px; border-radius: 10px;">
-          회원가입 <span style="font-size:11px;">↗</span>
-        </router-link>
+      <div v-else class="relative">
+        <button class="btn-primary nav-start" @click="showStartMenu = !showStartMenu">
+          시작하기 <span class="arrow">▾</span>
+        </button>
+
+        <div v-if="showStartMenu" class="nav-drop" @click.stop>
+          <div class="drop-header">
+            <p class="drop-sub">Newsense 시작</p>
+            <p class="drop-email">계정으로 학습 기록을 이어가세요</p>
+          </div>
+          <router-link to="/login" @click="showStartMenu = false" class="drop-item">로그인</router-link>
+          <router-link to="/register" @click="showStartMenu = false" class="drop-item">회원가입</router-link>
+        </div>
       </div>
     </nav>
   </div>
 
   <!-- Backdrop to close dropdown -->
-  <div v-if="showDropdown" class="fixed inset-0 z-40" @click="showDropdown = false" />
+  <div v-if="showDropdown || showStartMenu" class="fixed inset-0 z-40" @click="closeMenus" />
 </template>
 
 <style scoped>
@@ -185,6 +198,16 @@ const handleLogout = async () => {
   white-space: nowrap;
 }
 .nav-login:hover { opacity: 1; }
+
+.nav-start {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 16px;
+  font-size: 13px;
+  border-radius: 10px;
+  white-space: nowrap;
+}
 
 /* Dropdown */
 .nav-drop {

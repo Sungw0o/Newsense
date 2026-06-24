@@ -1,21 +1,27 @@
 <script setup>
-import { onMounted } from 'vue'
+import { computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { storeToRefs } from 'pinia'
 import { useHistoryStore } from '../stores/useHistoryStore'
+import { useWrongNoteStore } from '../stores/useWrongNoteStore'
 import BaseBadge from '../components/common/BaseBadge.vue'
 
 const router = useRouter()
 const historyStore = useHistoryStore()
+const wrongNoteStore = useWrongNoteStore()
 
 // storeToRefs를 사용하여 Pinia 상태의 반응성을 유지하며 추출
 const { history, stats, isLoading, error } = storeToRefs(historyStore)
+const { wrongNotes, isLoading: isWrongNoteLoading } = storeToRefs(wrongNoteStore)
+
+const unresolvedWrongNotes = computed(() => wrongNotes.value.filter(note => !note.isResolved))
 
 onMounted(async () => {
   try {
     await Promise.all([
       historyStore.fetchHistory(),
-      historyStore.fetchStats()
+      historyStore.fetchStats(),
+      wrongNoteStore.fetchWrongNotes()
     ])
   } catch (err) {
     console.error('Failed to load history or stats:', err)
@@ -24,6 +30,10 @@ onMounted(async () => {
 
 const navigateToDetail = (id) => {
   router.push(`/articles/${id}`)
+}
+
+const navigateToWrongNote = () => {
+  router.push('/wrong-notes')
 }
 </script>
 
@@ -185,5 +195,50 @@ const navigateToDetail = (id) => {
         </div>
       </div>
     </div>
+
+    <section class="glass-panel rounded-3xl p-8 shadow-premium mt-8">
+      <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-6 border-b border-slate-100 dark:border-white/10 pb-4">
+        <div>
+          <h2 class="text-lg font-bold text-slate-800 dark:text-slate-100">오답노트</h2>
+          <p class="text-sm text-slate-400 dark:text-slate-500 mt-1">학습 이력에서 바로 복습할 문제를 확인하세요.</p>
+        </div>
+        <button
+          class="px-4 py-2 rounded-xl bg-primary-600 hover:bg-primary-700 text-white text-sm font-bold transition-colors"
+          @click="navigateToWrongNote"
+        >
+          전체 보기
+        </button>
+      </div>
+
+      <div v-if="isWrongNoteLoading" class="space-y-3">
+        <div v-for="n in 3" :key="n" class="h-16 rounded-2xl bg-slate-100 dark:bg-slate-800 animate-pulse"></div>
+      </div>
+
+      <div v-else-if="unresolvedWrongNotes.length === 0" class="text-center py-10">
+        <p class="text-slate-400 dark:text-slate-500 font-light">아직 복습할 오답이 없습니다.</p>
+      </div>
+
+      <div v-else class="divide-y divide-slate-100 dark:divide-white/10">
+        <article
+          v-for="note in unresolvedWrongNotes.slice(0, 5)"
+          :key="note.id"
+          class="py-4 first:pt-0 last:pb-0"
+        >
+          <div class="flex flex-col sm:flex-row sm:items-start justify-between gap-3">
+            <div>
+              <p class="text-sm font-bold text-slate-800 dark:text-slate-100 leading-snug">
+                {{ note.question || note.quizQuestion || '복습 문제' }}
+              </p>
+              <p class="text-xs text-slate-400 dark:text-slate-500 mt-1">
+                {{ note.articleTitle || '연결된 기사' }}
+              </p>
+            </div>
+            <span class="shrink-0 text-xs px-2.5 py-1 rounded-lg bg-accent-50 border border-accent-200 text-accent-700 dark:bg-accent-950/40 dark:border-accent-800 dark:text-accent-400 font-semibold">
+              복습 필요
+            </span>
+          </div>
+        </article>
+      </div>
+    </section>
   </div>
 </template>
