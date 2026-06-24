@@ -156,9 +156,9 @@ watch(articleId, async (newId) => {
         <!-- Main Content (2/3 width) -->
         <article class="lg:col-span-2 bg-white rounded-3xl border border-slate-200/80 p-8 shadow-premium">
           <!-- Meta -->
-          <div class="flex items-center gap-2 mb-4">
+          <div class="flex items-center gap-2 mb-4 flex-wrap">
             <BaseBadge :value="selectedArticle.category" />
-            <span 
+            <span
               class="text-xs font-semibold px-2.5 py-0.5 rounded-full"
               :class="{
                 'bg-brand-100 text-brand-700': selectedArticle.difficulty === '초급',
@@ -172,9 +172,31 @@ watch(articleId, async (newId) => {
           </div>
 
           <!-- Title -->
-          <h1 class="text-2xl md:text-3xl font-extrabold text-slate-900 mb-8 leading-snug">
+          <h1 class="text-2xl md:text-3xl font-extrabold text-slate-900 mb-4 leading-snug">
             {{ selectedArticle.title }}
           </h1>
+
+          <!-- Source URL -->
+          <div v-if="selectedArticle.sourceUrl" class="mb-6">
+            <a
+              :href="selectedArticle.sourceUrl"
+              target="_blank"
+              rel="noopener noreferrer"
+              class="inline-flex items-center gap-1.5 text-xs font-semibold text-slate-400 hover:text-primary-600 transition-colors duration-200 border border-slate-200 hover:border-primary-300 rounded-full px-3 py-1"
+            >
+              <span>{{ selectedArticle.source }}</span>
+              <span>↗ 원문 읽기</span>
+            </a>
+          </div>
+
+          <!-- AI 3-line Summary -->
+          <div v-if="selectedArticle.summary" class="mb-8 p-4 bg-amber-50 border border-amber-200/70 rounded-2xl">
+            <div class="flex items-center gap-2 mb-2">
+              <span class="text-base">💡</span>
+              <span class="text-xs font-bold text-amber-700 uppercase tracking-wider">AI 3줄 요약</span>
+            </div>
+            <p class="text-sm text-amber-900 leading-relaxed whitespace-pre-line font-light">{{ selectedArticle.summary }}</p>
+          </div>
 
           <!-- Body Text with Clickable Terms -->
           <div class="space-y-6 text-slate-700 leading-relaxed font-light text-base md:text-lg">

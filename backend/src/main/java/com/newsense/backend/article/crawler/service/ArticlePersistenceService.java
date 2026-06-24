@@ -31,6 +31,7 @@ public class ArticlePersistenceService {
     private static final int SUMMARY_MAX_LENGTH = 500;
     private static final int AI_SUMMARY_MAX_LENGTH = 1000;
     private static final int CHARACTERS_PER_MINUTE = 500;
+    private static final int AI_SUMMARY_THRESHOLD = 1500;
 
     private final ArticleMetaRepository articleMetaRepository;
     private final ArticleContentRepository articleContentRepository;
@@ -121,6 +122,14 @@ public class ArticlePersistenceService {
     }
 
     private ArticleClassificationResult classify(String title, String cleanText) {
+        if (cleanText.length() < AI_SUMMARY_THRESHOLD) {
+            log.debug("Article too short for AI classification ({} chars), skipping API call: {}", cleanText.length(), title);
+            return new ArticleClassificationResult(
+                    ArticleCategory.MACRO_ECONOMY,
+                    ArticleDifficulty.BASIC,
+                    summarize(cleanText)
+            );
+        }
         try {
             return articleClassifierClient.classify(title, cleanText);
         } catch (RuntimeException exception) {
