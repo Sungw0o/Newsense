@@ -3,7 +3,7 @@ spring:
     activate:
       on-profile: local
   datasource:
-    url: ${SPRING_DATASOURCE_URL:jdbc:mysql://localhost:13306/newsense?useSSL=false&serverTimezone=Asia/Seoul&characterEncoding=UTF-8}
+    url: ${SPRING_DATASOURCE_URL:jdbc:mysql://localhost:13306/newsense?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=Asia/Seoul&characterEncoding=UTF-8}
     username: ${SPRING_DATASOURCE_USERNAME:root}
     password: ${SPRING_DATASOURCE_PASSWORD:root}
     driver-class-name: com.mysql.cj.jdbc.Driver
@@ -30,6 +30,8 @@ jwt:
 
 crawler:
   enabled: ${CRAWLER_ENABLED:false}
+  bootstrap-enabled: ${CRAWLER_BOOTSTRAP_ENABLED:true}
+  minimum-articles: ${CRAWLER_MINIMUM_ARTICLES:10}
   initial-delay: ${CRAWLER_INITIAL_DELAY:30000}
   fixed-delay: ${CRAWLER_FIXED_DELAY:3600000}
   connection-timeout: ${CRAWLER_CONNECTION_TIMEOUT:10000}

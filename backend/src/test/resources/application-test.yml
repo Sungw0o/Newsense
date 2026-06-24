@@ -23,3 +23,5 @@ jwt:
 
 crawler:
   enabled: false
+  bootstrap-enabled: false
+  minimum-articles: 10

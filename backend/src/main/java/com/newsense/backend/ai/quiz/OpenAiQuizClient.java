@@ -57,14 +57,16 @@ public class OpenAiQuizClient {
                 + "\n\n기재부 경제 용어 사전:\n" + formatTerms(economicTerms);
         Map<String, Object> request = Map.of(
                 "model", properties.model(),
-                "instructions", INSTRUCTIONS,
-                "input", input,
-                "text", Map.of("format", createResponseFormat())
+                "messages", List.of(
+                        Map.of("role", "developer", "content", INSTRUCTIONS),
+                        Map.of("role", "user", "content", input)
+                ),
+                "response_format", createResponseFormat()
         );
 
         try {
             JsonNode response = openAiRestClient.post()
-                    .uri("/responses")
+                    .uri("/chat/completions")
                     .header(HttpHeaders.AUTHORIZATION, "Bearer " + properties.apiKey())
                     .contentType(MediaType.APPLICATION_JSON)
                     .body(request)
@@ -75,26 +77,20 @@ public class OpenAiQuizClient {
             validate(generated.quizzes());
             return generated.quizzes();
         } catch (RestClientException | JsonProcessingException | IllegalArgumentException exception) {
-            log.error("OpenAI quiz generation failed: {}", exception.getMessage());
+            log.error("AI quiz generation failed: {}", exception.getMessage());
             throw new CustomException(ErrorCode.QUIZ_GENERATION_FAILED);
         }
     }
 
     private String extractOutputText(JsonNode response) {
         if (response == null) {
-            throw new IllegalArgumentException("OpenAI response is empty");
+            throw new IllegalArgumentException("AI response is empty");
         }
-        for (JsonNode output : response.path("output")) {
-            for (JsonNode content : output.path("content")) {
-                if ("output_text".equals(content.path("type").asText())) {
-                    String text = content.path("text").asText();
-                    if (!text.isBlank()) {
-                        return text;
-                    }
-                }
-            }
+        JsonNode content = response.path("choices").path(0).path("message").path("content");
+        if (content.isTextual() && !content.asText().isBlank()) {
+            return content.asText();
         }
-        throw new IllegalArgumentException("OpenAI response has no output text");
+        throw new IllegalArgumentException("AI response has no output text");
     }
 
     private void validate(List<GeneratedQuiz> quizzes) {
@@ -190,9 +186,11 @@ public class OpenAiQuizClient {
 
         return Map.of(
                 "type", "json_schema",
-                "name", "article_quizzes",
-                "strict", true,
-                "schema", schema
+                "json_schema", Map.of(
+                        "name", "article_quizzes",
+                        "strict", true,
+                        "schema", schema
+                )
         );
     }
 }

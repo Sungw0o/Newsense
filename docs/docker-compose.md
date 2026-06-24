@@ -20,7 +20,7 @@ cp .env.example .env
 - `MYSQL_ROOT_PASSWORD`
 - `MONGO_INITDB_ROOT_PASSWORD`
 - `JWT_SECRET`
-- `OPENAI_API_KEY`
+- `GMS_KEY`
 
 ### 운영 DB 스키마 전략
 
@@ -45,6 +45,27 @@ docker compose up -d --build
 
 ```bash
 docker compose up -d --build
+```
+
+## SSAFY GMS AI 설정
+
+AI 퀴즈 생성은 SSAFY GMS의 OpenAI 호환 Chat Completions 엔드포인트를 기본값으로 사용합니다.
+
+```bash
+GMS_KEY=<your-gms-key>
+GMS_BASE_URL=https://gms.ssafy.io/gmsapi/api.openai.com/v1
+GMS_MODEL=gpt-4o-mini
+```
+
+기존 `OPENAI_API_KEY`, `OPENAI_BASE_URL`, `OPENAI_MODEL` 환경변수도 하위 호환용으로 남아 있지만, 새 설정에서는 `GMS_*` 값을 우선 사용합니다. 실제 키는 `.env`에만 저장하고 Git에는 올리지 않습니다.
+
+## 로컬 기사 자동 적재
+
+`local` 프로필에서는 기본적으로 `CRAWLER_BOOTSTRAP_ENABLED=true`이며, 앱 시작 시 `article_meta`가 `CRAWLER_MINIMUM_ARTICLES`보다 적으면 크롤러를 한 번 실행합니다. 기본 목표치는 10개입니다.
+
+```bash
+CRAWLER_BOOTSTRAP_ENABLED=true
+CRAWLER_MINIMUM_ARTICLES=10
 ```
 
 ## 중지
