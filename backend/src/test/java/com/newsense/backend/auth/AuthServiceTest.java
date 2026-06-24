@@ -3,6 +3,7 @@ package com.newsense.backend.auth;
 import com.newsense.backend.auth.dto.LoginRequest;
 import com.newsense.backend.auth.dto.SignupRequest;
 import com.newsense.backend.auth.dto.SignupResponse;
+import com.newsense.backend.auth.service.RefreshResult;
 import com.newsense.backend.auth.service.AuthService;
 import com.newsense.backend.auth.service.LoginResult;
 import com.newsense.backend.auth.token.JwtTokenProvider;
@@ -12,6 +13,7 @@ import com.newsense.backend.common.exception.CustomException;
 import com.newsense.backend.common.exception.ErrorCode;
 import com.newsense.backend.user.domain.User;
 import com.newsense.backend.user.repository.UserRepository;
+import io.jsonwebtoken.Claims;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -21,6 +23,7 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.security.crypto.password.PasswordEncoder;
 
+import java.util.Date;
 import java.time.Instant;
 import java.util.Optional;
 
@@ -200,6 +203,69 @@ class AuthServiceTest {
             authService.login(request);
 
             then(userRepository).should().findByEmailAndIsActiveTrue("user@example.com");
+        }
+    }
+
+    @Nested
+    @DisplayName("refresh/logout")
+    class RefreshAndLogout {
+
+        @Test
+        @DisplayName("valid refresh token rotates token pair")
+        void refresh_success() {
+            Claims claims = mock(Claims.class);
+            User user = User.create("user@example.com", "encoded", "tester");
+            TokenPair tokenPair = new TokenPair(
+                    "new.access",
+                    "new.refresh",
+                    Instant.now().plusSeconds(1800),
+                    Instant.now().plusSeconds(1209600)
+            );
+
+            given(claims.getSubject()).willReturn("1");
+            given(jwtTokenProvider.parseRefreshToken("old.refresh")).willReturn(claims);
+            given(userRepository.findById(1L)).willReturn(Optional.of(user));
+            given(jwtTokenProvider.createTokenPair(user)).willReturn(tokenPair);
+
+            RefreshResult result = authService.refresh("old.refresh");
+
+            assertThat(result.response().accessToken()).isEqualTo("new.access");
+            then(tokenStore).should().validateRefreshToken(1L, "old.refresh");
+            then(tokenStore).should().saveRefreshToken(1L, "new.refresh", tokenPair.refreshExpiresAt());
+        }
+
+        @Test
+        @DisplayName("inactive user cannot refresh")
+        void refresh_inactiveUser_throwsException() {
+            Claims claims = mock(Claims.class);
+            User user = User.create("user@example.com", "encoded", "tester");
+            user.deactivate();
+
+            given(claims.getSubject()).willReturn("1");
+            given(jwtTokenProvider.parseRefreshToken("old.refresh")).willReturn(claims);
+            given(userRepository.findById(1L)).willReturn(Optional.of(user));
+
+            assertThatThrownBy(() -> authService.refresh("old.refresh"))
+                    .isInstanceOf(CustomException.class)
+                    .satisfies(e -> assertThat(((CustomException) e).getErrorCode())
+                            .isEqualTo(ErrorCode.INVALID_TOKEN));
+        }
+
+        @Test
+        @DisplayName("logout blacklists access token and deletes refresh token")
+        void logout_success() {
+            Claims claims = mock(Claims.class);
+            Date expiresAt = Date.from(Instant.now().plusSeconds(1800));
+
+            given(claims.getSubject()).willReturn("1");
+            given(claims.getId()).willReturn("jwt-id");
+            given(claims.getExpiration()).willReturn(expiresAt);
+            given(jwtTokenProvider.parseAccessToken("access.token")).willReturn(claims);
+
+            authService.logout("access.token");
+
+            then(tokenStore).should().blacklistAccessToken("jwt-id", expiresAt.toInstant());
+            then(tokenStore).should().deleteRefreshToken(1L);
         }
     }
 }
