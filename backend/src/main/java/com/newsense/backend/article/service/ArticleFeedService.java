@@ -25,6 +25,19 @@ import java.util.Map;
 @Transactional(readOnly = true)
 public class ArticleFeedService {
 
+    private static final List<String> EXCLUDED_TITLE_KEYWORDS = List.of(
+            "인사",
+            "공고",
+            "공지",
+            "채용",
+            "행사",
+            "일정",
+            "안내",
+            "동정",
+            "입찰",
+            "모집"
+    );
+
     private final ArticleMetaRepository articleMetaRepository;
 
     public ArticleFeedPageResponse getArticles(
@@ -66,6 +79,12 @@ public class ArticleFeedService {
             }
             if (difficulty != null) {
                 predicate = criteriaBuilder.and(predicate, criteriaBuilder.equal(root.get("difficulty"), difficulty));
+            }
+            for (String keyword : EXCLUDED_TITLE_KEYWORDS) {
+                predicate = criteriaBuilder.and(
+                        predicate,
+                        criteriaBuilder.notLike(criteriaBuilder.lower(root.get("title")), "%" + keyword + "%")
+                );
             }
             return predicate;
         };
