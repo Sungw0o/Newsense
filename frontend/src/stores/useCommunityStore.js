@@ -135,10 +135,10 @@ export const useCommunityStore = defineStore('community', {
   }),
 
   actions: {
-    async fetchPosts() {
+    async fetchPosts(params = {}) {
       this.isLoading = true
       try {
-        const res = await communityApi.getPosts()
+        const res = await communityApi.getPosts(params)
         this.posts = pageContent(res).map(normalizePost).filter(Boolean)
       } catch {
         this.posts = []

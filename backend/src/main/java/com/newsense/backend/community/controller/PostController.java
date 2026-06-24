@@ -7,6 +7,7 @@ import com.newsense.backend.community.dto.CommentResponse;
 import com.newsense.backend.community.dto.PostCreateRequest;
 import com.newsense.backend.community.dto.PostReactionResponse;
 import com.newsense.backend.community.dto.PostResponse;
+import com.newsense.backend.community.dto.PostSort;
 import com.newsense.backend.community.service.PostService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
@@ -32,10 +33,10 @@ public class PostController implements PostApiDocs {
     }
 
     @Override
-    public ResponseEntity<ApiResponse<Page<PostResponse>>> getPosts(Pageable pageable) {
+    public ResponseEntity<ApiResponse<Page<PostResponse>>> getPosts(Pageable pageable, PostSort sort) {
         return ResponseEntity.ok(ApiResponse.success(
                 "게시글 목록 조회에 성공했습니다.",
-                postService.getPosts(pageable)
+                postService.getPosts(pageable, sort)
         ));
     }
 

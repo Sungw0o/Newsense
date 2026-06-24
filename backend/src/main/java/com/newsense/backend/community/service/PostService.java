@@ -13,6 +13,7 @@ import com.newsense.backend.community.dto.CommentResponse;
 import com.newsense.backend.community.dto.PostCreateRequest;
 import com.newsense.backend.community.dto.PostReactionResponse;
 import com.newsense.backend.community.dto.PostResponse;
+import com.newsense.backend.community.dto.PostSort;
 import com.newsense.backend.community.repository.PostCommentRepository;
 import com.newsense.backend.community.repository.PostReactionRepository;
 import com.newsense.backend.community.repository.PostRepository;
@@ -20,6 +21,7 @@ import com.newsense.backend.user.domain.User;
 import com.newsense.backend.user.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -48,19 +50,20 @@ public class PostService {
                 article,
                 request.scrapSummaryId()
         ));
-        return PostResponse.from(post);
+        return toResponse(post);
     }
 
     @Transactional(readOnly = true)
-    public Page<PostResponse> getPosts(Pageable pageable) {
-        return postRepository.findAll(pageable).map(PostResponse::from);
+    public Page<PostResponse> getPosts(Pageable pageable, PostSort sort) {
+        PageRequest pageRequest = PageRequest.of(pageable.getPageNumber(), pageable.getPageSize(), sort.toSort());
+        return postRepository.findAll(pageRequest).map(this::toResponse);
     }
 
     @Transactional
     public PostResponse getPost(Long postId) {
         Post post = findPost(postId);
         post.increaseViewCount();
-        return PostResponse.from(post);
+        return toResponse(post);
     }
 
     @Transactional
@@ -150,6 +153,10 @@ public class PostService {
     private Post findPost(Long postId) {
         return postRepository.findById(postId)
                 .orElseThrow(() -> new CustomException(ErrorCode.POST_NOT_FOUND));
+    }
+
+    private PostResponse toResponse(Post post) {
+        return PostResponse.from(post, postCommentRepository.countByPostId(post.getId()));
     }
 
     private User findUser(Long userId) {

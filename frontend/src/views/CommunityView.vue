@@ -8,6 +8,19 @@ const store = useCommunityStore()
 
 const activeFilter = ref('전체')
 const filters = ['전체', '기사 스크랩', '자유 토론']
+const activeSort = ref('LATEST')
+const sortOptions = [
+  { label: '최신순', value: 'LATEST' },
+  { label: '좋아요순', value: 'LIKES' },
+  { label: '조회순', value: 'VIEWS' },
+]
+
+const fetchPosts = () => store.fetchPosts({ sort: activeSort.value })
+
+const changeSort = (sort) => {
+  activeSort.value = sort
+  fetchPosts()
+}
 
 const displayPosts = computed(() => {
   if (activeFilter.value === '기사 스크랩') return store.posts.filter(p => p.articleScrap)
@@ -15,7 +28,7 @@ const displayPosts = computed(() => {
   return store.posts
 })
 
-onMounted(() => store.fetchPosts())
+onMounted(fetchPosts)
 
 const formatDate = (iso) => {
   const d = new Date(iso)
@@ -53,6 +66,18 @@ const categoryColor = {
         :class="{ active: activeFilter === f }"
         @click="activeFilter = f"
       >{{ f }}</button>
+    </div>
+
+    <div class="sort-row" aria-label="게시글 정렬">
+      <button
+        v-for="option in sortOptions"
+        :key="option.value"
+        class="sort-chip"
+        :class="{ active: activeSort === option.value }"
+        @click="changeSort(option.value)"
+      >
+        {{ option.label }}
+      </button>
     </div>
 
     <!-- Loading -->
@@ -172,6 +197,14 @@ const categoryColor = {
 .filter-row {
   display: flex;
   gap: 8px;
+  margin-bottom: 10px;
+  flex-wrap: wrap;
+}
+
+.sort-row {
+  display: flex;
+  justify-content: flex-end;
+  gap: 6px;
   margin-bottom: 20px;
   flex-wrap: wrap;
 }
@@ -194,6 +227,24 @@ const categoryColor = {
 .dark .chip { background: rgba(20,24,34,0.55); border-color: rgba(255,255,255,0.12); color: #a4adbf; }
 .dark .chip:hover { color: #f4f6fa; }
 .dark .chip.active { background: #f4f6fa; color: #07090f; border-color: #f4f6fa; }
+
+.sort-chip {
+  display: inline-flex;
+  align-items: center;
+  padding: 6px 11px;
+  background: rgba(255,255,255,0.48);
+  border: 1px solid rgba(0,0,0,0.07);
+  border-radius: 8px;
+  font-size: 12.5px;
+  font-weight: 600;
+  color: var(--ink-3, #8a93a3);
+  cursor: pointer;
+  transition: all .15s;
+}
+.sort-chip:hover { color: #0084ff; border-color: rgba(0,132,255,0.30); }
+.sort-chip.active { background: rgba(0,132,255,0.10); color: #0084ff; border-color: rgba(0,132,255,0.35); }
+.dark .sort-chip { background: rgba(20,24,34,0.45); border-color: rgba(255,255,255,0.10); color: #a4adbf; }
+.dark .sort-chip.active { color: #9BCBFF; border-color: rgba(0,132,255,0.4); background: rgba(0,132,255,0.14); }
 
 .post-list { display: flex; flex-direction: column; gap: 12px; }
 

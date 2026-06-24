@@ -7,6 +7,7 @@ import com.newsense.backend.community.dto.CommentResponse;
 import com.newsense.backend.community.dto.PostCreateRequest;
 import com.newsense.backend.community.dto.PostReactionResponse;
 import com.newsense.backend.community.dto.PostResponse;
+import com.newsense.backend.community.dto.PostSort;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -21,6 +22,7 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestParam;
 
 @Tag(name = "Community", description = "커뮤니티 게시글 및 댓글")
 public interface PostApiDocs {
@@ -35,7 +37,10 @@ public interface PostApiDocs {
 
     @Operation(summary = "전체 게시글 페이징 조회")
     @GetMapping("/api/v1/posts")
-    ResponseEntity<ApiResponse<Page<PostResponse>>> getPosts(@PageableDefault(size = 20) Pageable pageable);
+    ResponseEntity<ApiResponse<Page<PostResponse>>> getPosts(
+            @PageableDefault(size = 20) Pageable pageable,
+            @RequestParam(defaultValue = "LATEST") PostSort sort
+    );
 
     @Operation(summary = "게시글 단건 조회")
     @GetMapping("/api/v1/posts/{postId}")
