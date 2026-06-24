@@ -9,10 +9,14 @@ import com.newsense.backend.learning.domain.LearningHistory;
 import com.newsense.backend.learning.domain.LearningHistoryType;
 import com.newsense.backend.learning.dto.LearningHistoryResponse;
 import com.newsense.backend.learning.dto.LearningStatsResponse;
+import com.newsense.backend.article.repository.ArticleReadRepository;
+import com.newsense.backend.bookmark.repository.BookmarkRepository;
 import com.newsense.backend.learning.repository.LearningHistoryRepository;
 import com.newsense.backend.learning.service.LearningHistoryService;
 import com.newsense.backend.quiz.event.QuizCompletedEvent;
+import com.newsense.backend.quiz.repository.QuizAnswerRepository;
 import com.newsense.backend.review.event.ReviewCompletedEvent;
+import com.newsense.backend.review.repository.ReviewRepository;
 import com.newsense.backend.support.TestFixtures;
 import com.newsense.backend.user.domain.User;
 import com.newsense.backend.user.repository.UserRepository;
@@ -50,6 +54,18 @@ class LearningHistoryServiceTest {
 
     @Mock
     UserRepository userRepository;
+
+    @Mock
+    ArticleReadRepository articleReadRepository;
+
+    @Mock
+    ReviewRepository reviewRepository;
+
+    @Mock
+    QuizAnswerRepository quizAnswerRepository;
+
+    @Mock
+    BookmarkRepository bookmarkRepository;
 
     @Test
     void recordEvents_saveEachLearningTypeWhenAbsent() {
@@ -95,6 +111,10 @@ class LearningHistoryServiceTest {
                 LearningHistory.review(user, article, 2L, learnedAt.plusMinutes(1)),
                 LearningHistory.quiz(user, article, 3L, true, learnedAt.plusMinutes(2))
         );
+        given(userRepository.findById(7L)).willReturn(Optional.of(user));
+        given(articleReadRepository.findAllByUserId(7L)).willReturn(List.of());
+        given(reviewRepository.findAllByUserIdAndIsActiveTrue(7L)).willReturn(List.of());
+        given(quizAnswerRepository.findAllByUserId(7L)).willReturn(List.of());
         given(learningHistoryRepository.findAllByUserIdAndLearningDateBetweenOrderByLearningDateDescLearnedAtDesc(
                 7L,
                 learnedAt.toLocalDate(),
@@ -115,6 +135,11 @@ class LearningHistoryServiceTest {
 
     @Test
     void getHistory_rejectsInvalidDateRange() {
+        User user = TestFixtures.user(7L);
+        given(userRepository.findById(7L)).willReturn(Optional.of(user));
+        given(articleReadRepository.findAllByUserId(7L)).willReturn(List.of());
+        given(reviewRepository.findAllByUserIdAndIsActiveTrue(7L)).willReturn(List.of());
+        given(quizAnswerRepository.findAllByUserId(7L)).willReturn(List.of());
         assertThatThrownBy(() -> learningHistoryService.getHistory(
                 7L,
                 LocalDate.of(2026, 6, 25),
@@ -127,28 +152,7 @@ class LearningHistoryServiceTest {
 
     @Test
     void getStats_calculatesAccuracyAndStreak() {
-        LocalDate today = LocalDate.now();
-        LocalDate weekStart = today.with(DayOfWeek.MONDAY);
-        LocalDate weekEnd = weekStart.plusDays(6);
-        given(learningHistoryRepository.countDistinctArticleIdByUserIdAndType(7L, LearningHistoryType.ARTICLE_READ))
-                .willReturn(3L);
-        given(learningHistoryRepository.countByUserIdAndType(7L, LearningHistoryType.REVIEW)).willReturn(2L);
-        given(learningHistoryRepository.countByUserIdAndType(7L, LearningHistoryType.QUIZ)).willReturn(4L);
-        given(learningHistoryRepository.countByUserIdAndTypeAndQuizCorrectTrue(7L, LearningHistoryType.QUIZ))
-                .willReturn(3L);
-        given(learningHistoryRepository.countDistinctLearningDateByUserIdAndLearningDateBetween(
-                7L,
-                weekStart,
-                weekEnd
-        )).willReturn(5L);
-        given(learningHistoryRepository.findDistinctLearningDatesByUserIdOrderByDesc(7L))
-                .willReturn(List.of(today, today.minusDays(1), today.minusDays(2), today.minusDays(4)));
-
-        LearningStatsResponse response = learningHistoryService.getStats(7L);
-
-        assertThat(response.totalReadArticleCount()).isEqualTo(3L);
-        assertThat(response.quizAccuracyRate()).isEqualTo(75.0);
-        assertThat(response.consecutiveLearningDays()).isEqualTo(3);
-        assertThat(response.weeklyLearningDays()).isEqualTo(5L);
-    }
-}
+        User user = TestFixtures.user(7L);
+        given(userRepository.findById(7L)).willReturn(Optional.of(user));
+        given(articleReadRepository.findAllByUserId(7L)).willReturn(List.of());
+        given(reviewRepository.

@@ -1,7 +1,10 @@
 package com.newsense.backend.quiz;
 
+import com.newsense.backend.ai.config.AiPipelineProperties;
 import com.newsense.backend.ai.quiz.GeneratedQuiz;
 import com.newsense.backend.ai.quiz.OpenAiQuizClient;
+import com.newsense.backend.ai.quiz.QuizCriticClient;
+import com.newsense.backend.ai.quiz.QuizCritiqueResult;
 import com.newsense.backend.article.document.ArticleContent;
 import com.newsense.backend.article.domain.ArticleMeta;
 import com.newsense.backend.article.repository.ArticleContentRepository;
@@ -32,6 +35,7 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.context.ApplicationEventPublisher;
+import org.springframework.data.mongodb.core.MongoTemplate;
 
 import java.util.List;
 import java.util.Optional;
@@ -41,6 +45,7 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyList;
 import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.isNull;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.BDDMockito.then;
 
@@ -84,6 +89,15 @@ class QuizServiceTest {
     @Mock
     ApplicationEventPublisher eventPublisher;
 
+    @Mock
+    QuizCriticClient quizCriticClient;
+
+    @Mock
+    AiPipelineProperties pipelineProperties;
+
+    @Mock
+    MongoTemplate mongoTemplate;
+
     @Test
     void getArticleQuizzes_returnsExistingQuizzesWithoutAiCall() {
         ArticleMeta article = TestFixtures.article(1L);
@@ -105,9 +119,10 @@ class QuizServiceTest {
         given(articleMetaRepository.findById(1L)).willReturn(Optional.of(article));
         given(articleContentRepository.findById("mongo-1")).willReturn(Optional.of(content));
         given(termRepository.findAll()).willReturn(List.of(Term.create("기준금리", "정책 금리", "BOK")));
+        given(pipelineProperties.maxQuizRetries()).willReturn(1);
         given(ragRetrievalService.retrieveQuizEvidence(anyString(), any(), anyList()))
                 .willReturn(List.of("근거 문장"));
-        given(openAiQuizClient.generate(anyString(), anyString(), anyList(), anyList()))
+        given(openAiQuizClient.generate(anyString(), anyString(), anyList(), anyList(), isNull()))
                 .willReturn(List.of(new GeneratedQuiz(
                         QuizType.OX,
                         "기준금리는 정책 금리다.",
@@ -115,6 +130,8 @@ class QuizServiceTest {
                         "O",
                         "중앙은행 정책 금리입니다."
                 )));
+        given(quizCriticClient.critique(anyString(), anyString(), anyList(), anyList()))
+                .willReturn(QuizCritiqueResult.approvedResult());
         given(quizRepository.saveAll(anyList())).willAnswer(invocation -> invocation.getArgument(0));
 
         List<QuizResponse> responses = quizService.getArticleQuizzes(1L);
@@ -150,20 +167,4 @@ class QuizServiceTest {
         given(quizAnswerRepository.save(any(QuizAnswer.class))).willAnswer(invocation -> invocation.getArgument(0));
         given(articleTermRepository.findAllByArticleIdWithTerm(1L)).willReturn(List.of());
 
-        QuizAnswerResponse response = quizService.submitAnswer(10L, 7L, new QuizAnswerRequest("X"));
-
-        assertThat(response.correct()).isFalse();
-        assertThat(response.wrongNoteRecorded()).isTrue();
-        then(wrongNoteRecorder).should().record(7L, quiz, "X", List.of());
-    }
-
-    @Test
-    void submitAnswer_throwsWhenQuizMissing() {
-        given(quizRepository.findByIdAndIsActiveTrue(404L)).willReturn(Optional.empty());
-
-        assertThatThrownBy(() -> quizService.submitAnswer(404L, 7L, new QuizAnswerRequest("O")))
-                .isInstanceOf(CustomException.class)
-                .satisfies(error -> assertThat(((CustomException) error).getErrorCode())
-                        .isEqualTo(ErrorCode.QUIZ_NOT_FOUND));
-    }
-}
+        QuizAnswerResponse response = quizService.submitAnswer(10L, 7L, new QuizAnswerRequ

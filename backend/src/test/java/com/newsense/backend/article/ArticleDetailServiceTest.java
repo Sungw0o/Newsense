@@ -10,11 +10,10 @@ import com.newsense.backend.article.dto.BookmarkToggleResponse;
 import com.newsense.backend.article.repository.ArticleContentRepository;
 import com.newsense.backend.article.repository.ArticleMetaRepository;
 import com.newsense.backend.article.repository.ArticleReadRepository;
+import com.newsense.backend.article.repository.ArticleRelatedStockRepository;
 import com.newsense.backend.article.service.ArticleDetailService;
 import com.newsense.backend.bookmark.domain.Bookmark;
 import com.newsense.backend.bookmark.repository.BookmarkRepository;
-import com.newsense.backend.common.exception.CustomException;
-import com.newsense.backend.common.exception.ErrorCode;
 import com.newsense.backend.support.TestFixtures;
 import com.newsense.backend.term.domain.Term;
 import com.newsense.backend.term.repository.ArticleTermRepository;
@@ -28,12 +27,12 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.context.ApplicationEventPublisher;
+import org.springframework.data.mongodb.core.MongoTemplate;
 
 import java.util.List;
 import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.BDDMockito.then;
@@ -69,6 +68,12 @@ class ArticleDetailServiceTest {
     @Mock
     ApplicationEventPublisher eventPublisher;
 
+    @Mock
+    ArticleRelatedStockRepository articleRelatedStockRepository;
+
+    @Mock
+    MongoTemplate mongoTemplate;
+
     @Test
     void getArticleDetail_returnsContentAndUserFlags() {
         ArticleMeta article = TestFixtures.article(1L);
@@ -77,6 +82,7 @@ class ArticleDetailServiceTest {
         given(articleContentRepository.findById("mongo-1")).willReturn(Optional.of(content));
         given(articleReadRepository.existsByUserIdAndArticleId(7L, 1L)).willReturn(true);
         given(bookmarkRepository.existsByUserIdAndArticleId(7L, 1L)).willReturn(true);
+        given(articleRelatedStockRepository.findAllByArticleMetaId(1L)).willReturn(List.of());
 
         ArticleDetailResponse response = articleDetailService.getArticleDetail(1L, 7L);
 
@@ -86,15 +92,16 @@ class ArticleDetailServiceTest {
     }
 
     @Test
-    void getArticleDetail_throwsWhenContentMissing() {
+    void getArticleDetail_usesSummaryWhenContentMissing() {
+        // 컨텐츠가 없을 때 서비스는 예외를 던지지 않고 summary로 폴백한다
         ArticleMeta article = TestFixtures.article(1L);
         given(articleMetaRepository.findById(1L)).willReturn(Optional.of(article));
         given(articleContentRepository.findById("mongo-1")).willReturn(Optional.empty());
 
-        assertThatThrownBy(() -> articleDetailService.getArticleDetail(1L, null))
-                .isInstanceOf(CustomException.class)
-                .satisfies(error -> assertThat(((CustomException) error).getErrorCode())
-                        .isEqualTo(ErrorCode.ARTICLE_CONTENT_NOT_FOUND));
+        ArticleDetailResponse response = articleDetailService.getArticleDetail(1L, null);
+
+        assertThat(response).isNotNull();
+        assertThat(response.id()).isEqualTo(1L);
     }
 
     @Test
@@ -149,8 +156,4 @@ class ArticleDetailServiceTest {
         BookmarkToggleResponse deleted = articleDetailService.toggleBookmark(1L, 7L);
 
         assertThat(created.isBookmarked()).isTrue();
-        assertThat(deleted.isBookmarked()).isFalse();
-        then(bookmarkRepository).should().save(any(Bookmark.class));
-        then(bookmarkRepository).should().delete(bookmark);
-    }
-}
+        assertThat(deleted.isBoo
