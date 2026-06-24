@@ -33,6 +33,12 @@ public class ArticleContent {
 
     private LocalDateTime collectedAt;
 
+    /**
+     * OpenAI text-embedding-3-large 기반 임베딩 벡터 (3072차원).
+     * 기사 저장 직후 비동기로 생성되며, 생성 전까지는 null입니다.
+     */
+    private List<Double> embedding;
+
     public static ArticleContent create(
             String sourceKey,
             String source,
