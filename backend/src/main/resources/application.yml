@@ -1,0 +1,15 @@
+spring:
+  application:
+    name: newsense-backend
+  profiles:
+    active: ${SPRING_PROFILES_ACTIVE:local}
+  jpa:
+    open-in-view: false
+
+server:
+  port: ${SERVER_PORT:8080}
+
+openai:
+  api-key: ${GMS_KEY:${OPENAI_API_KEY:}}
+  base-url: ${GMS_BASE_URL:${OPENAI_BASE_URL:https://gms.ssafy.io/gmsapi/api.openai.com/v1}}
+  model: ${GMS_MODEL:${OPENAI_MODEL:gpt-4o-mini}}

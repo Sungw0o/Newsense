@@ -31,7 +31,7 @@
 * **오답노트**: 틀린 퀴즈 문제를 자동으로 분류하고 수집하여 취약한 개념을 빠르게 파악하고 반복 학습할 수 있도록 지원.
 
 ### 2. 2차 및 확장 기능 (로드맵)
-* **취약 개념 분석**: 자주 틀린 경제 카테고리/용어를 시각화하고 관련 보완 뉴스 추천 피드 제공.
+* **취약 개념 분석 및 RAG 추천**: 자주 틀린 경제 카테고리/용어를 시각화하고, 기사 청크 검색 기반 보완 뉴스 추천 피드 제공.
 * **수준별 설명 확장**: 초급, 중급 등 학습자의 수준에 맞춘 다층형 경제 용어 설명 제공.
 * **AI 기반 요약 보조 및 리뷰 피드백**: 학습자가 작성한 요약 리뷰와 기사 원문의 유사도를 비교 판별하여 정합성 코멘트 제공.
 * **기관 관리자 페이지**: 교사 및 교육기관용 대시보드를 제공하여 학생별 학습 현황 및 과제 출제 기능 연동.
@@ -60,7 +60,7 @@ graph TD
     end
 
     %% 외부 API 및 데이터 소스
-    OpenAI["🤖 OpenAI API<br>(GPT-4o mini / 퀴즈 생성 및 피드백)"]
+    OpenAI["🤖 SSAFY GMS<br>(gpt-4o-mini / 퀴즈 생성 및 피드백)"]
     GovData["🏛️ 공공누리 제1유형 보도자료<br>(기재부, 한국은행 등)"]
 
     %% 흐름 연결
@@ -78,7 +78,7 @@ graph TD
 > [!NOTE]
 > * **데이터 수집**: 기획재정부, 한국은행 등 공공누리 제1유형 보도자료 전문을 JSoup으로 정기 크롤링하여 **MongoDB**에 적재함으로써 저작권 분쟁 소지를 사전에 전면 차단합니다.
 > * **메인 RDB**: 회원 정보, 학습한 뉴스 매핑 데이터, 생성된 퀴즈 정보, 사용자 리뷰 및 오답 노트 등 비즈니스 도메인의 핵심 관계형 데이터는 **MySQL**에서 트랜잭션을 적용해 신뢰성 있게 관리합니다.
-> * **AI 분석 및 퀴즈 출제**: 사용자가 뉴스를 다 읽은 후 이해도를 진단하기 위해, 기사 본문과 용어 정보를 기반으로 **OpenAI GPT-4o mini**를 연동하여 기사 맥락에 맞춘 OX/객관식 퀴즈를 실시간으로 출제하고 리뷰에 대한 피드백을 생성합니다.
+> * **AI 분석 및 퀴즈 출제**: 사용자가 뉴스를 다 읽은 후 이해도를 진단하기 위해, 기사 본문과 용어 정보를 기반으로 **SSAFY GMS gpt-4o-mini**를 연동하여 기사 맥락에 맞춘 OX/객관식 퀴즈를 실시간으로 출제하고 리뷰에 대한 피드백을 생성합니다.
 > * **네트워크 보안 격리**: AWS EC2 Docker 환경 내부에서 MySQL과 MongoDB의 외부 호스트 포트 바인딩(Expose)을 배제하여 내부 로컬에서만 통신하도록 격리합니다. 인바운드 트래픽은 오직 Cloudflare Tunnel(SSL)을 통한 특정 웹 포트만 수신하도록 제어하여 DB 스캔 등 외부 사이버 공격을 차단합니다.
 
 ---
@@ -89,11 +89,16 @@ graph TD
 ```text
 newsense/
 ├── backend/                  # Spring Boot 4.1.0 + Java 21 백엔드 프로젝트
+│   ├── Dockerfile            # 백엔드 컨테이너 멀티 스테이지 빌드 설정
 │   ├── src/                  # 백엔드 소스 코드 (Spring Data JPA, MongoDB)
 │   └── build.gradle          # Gradle 의존성 및 빌드 설정
+├── docs/                     # 운영 및 실행 문서
 ├── frontend/                 # Vue 3 + Vite + Pinia + Tailwind CSS 프론트엔드 프로젝트
 │   ├── src/                  # 프론트엔드 컴포넌트, 스토어, 라우터 소스 코드
 │   └── package.json          # 프론트엔드 npm 패키지 의존성 설정
+├── infra/                    # Nginx 등 배포 인프라 설정
+├── docker-compose.yml        # 백엔드, DB, 캐시, Nginx 통합 실행 구성
+├── .env.example              # Docker Compose 환경변수 예시
 ├── .gitignore                # Git 제외 대상 설정 파일
 └── README.md                 # 프로젝트 통합 가이드 (본 문서)
 ```
@@ -101,6 +106,28 @@ newsense/
 ---
 
 ## 🚀 로컬 실행 방법
+
+### 0. Docker Compose 통합 실행
+백엔드 애플리케이션, MySQL 8.0, MongoDB, Redis, Nginx를 한 번에 실행할 수 있습니다.
+
+```bash
+cp .env.example .env
+docker compose up -d --build
+```
+
+* **Nginx 진입 주소**: `http://127.0.0.1:8080`
+* **헬스 체크**: `http://127.0.0.1:8080/api/v1/health`
+* MySQL, MongoDB, Redis는 외부 호스트 포트에 바인딩하지 않고 Compose 내부 네트워크에서만 접근합니다.
+* 운영 안정성을 위해 JPA 스키마 검증은 기본 `SPRING_JPA_DDL_AUTO=validate`로 실행합니다. 빈 DB 최초 기동 시에만 일시적으로 `update`를 사용한 뒤 다시 `validate`로 되돌립니다.
+* 상세 절차는 [`docs/docker-compose.md`](docs/docker-compose.md)를 참고합니다.
+
+### RAG 검색 및 추천 API
+
+MongoDB에 저장된 기사 청크와 MySQL 오답노트 신호를 활용한 1차 RAG 기능을 제공합니다.
+
+* **기사 청크 검색**: `GET /api/v1/rag/search?query=금리&limit=5`
+* **내 취약 개념 기반 추천**: `GET /api/v1/rag/recommendations?limit=5` (Bearer 토큰 필요)
+* 상세 구조는 [`docs/rag.md`](docs/rag.md)를 참고합니다.
 
 ### 1. 데이터베이스 준비
 로컬 환경에 **MySQL 8.0** 및 **MongoDB** 인프라가 실행 중이어야 합니다.
