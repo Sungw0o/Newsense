@@ -17,11 +17,27 @@ public record CrawlerProperties(
         long retryDelay,
         long requestDelay,
         int chunkSize,
+        int pdfMinTextLength,
+        String tessDataPath,
+        String naverClientId,
+        String naverClientSecret,
+        String newsApiKey,
+        Cron cron,
         List<Source> sources
 ) {
 
     public CrawlerProperties {
+        cron = cron == null ? new Cron(
+                "0 0 11,17 * * MON-FRI",
+                "0 0 8,14,20 * * *"
+        ) : cron;
         sources = sources == null ? List.of() : List.copyOf(sources);
+    }
+
+    public record Cron(
+            String publicSource,
+            String portalSource
+    ) {
     }
 
     public record Source(

@@ -3,6 +3,8 @@ package com.newsense.backend.article.crawler.client;
 import com.newsense.backend.article.crawler.config.CrawlerProperties;
 import com.newsense.backend.article.crawler.model.ArticleCandidate;
 import com.newsense.backend.article.crawler.model.CrawledArticle;
+import com.newsense.backend.article.crawler.util.PdfOcrExtractor;
+import com.newsense.backend.article.crawler.util.PdfTextExtractor;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.jsoup.Connection;
@@ -32,6 +34,8 @@ public class PublicNewsCrawlerClient {
     );
 
     private final CrawlerProperties properties;
+    private final PdfTextExtractor pdfTextExtractor;
+    private final PdfOcrExtractor pdfOcrExtractor;
 
     public List<ArticleCandidate> fetchCandidates(CrawlerProperties.Source source) {
         Document document = fetchDocument(source.listUrl());
@@ -60,6 +64,21 @@ public class PublicNewsCrawlerClient {
 
     public CrawledArticle fetchArticle(CrawlerProperties.Source source, ArticleCandidate candidate) {
         Document document = fetchDocument(candidate.sourceUrl());
+        String pdfUrl = findPdfUrl(document);
+        if (!pdfUrl.isBlank()) {
+            String primaryText = pdfTextExtractor.extractText(pdfUrl);
+            String fullText = pdfOcrExtractor.extractText(pdfUrl, primaryText);
+            if (!fullText.isBlank()) {
+                return new CrawledArticle(
+                        source.key(),
+                        source.name(),
+                        candidate.title(),
+                        candidate.sourceUrl(),
+                        candidate.publishedAt(),
+                        fullText
+                );
+            }
+        }
         Element body = document.selectFirst(source.bodySelector());
         if (body == null) {
             throw new IllegalStateException("Article body selector did not match: " + source.bodySelector());
@@ -75,6 +94,11 @@ public class PublicNewsCrawlerClient {
                 candidate.publishedAt(),
                 rawText
         );
+    }
+
+    private String findPdfUrl(Document document) {
+        Element pdfLink = document.selectFirst("a[href$=.pdf], a[href*=.pdf?], a[href*=atchFileId], a[href*=download]");
+        return pdfLink == null ? "" : pdfLink.absUrl("href");
     }
 
     private Document fetchDocument(String url) {

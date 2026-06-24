@@ -30,7 +30,7 @@ public interface ArticleFeedApiDocs {
             @Parameter(description = "Zero-based page number")
             @RequestParam(defaultValue = "0") @Min(0) int page,
             @Parameter(description = "Page size (1-100)")
-            @RequestParam(defaultValue = "10") @Min(1) @Max(100) int size,
+            @RequestParam(defaultValue = "20") @Min(1) @Max(100) int size,
             @Parameter(description = "Feed sort order")
             @RequestParam(defaultValue = "LATEST") ArticleFeedSort sort
     );
