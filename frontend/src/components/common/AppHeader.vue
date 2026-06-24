@@ -379,11 +379,15 @@ const handleMobileNav = (path) => {
 }
 
 /* Responsive */
-@media (max-width: 640px) {
-  .nav { gap: 8px; padding: 8px 8px 8px 14px; }
+@media (max-width: 900px) {
+  .nav { gap: 8px; padding: 8px 8px 8px 14px; width: min(520px, calc(100vw - 32px)); }
   .nav-links { display: none; }
   .desktop-auth { display: none; }
   .hamburger { display: flex; }
+  .brand { margin-right: auto; }
+}
+
+@media (max-width: 640px) {
   .brand { font-size: 17px; }
 }
 </style>

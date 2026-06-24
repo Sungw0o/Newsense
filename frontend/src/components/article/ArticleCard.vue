@@ -26,7 +26,11 @@ const readTime = computed(() => {
 const publishedDate = computed(() => {
   const d = props.article.publishedAt ?? props.article.createdAt
   if (!d) return ''
-  return new Date(d).toLocaleDateString('ko-KR', { month: 'short', day: 'numeric' })
+  const date = new Date(d)
+  const year = date.getFullYear()
+  const month = String(date.getMonth() + 1).padStart(2, '0')
+  const day = String(date.getDate()).padStart(2, '0')
+  return `${year}.${month}.${day}`
 })
 
 const viewCount = computed(() => {
@@ -69,7 +73,7 @@ const viewCount = computed(() => {
           <circle cx="7" cy="7" r="4.5" stroke="currentColor" stroke-width="1.5"/>
           <circle cx="7" cy="7" r="2" fill="currentColor"/>
         </svg>
-        {{ viewCount }}
+        조회수 {{ viewCount }}회
       </span>
     </div>
   </article>

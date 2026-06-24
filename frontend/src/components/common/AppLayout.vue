@@ -28,7 +28,7 @@ onMounted(async () => {
 
       <aside class="sidebar-right">
         <StreakWidget v-if="userStore.isAuthenticated" />
-        <IndicatorWidget />
+        <IndicatorWidget v-if="userStore.isAuthenticated" />
       </aside>
     </div>
 

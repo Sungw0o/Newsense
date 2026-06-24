@@ -62,6 +62,17 @@ const toggleGroup = (dayDate, articleId) => {
   expanded.value = new Set(expanded.value)
 }
 const isExpanded = (dayDate, articleId) => expanded.value.has(`${dayDate}__${articleId}`)
+
+const openSections = ref(new Set(['timeline', 'recommendations', 'bookmarks', 'wrongNotes']))
+const toggleSection = (key) => {
+  if (openSections.value.has(key)) {
+    openSections.value.delete(key)
+  } else {
+    openSections.value.add(key)
+  }
+  openSections.value = new Set(openSections.value)
+}
+const isSectionOpen = (key) => openSections.value.has(key)
 </script>
 
 <template>
@@ -142,23 +153,26 @@ const isExpanded = (dayDate, articleId) => expanded.value.has(`${dayDate}__${art
 
     <!-- History timeline -->
     <section class="section-card">
-      <h2 class="section-title">최근 학습 타임라인</h2>
+      <button class="section-toggle" @click="toggleSection('timeline')">
+        <span class="section-title">최근 학습 타임라인</span>
+        <span class="toggle-arrow" :class="{ open: isSectionOpen('timeline') }">▾</span>
+      </button>
 
-      <div v-if="isLoading" class="timeline-skel">
+      <div v-if="isSectionOpen('timeline') && isLoading" class="timeline-skel">
         <div v-for="n in 3" :key="n" class="skel-row">
           <span class="skel" style="width:80px;height:14px;"></span>
           <span class="skel" style="width:60%;height:18px;margin-top:6px;"></span>
         </div>
       </div>
 
-      <div v-else-if="!history?.days?.length" class="empty-state">
+      <div v-else-if="isSectionOpen('timeline') && !history?.days?.length" class="empty-state">
         <p class="empty-icon">📚</p>
         <p class="empty-title">아직 학습 이력이 없습니다</p>
         <p class="empty-desc">관심 경제 뉴스를 읽고 학습을 시작해 보세요!</p>
         <button class="btn-primary" style="margin-top:16px;" @click="navigate('/')">뉴스 피드 보기</button>
       </div>
 
-      <div v-else class="timeline">
+      <div v-else-if="isSectionOpen('timeline')" class="timeline">
         <div v-for="day in groupedDays" :key="day.date" class="day-group">
           <div class="day-header">
             <span class="day-label">{{ day.date }}</span>
@@ -237,14 +251,17 @@ const isExpanded = (dayDate, articleId) => expanded.value.has(`${dayDate}__${art
           <h2 class="section-title">🤖 AI 맞춤 추천 기사</h2>
           <p class="section-sub">오답노트의 취약 개념을 바탕으로 복습에 도움이 될 기사를 추천합니다.</p>
         </div>
+        <button class="section-mini-toggle" @click="toggleSection('recommendations')">
+          <span class="toggle-arrow" :class="{ open: isSectionOpen('recommendations') }">▾</span>
+        </button>
       </div>
 
-      <div v-if="recommendations.weaknessTerms?.length" class="weakness-tags">
+      <div v-if="isSectionOpen('recommendations') && recommendations.weaknessTerms?.length" class="weakness-tags">
         <span class="tag-label">분석된 취약 개념</span>
         <span v-for="term in recommendations.weaknessTerms.slice(0, 6)" :key="term" class="weakness-tag">{{ term }}</span>
       </div>
 
-      <div class="rec-list">
+      <div v-if="isSectionOpen('recommendations')" class="rec-list">
         <div
           v-for="item in (recommendations.articles || recommendations.results || []).slice(0, 6)"
           :key="item.article?.articleId || item.articleId"
@@ -270,14 +287,17 @@ const isExpanded = (dayDate, articleId) => expanded.value.has(`${dayDate}__${art
           <h2 class="section-title">북마크한 기사</h2>
           <p class="section-sub">저장해 둔 기사를 빠르게 다시 읽어보세요.</p>
         </div>
+        <button class="section-mini-toggle" @click="toggleSection('bookmarks')">
+          <span class="toggle-arrow" :class="{ open: isSectionOpen('bookmarks') }">▾</span>
+        </button>
       </div>
 
-      <div v-if="!bookmarks.length" class="empty-state small">
+      <div v-if="isSectionOpen('bookmarks') && !bookmarks.length" class="empty-state small">
         <p class="empty-icon">🔖</p>
         <p class="empty-desc">북마크한 기사가 없습니다.</p>
       </div>
 
-      <div v-else class="bookmark-list">
+      <div v-else-if="isSectionOpen('bookmarks')" class="bookmark-list">
         <div
           v-for="article in bookmarks"
           :key="article.articleId"
@@ -301,22 +321,27 @@ const isExpanded = (dayDate, articleId) => expanded.value.has(`${dayDate}__${art
           <h2 class="section-title">오답 노트</h2>
           <p class="section-sub">학습 이력에서 복습할 문제를 확인하세요.</p>
         </div>
-        <button class="btn-primary" @click="navigate('/wrong-notes')">전체 보기</button>
+        <div class="section-actions">
+          <button class="section-mini-toggle" @click="toggleSection('wrongNotes')">
+            <span class="toggle-arrow" :class="{ open: isSectionOpen('wrongNotes') }">▾</span>
+          </button>
+          <button class="btn-primary" @click="navigate('/wrong-notes')">전체 보기</button>
+        </div>
       </div>
 
-      <div v-if="isWrongNoteLoading" class="timeline-skel">
+      <div v-if="isSectionOpen('wrongNotes') && isWrongNoteLoading" class="timeline-skel">
         <div v-for="n in 3" :key="n" class="skel-row">
           <span class="skel" style="width:75%;height:16px;"></span>
           <span class="skel" style="width:50%;height:12px;margin-top:6px;"></span>
         </div>
       </div>
 
-      <div v-else-if="unresolvedWrongNotes.length === 0" class="empty-state small">
+      <div v-else-if="isSectionOpen('wrongNotes') && unresolvedWrongNotes.length === 0" class="empty-state small">
         <p class="empty-icon">✅</p>
         <p class="empty-desc">복습할 오답이 없습니다.</p>
       </div>
 
-      <div v-else class="wrong-list">
+      <div v-else-if="isSectionOpen('wrongNotes')" class="wrong-list">
         <div v-for="note in unresolvedWrongNotes.slice(0, 5)" :key="note.id" class="wrong-item">
           <div class="wrong-content">
             <p class="wrong-question">{{ note.question || note.quizQuestion || '복습 문제' }}</p>
@@ -507,6 +532,40 @@ const isExpanded = (dayDate, articleId) => expanded.value.has(`${dayDate}__${art
   margin-bottom: 20px;
   padding-bottom: 16px;
   border-bottom: 1px solid var(--line);
+}
+
+.section-toggle {
+  width: 100%;
+  padding: 0 0 16px;
+  margin: 0 0 20px;
+  border: none;
+  border-bottom: 1px solid var(--line);
+  background: none;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  cursor: pointer;
+}
+
+.section-mini-toggle {
+  width: 34px;
+  height: 34px;
+  border-radius: 10px;
+  border: 1px solid var(--line);
+  background: var(--bg-soft);
+  color: var(--ink-2);
+  cursor: pointer;
+  transition: all .2s;
+}
+.section-mini-toggle:hover {
+  border-color: #0084ff;
+  color: #0084ff;
+}
+
+.section-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
 }
 
 .section-title {
@@ -883,12 +942,6 @@ const isExpanded = (dayDate, articleId) => expanded.value.has(`${dayDate}__${art
 .dark .empty-title { color: #f4f6fa; }
 
 /* History section title (no section-head-row) */
-.section-card > .section-title:first-child {
-  margin-bottom: 20px;
-  padding-bottom: 16px;
-  border-bottom: 1px solid var(--line);
-}
-
 @media (max-width: 768px) {
   .stats-grid { grid-template-columns: repeat(2, 1fr); }
   .history-title { font-size: 34px; }

@@ -95,13 +95,18 @@ const toggleBookmark = async () => {
   }
 }
 
-const startQuiz = () => {
-  router.push(`/articles/${articleId.value}/quiz`)
-}
-
 const writeReview = () => {
   router.push(`/articles/${articleId.value}/review`)
 }
+
+const articleMetaText = computed(() => {
+  if (!selectedArticle.value) return ''
+  const published = selectedArticle.value.publishedAt
+    ? String(selectedArticle.value.publishedAt).replaceAll('-', '.')
+    : '작성일 미상'
+  const views = Number(selectedArticle.value.viewCount ?? 0).toLocaleString()
+  return `${published} · 조회수 ${views}회`
+})
 
 watch(articleId, async (newId) => {
   if (!newId) return
@@ -158,17 +163,7 @@ watch(articleId, async (newId) => {
           <!-- Meta -->
           <div class="flex items-center gap-2 mb-4 flex-wrap">
             <BaseBadge :value="selectedArticle.category" />
-            <span
-              class="text-xs font-semibold px-2.5 py-0.5 rounded-full"
-              :class="{
-                'bg-brand-100 text-brand-700': selectedArticle.difficulty === '초급',
-                'bg-secondary-100 text-secondary-700': selectedArticle.difficulty === '중급',
-                'bg-accent-100 text-accent-700': selectedArticle.difficulty === '고급'
-              }"
-            >
-              난이도 {{ selectedArticle.difficulty }}
-            </span>
-            <span class="text-xs text-slate-400 font-light ml-auto">{{ selectedArticle.publishedAt }} • 읽기 {{ selectedArticle.estimatedMinutes }}분</span>
+            <span class="text-xs text-slate-400 font-light ml-auto">{{ articleMetaText }}</span>
           </div>
 
           <!-- Title -->
@@ -250,18 +245,10 @@ watch(articleId, async (newId) => {
           <!-- Call to Action Buttons -->
           <div class="border-t border-slate-100 mt-12 pt-8 flex flex-col sm:flex-row gap-4 justify-end">
             <BaseButton 
-              variant="outline" 
               @click="writeReview"
               class="py-3 px-6 rounded-xl font-bold"
             >
               ✏️ 학습 요약/리뷰 작성
-            </BaseButton>
-            <BaseButton 
-              variant="primary" 
-              @click="startQuiz"
-              class="py-3 px-8 rounded-xl font-bold bg-primary-600 hover:bg-primary-700 text-white shadow-md shadow-primary-100"
-            >
-              🧩 퀴즈 풀고 지식 검증
             </BaseButton>
           </div>
         </article>
