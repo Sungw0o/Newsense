@@ -1,5 +1,6 @@
 package com.newsense.backend.rag.service;
 
+import com.newsense.backend.ai.embedding.OpenAiEmbeddingClient;
 import com.newsense.backend.ai.quiz.EconomicTermContext;
 import com.newsense.backend.article.document.ArticleContent;
 import com.newsense.backend.article.domain.ArticleMeta;
@@ -8,13 +9,15 @@ import com.newsense.backend.article.repository.ArticleContentRepository;
 import com.newsense.backend.article.repository.ArticleMetaRepository;
 import com.newsense.backend.common.exception.CustomException;
 import com.newsense.backend.common.exception.ErrorCode;
+import com.newsense.backend.rag.config.VectorSearchProperties;
 import com.newsense.backend.rag.dto.RagArticleResultResponse;
 import com.newsense.backend.rag.dto.RagMatchedChunkResponse;
 import com.newsense.backend.rag.dto.RagRecommendationResponse;
 import com.newsense.backend.rag.dto.RagSearchResponse;
-import com.newsense.backend.wrongnote.domain.WrongNote;
+import com.newsense.backend.rag.service.RagVectorSearchService.VectorResult;
 import com.newsense.backend.wrongnote.repository.WrongNoteRepository;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
@@ -26,26 +29,47 @@ import java.util.Comparator;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Locale;
+import java.util.Map;
 import java.util.Set;
+import java.util.function.Function;
+import java.util.stream.Collectors;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class RagRetrievalService {
 
-    private static final int MAX_CANDIDATE_ARTICLES = 120;
-    private static final int MAX_RESULT_LIMIT = 20;
-    private static final int DEFAULT_RESULT_LIMIT = 5;
-    private static final int MAX_CHUNKS_PER_ARTICLE = 3;
-    private static final int QUIZ_EVIDENCE_CHUNK_LIMIT = 5;
-    private static final int SNIPPET_RADIUS = 120;
-    private static final int MIN_QUERY_LENGTH = 2;
+    // ─── 상수 ────────────────────────────────────────────────────────────────
+    private static final int MAX_CANDIDATE_ARTICLES     = 120;
+    private static final int MAX_RESULT_LIMIT           = 20;
+    private static final int DEFAULT_RESULT_LIMIT       = 5;
+    private static final int MAX_CHUNKS_PER_ARTICLE     = 3;
+    private static final int QUIZ_EVIDENCE_CHUNK_LIMIT  = 5;
+    private static final int SNIPPET_RADIUS             = 120;
+    private static final int MIN_QUERY_LENGTH           = 2;
+
+    /** 하이브리드 점수: 벡터 70% + 키워드 30% */
+    private static final double VECTOR_WEIGHT  = 0.70;
+    private static final double KEYWORD_WEIGHT = 0.30;
+
+    /** 벡터 후보 배수: 최종 limit보다 더 많이 가져와 키워드 re-scoring */
+    private static final int VECTOR_CANDIDATE_MULTIPLIER = 4;
+
     private static final Set<String> STOP_WORDS = Set.of(
             "그리고", "그러나", "하지만", "관련", "기사", "뉴스", "내용", "대한", "대해",
             "으로", "에서", "이다", "있는", "하는", "했다", "한다", "이번", "최근");
 
-    private final ArticleMetaRepository articleMetaRepository;
+    // ─── 의존성 ──────────────────────────────────────────────────────────────
+    private final ArticleMetaRepository    articleMetaRepository;
     private final ArticleContentRepository articleContentRepository;
-    private final WrongNoteRepository wrongNoteRepository;
+    private final WrongNoteRepository      wrongNoteRepository;
+    private final OpenAiEmbeddingClient    embeddingClient;
+    private final RagVectorSearchService   vectorSearchService;
+    private final VectorSearchProperties   vectorSearchProperties;
+
+    // ─────────────────────────────────────────────────────────────────────────
+    // Public API
+    // ─────────────────────────────────────────────────────────────────────────
 
     @Transactional(readOnly = true)
     public RagSearchResponse search(String query, int limit) {
@@ -53,10 +77,14 @@ public class RagRetrievalService {
         if (keywords.isEmpty()) {
             throw new CustomException(ErrorCode.INVALID_INPUT_VALUE);
         }
-        return new RagSearchResponse(
-                query.trim(),
-                keywords,
-                retrieveByKeywords(keywords, normalizeLimit(limit), "검색어와 기사 청크가 매칭되었습니다."));
+        int normalizedLimit = normalizeLimit(limit);
+        String reason = "검색어와 기사 청크가 매칭되었습니다.";
+
+        List<RagArticleResultResponse> results = vectorSearchProperties.enabled()
+                ? hybridSearch(query, keywords, normalizedLimit, reason)
+                : retrieveByKeywords(keywords, normalizedLimit, reason);
+
+        return new RagSearchResponse(query.trim(), keywords, results);
     }
 
     @Transactional(readOnly = true)
@@ -79,13 +107,17 @@ public class RagRetrievalService {
         List<String> keywords = toDistinctList(
                 weaknessTerms.stream()
                         .flatMap(term -> extractKeywords(term).stream()));
+        List<String> effectiveKeywords = keywords.isEmpty() ? weaknessTerms : keywords;
 
-        return new RagRecommendationResponse(
-                weaknessTerms,
-                retrieveByKeywords(
-                        keywords.isEmpty() ? weaknessTerms : keywords,
-                        normalizeLimit(limit),
-                        "오답노트의 취약 경제 용어와 관련된 기사입니다."));
+        String reason = "오답노트의 취약 경제 용어와 관련된 기사입니다.";
+        int    lim    = normalizeLimit(limit);
+        String query  = String.join(" ", weaknessTerms);
+
+        List<RagArticleResultResponse> results = vectorSearchProperties.enabled()
+                ? hybridSearch(query, effectiveKeywords, lim, reason)
+                : retrieveByKeywords(effectiveKeywords, lim, reason);
+
+        return new RagRecommendationResponse(weaknessTerms, results);
     }
 
     public List<String> retrieveQuizEvidence(
@@ -113,10 +145,86 @@ public class RagRetrievalService {
                 .toList();
     }
 
-    private List<RagArticleResultResponse> retrieveByKeywords(List<String> keywords, int limit, String reason) {
+    // ─────────────────────────────────────────────────────────────────────────
+    // Hybrid search (vector 70% + keyword 30%)
+    // ─────────────────────────────────────────────────────────────────────────
+
+    private List<RagArticleResultResponse> hybridSearch(
+            String query,
+            List<String> keywords,
+            int limit,
+            String reason) {
+
+        // 1. 쿼리 임베딩 생성
+        List<Double> queryEmbedding = embeddingClient.embed(query);
+        if (queryEmbedding.isEmpty()) {
+            log.warn("Query embedding empty — falling back to keyword-only search");
+            return retrieveByKeywords(keywords, limit, reason);
+        }
+
+        // 2. 벡터 후보 검색 (배수만큼 더 가져옴)
+        int candidateLimit = Math.min(limit * VECTOR_CANDIDATE_MULTIPLIER, MAX_CANDIDATE_ARTICLES);
+        List<VectorResult> vectorResults = vectorSearchService.search(queryEmbedding, candidateLimit);
+        if (vectorResults.isEmpty()) {
+            log.debug("Vector search returned no results — falling back to keyword-only search");
+            return retrieveByKeywords(keywords, limit, reason);
+        }
+
+        // 3. 벡터 점수 정규화 (max → 1.0)
+        double maxVecScore = vectorResults.stream()
+                .mapToDouble(VectorResult::score)
+                .max()
+                .orElse(1.0);
+        Map<String, Double> normalizedVecScores = vectorResults.stream()
+                .collect(Collectors.toMap(
+                        VectorResult::contentId,
+                        r -> maxVecScore > 0 ? r.score() / maxVecScore : 0.0));
+
+        // 4. 후보 ArticleMeta 조회
+        List<String> contentIds = vectorResults.stream().map(VectorResult::contentId).toList();
+        Map<String, ArticleMeta> metaByContentId = articleMetaRepository
+                .findAllByMongoDocumentIdIn(contentIds)
+                .stream()
+                .collect(Collectors.toMap(ArticleMeta::getMongoDocumentId, Function.identity()));
+
+        // 5. 키워드 점수 계산 및 최대값 파악
+        record Entry(String contentId, ArticleMeta meta, ArticleContent content, int kScore) {}
+        List<Entry> entries = new ArrayList<>();
+        int maxKwScore = 1;
+
+        for (String cid : contentIds) {
+            ArticleMeta meta = metaByContentId.get(cid);
+            if (meta == null) continue;
+            ArticleContent content = articleContentRepository.findById(cid).orElse(null);
+            int kScore = computeKeywordScore(meta, content, keywords);
+            if (kScore > maxKwScore) maxKwScore = kScore;
+            entries.add(new Entry(cid, meta, content, kScore));
+        }
+
+        // 6. 하이브리드 점수 계산 후 정렬·제한
+        final int maxKw = maxKwScore;
+        return entries.stream()
+                .map(e -> {
+                    double vecScore    = normalizedVecScores.getOrDefault(e.contentId(), 0.0);
+                    double kwScore     = (double) e.kScore() / maxKw;
+                    double hybridScore = VECTOR_WEIGHT * vecScore + KEYWORD_WEIGHT * kwScore;
+                    // DTO가 int score를 사용하므로 0~100 스케일로 변환
+                    int intScore = (int) Math.round(hybridScore * 100);
+                    return buildResult(e.meta(), e.content(), keywords, intScore, reason);
+                })
+                .sorted(Comparator.comparingInt(RagArticleResultResponse::score).reversed())
+                .limit(limit)
+                .toList();
+    }
+
+    // ─────────────────────────────────────────────────────────────────────────
+    // Keyword-only search (기존 방식 / fallback)
+    // ─────────────────────────────────────────────────────────────────────────
+
+    private List<RagArticleResultResponse> retrieveByKeywords(
+            List<String> keywords, int limit, String reason) {
         PageRequest pageRequest = PageRequest.of(
-                0,
-                MAX_CANDIDATE_ARTICLES,
+                0, MAX_CANDIDATE_ARTICLES,
                 Sort.by(
                         Sort.Order.desc("publishedAt").nullsLast(),
                         Sort.Order.desc("collectedAt"),
@@ -132,27 +240,48 @@ public class RagRetrievalService {
 
     private RagArticleResultResponse scoreArticle(ArticleMeta article, List<String> keywords, String reason) {
         ArticleContent content = articleContentRepository.findById(article.getMongoDocumentId()).orElse(null);
-        List<ScoredChunk> chunks = content == null ? List.of() : scoreChunks(safeChunks(content), keywords);
-        int metadataScore = scoreText(article.getTitle(), keywords) * 4
-                + scoreText(article.getSummary(), keywords) * 2;
+        int totalScore = computeKeywordScore(article, content, keywords);
+        return buildResult(article, content, keywords, totalScore, reason);
+    }
 
-        List<ScoredChunk> matchedChunks = chunks.stream()
-                .filter(chunk -> chunk.score() > 0)
-                .sorted(Comparator.comparingInt(ScoredChunk::score).reversed())
-                .limit(MAX_CHUNKS_PER_ARTICLE)
-                .toList();
+    // ─────────────────────────────────────────────────────────────────────────
+    // Shared helpers
+    // ─────────────────────────────────────────────────────────────────────────
 
-        int chunkScore = matchedChunks.stream().mapToInt(ScoredChunk::score).sum();
-        int totalScore = metadataScore + chunkScore;
+    private int computeKeywordScore(ArticleMeta meta, ArticleContent content, List<String> keywords) {
+        int metaScore = scoreText(meta.getTitle(), keywords) * 4
+                + scoreText(meta.getSummary(), keywords) * 2;
+        if (content == null) return metaScore;
+        int chunkScore = scoreChunks(safeChunks(content), keywords).stream()
+                .filter(c -> c.score() > 0)
+                .mapToInt(ScoredChunk::score)
+                .sum();
+        return metaScore + chunkScore;
+    }
+
+    private RagArticleResultResponse buildResult(
+            ArticleMeta meta,
+            ArticleContent content,
+            List<String> keywords,
+            int score,
+            String reason) {
+
+        List<ScoredChunk> matchedChunks = content == null ? List.of()
+                : scoreChunks(safeChunks(content), keywords).stream()
+                        .filter(c -> c.score() > 0)
+                        .sorted(Comparator.comparingInt(ScoredChunk::score).reversed())
+                        .limit(MAX_CHUNKS_PER_ARTICLE)
+                        .toList();
+
         List<String> matchedKeywords = keywords.stream()
-                .filter(keyword -> containsKeyword(article.getTitle(), keyword)
-                        || containsKeyword(article.getSummary(), keyword)
+                .filter(keyword -> containsKeyword(meta.getTitle(), keyword)
+                        || containsKeyword(meta.getSummary(), keyword)
                         || matchedChunks.stream().anyMatch(chunk -> containsKeyword(chunk.text(), keyword)))
                 .distinct()
                 .toList();
 
         return new RagArticleResultResponse(
-                ArticleCardResponse.from(article),
+                ArticleCardResponse.from(meta),
                 matchedChunks.stream()
                         .map(chunk -> new RagMatchedChunkResponse(
                                 chunk.index(),
@@ -160,9 +289,13 @@ public class RagRetrievalService {
                                 chunk.score()))
                         .toList(),
                 matchedKeywords,
-                totalScore,
+                score,
                 reason);
     }
+
+    // ─────────────────────────────────────────────────────────────────────────
+    // Text scoring utilities
+    // ─────────────────────────────────────────────────────────────────────────
 
     private List<ScoredChunk> scoreChunks(List<String> chunks, List<String> keywords) {
         List<ScoredChunk> scored = new ArrayList<>();
@@ -197,9 +330,7 @@ public class RagRetrievalService {
         int fromIndex = 0;
         while (fromIndex < text.length()) {
             int index = text.indexOf(keyword, fromIndex);
-            if (index < 0) {
-                break;
-            }
+            if (index < 0) break;
             count++;
             fromIndex = index + keyword.length();
         }
@@ -209,6 +340,10 @@ public class RagRetrievalService {
     private boolean containsKeyword(String text, String keyword) {
         return text != null && normalize(text).contains(keyword);
     }
+
+    // ─────────────────────────────────────────────────────────────────────────
+    // Keyword extraction
+    // ─────────────────────────────────────────────────────────────────────────
 
     private List<String> extractKeywords(String query) {
         if (query == null || query.isBlank()) {
@@ -238,9 +373,12 @@ public class RagRetrievalService {
                 .toList();
     }
 
+    // ─────────────────────────────────────────────────────────────────────────
+    // Text utilities
+    // ─────────────────────────────────────────────────────────────────────────
+
     private String normalize(String value) {
-        return Normalizer.normalize(value, Normalizer.Form.NFKC)
-                .toLowerCase(Locale.ROOT);
+        return Normalizer.normalize(value, Normalizer.Form.NFKC).toLowerCase(Locale.ROOT);
     }
 
     private String createSnippet(String text, List<String> keywords) {
@@ -274,6 +412,5 @@ public class RagRetrievalService {
         return Math.min(limit, MAX_RESULT_LIMIT);
     }
 
-    private record ScoredChunk(int index, String text, int score) {
-    }
+    private record ScoredChunk(int index, String text, int score) {}
 }
