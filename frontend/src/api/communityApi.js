@@ -2,28 +2,29 @@ import axiosInstance from './axiosInstance'
 
 const communityApi = {
   getPosts(params = {}) {
-    return axiosInstance.get('/community/posts', { params })
+    return axiosInstance.get('/posts', { params })
   },
   getPost(postId) {
-    return axiosInstance.get(`/community/posts/${postId}`)
+    return axiosInstance.get(`/posts/${postId}`)
   },
   createPost(data) {
-    return axiosInstance.post('/community/posts', data)
+    return axiosInstance.post('/posts', data)
   },
   deletePost(postId) {
-    return axiosInstance.delete(`/community/posts/${postId}`)
+    return axiosInstance.delete(`/posts/${postId}`)
   },
   toggleReaction(postId, type) {
-    return axiosInstance.post(`/community/posts/${postId}/reactions`, { type })
+    const endpoint = type.toLowerCase() === 'like' ? 'like' : 'dislike'
+    return axiosInstance.post(`/posts/${postId}/${endpoint}`)
   },
   getComments(postId) {
-    return axiosInstance.get(`/community/posts/${postId}/comments`)
+    return axiosInstance.get(`/posts/${postId}/comments`)
   },
   createComment(postId, content) {
-    return axiosInstance.post(`/community/posts/${postId}/comments`, { content })
+    return axiosInstance.post(`/posts/${postId}/comments`, { content })
   },
-  deleteComment(postId, commentId) {
-    return axiosInstance.delete(`/community/posts/${postId}/comments/${commentId}`)
+  deleteComment(commentId) {
+    return axiosInstance.delete(`/comments/${commentId}`)
   },
 }
 
