@@ -6,7 +6,7 @@ const routes = [
     path: '/',
     name: 'Home',
     component: () => import('../views/HomeView.vue'),
-    meta: { title: '뉴스 목록 - Newsense' }
+    meta: { title: '뉴스 목록 - Newsense', requiresAuth: true }
   },
   {
     path: '/login',
