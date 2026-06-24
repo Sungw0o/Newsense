@@ -9,7 +9,7 @@ const router = useRouter()
 const articleStore = useArticleStore()
 const { articles, isLoading, hasMore, filters } = storeToRefs(articleStore)
 
-const categories = ['전체', '금융', '부동산', '주식', '환율', '거시경제']
+const categories = ['전체', '거시경제', '금융/투자', '정책/제도', '기업/산업', '글로벌경제']
 
 const mockArticles = ref([
   {

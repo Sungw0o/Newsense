@@ -13,12 +13,11 @@ const email = ref('')
 const subPlan = ref('Standard Plan (Free)')
 
 const categories = ref([
-  { id: 'FINANCE', name: '금융' },
-  { id: 'REAL_ESTATE', name: '부동산' },
-  { id: 'STOCK', name: '주식' },
-  { id: 'EXCHANGE_RATE', name: '환율' },
-  { id: 'ECONOMY', name: '거시경제' },
-  { id: 'MONETARY_POLICY', name: '통화정책' },
+  { id: 'MACRO_ECONOMY', name: '거시경제' },
+  { id: 'FINANCE_INVESTMENT', name: '금융/투자' },
+  { id: 'POLICY_SYSTEM', name: '정책/제도' },
+  { id: 'COMPANY_INDUSTRY', name: '기업/산업' },
+  { id: 'GLOBAL_ECONOMY', name: '글로벌경제' },
 ])
 const selectedCategories = ref(new Set())
 

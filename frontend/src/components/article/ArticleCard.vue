@@ -10,8 +10,11 @@ const emit = defineEmits(['click'])
 
 const categoryTag = computed(() => {
   const map = {
-    '금융': 'eco', '경제': 'eco', '부동산': 'estate',
-    '주식': 'stock', '환율': 'fx', '거시경제': 'macro', '정책': 'policy',
+    '거시경제': 'macro',
+    '금융/투자': 'eco',
+    '정책/제도': 'policy',
+    '기업/산업': 'stock',
+    '글로벌경제': 'fx',
   }
   return map[props.article.category] ?? 'default'
 })

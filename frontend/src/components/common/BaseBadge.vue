@@ -14,11 +14,11 @@ const props = defineProps({
 })
 
 const categoryThemes = {
-  '금융': 'bg-primary-500/10 border-primary-500/20 text-primary-400',
-  '부동산': 'bg-amber-500/10 border-amber-500/20 text-amber-400',
-  '주식': 'bg-brand-500/10 border-brand-500/20 text-brand-400',
-  '환율': 'bg-secondary-500/10 border-secondary-500/20 text-secondary-400',
-  '거시경제': 'bg-indigo-500/10 border-indigo-500/20 text-indigo-400',
+  '거시경제':   'bg-indigo-500/10 border-indigo-500/20 text-indigo-400',
+  '금융/투자':  'bg-primary-500/10 border-primary-500/20 text-primary-400',
+  '정책/제도':  'bg-amber-500/10 border-amber-500/20 text-amber-400',
+  '기업/산업':  'bg-brand-500/10 border-brand-500/20 text-brand-400',
+  '글로벌경제': 'bg-secondary-500/10 border-secondary-500/20 text-secondary-400',
 }
 
 const difficultyThemes = {
