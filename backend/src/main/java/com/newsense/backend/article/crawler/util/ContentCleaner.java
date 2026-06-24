@@ -10,6 +10,15 @@ import java.util.stream.Collectors;
 @Component
 public class ContentCleaner {
 
+    /*
+     * Scope:
+     * - Implemented: HTML tag removal, whitespace normalization, reporter email removal,
+     *   copyright/redistribution notice removal, and common byline/source signature removal.
+     * - Out of current implementation: broad advertising copy, repeated footer blocks, and
+     *   publisher-specific metadata. Those rules need source-specific patterns to avoid
+     *   deleting valid article sentences.
+     */
+
     // \uAE30\uC790 \uC774\uBA54\uC77C
     private static final Pattern EMAIL = Pattern.compile(
             "[a-zA-Z0-9+_.-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,}", Pattern.CASE_INSENSITIVE);
