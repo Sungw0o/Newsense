@@ -42,6 +42,15 @@ public class ArticleFeedService {
     public ArticleFeedPageResponse getArticles(
             ArticleCategory category,
             ArticleDifficulty difficulty,
+            int page,
+            int size,
+            ArticleFeedSort sort) {
+        return getArticles(category, difficulty, null, page, size, sort);
+    }
+
+    public ArticleFeedPageResponse getArticles(
+            ArticleCategory category,
+            ArticleDifficulty difficulty,
             String keyword,
             int page,
             int size,
