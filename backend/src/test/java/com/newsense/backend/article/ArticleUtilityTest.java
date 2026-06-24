@@ -60,7 +60,16 @@ class ArticleUtilityTest {
         ArticleDifficultyConverter difficultyConverter = new ArticleDifficultyConverter();
 
         assertThat(categoryConverter.convert("finance")).isEqualTo(ArticleCategory.FINANCE_INVESTMENT);
+        assertThat(categoryConverter.convert("주식")).isEqualTo(ArticleCategory.FINANCE_INVESTMENT);
+        assertThat(categoryConverter.convert("부동산")).isEqualTo(ArticleCategory.POLICY_SYSTEM);
+        assertThat(categoryConverter.convert("환율")).isEqualTo(ArticleCategory.GLOBAL_ECONOMY);
         assertThat(difficultyConverter.convert("BASIC")).isEqualTo(ArticleDifficulty.BASIC);
+        assertThat(categoryConverter.convert("")).isNull();
+        assertThat(categoryConverter.convert("   ")).isNull();
+        assertThat(categoryConverter.convert(null)).isNull();
+        assertThat(difficultyConverter.convert("")).isNull();
+        assertThat(difficultyConverter.convert("   ")).isNull();
+        assertThat(difficultyConverter.convert(null)).isNull();
         assertThatThrownBy(() -> categoryConverter.convert("unknown"))
                 .isInstanceOf(IllegalArgumentException.class);
         assertThatThrownBy(() -> difficultyConverter.convert("unknown"))

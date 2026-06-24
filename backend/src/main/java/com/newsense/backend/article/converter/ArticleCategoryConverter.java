@@ -9,6 +9,9 @@ public class ArticleCategoryConverter implements Converter<String, ArticleCatego
 
     @Override
     public ArticleCategory convert(String source) {
+        if (source == null || source.trim().isEmpty()) {
+            return null;
+        }
         return ArticleCategory.from(source.trim());
     }
 }

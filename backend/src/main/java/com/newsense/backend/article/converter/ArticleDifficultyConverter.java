@@ -9,6 +9,9 @@ public class ArticleDifficultyConverter implements Converter<String, ArticleDiff
 
     @Override
     public ArticleDifficulty convert(String source) {
+        if (source == null || source.trim().isEmpty()) {
+            return null;
+        }
         return ArticleDifficulty.from(source.trim());
     }
 }
