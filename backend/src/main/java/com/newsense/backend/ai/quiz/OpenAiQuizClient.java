@@ -3,6 +3,7 @@ package com.newsense.backend.ai.quiz;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.newsense.backend.ai.config.AiPipelineProperties;
 import com.newsense.backend.ai.config.OpenAiProperties;
 import com.newsense.backend.common.exception.CustomException;
 import com.newsense.backend.common.exception.ErrorCode;
@@ -31,14 +32,17 @@ public class OpenAiQuizClient {
             제공된 기사에 명시된 사실만 사용해 한국어 퀴즈 3문항을 만드세요.
             우선 '검색된 근거 청크'에 포함된 핵심 사실을 중심으로 출제하세요.
             정확히 OX 1문항과 객관식(MULTIPLE) 2문항을 작성하세요.
+            1번 문항은 개념 이해, 2번 문항은 정량 수치 또는 사실 확인, 3번 문항은 인과 추론이어야 합니다.
             OX 선택지는 반드시 [\"O\", \"X\"]이고 정답도 O 또는 X여야 합니다.
             객관식은 서로 중복되지 않는 선택지 4개를 제공하고 정답은 선택지 중 하나여야 합니다.
+            객관식 오답은 본문 속 다른 핵심 키워드나 수치를 섞어 변별력 있게 만들되 정답처럼 보이면 안 됩니다.
             질문은 모호하지 않게, 해설은 기사 근거를 짧고 명확하게 설명하세요.
             기사에 근거가 부족하면 추측하지 말고 기사에서 직접 확인 가능한 내용으로 출제하세요.
             """;
 
     private final RestClient openAiRestClient;
     private final OpenAiProperties properties;
+    private final AiPipelineProperties pipelineProperties;
     private final ObjectMapper objectMapper;
 
     public List<GeneratedQuiz> generate(
@@ -47,6 +51,16 @@ public class OpenAiQuizClient {
             List<EconomicTermContext> economicTerms,
             List<String> evidenceChunks
     ) {
+        return generate(title, articleText, economicTerms, evidenceChunks, null);
+    }
+
+    public List<GeneratedQuiz> generate(
+            String title,
+            String articleText,
+            List<EconomicTermContext> economicTerms,
+            List<String> evidenceChunks,
+            String criticFeedback
+    ) {
         if (properties.apiKey() == null || properties.apiKey().isBlank()) {
             throw new CustomException(ErrorCode.AI_SERVICE_UNAVAILABLE);
         }
@@ -54,9 +68,10 @@ public class OpenAiQuizClient {
         String input = "기사 제목: " + title
                 + "\n\n검색된 근거 청크:\n" + formatEvidenceChunks(evidenceChunks)
                 + "\n\n기사 본문:\n" + truncate(articleText)
-                + "\n\n기재부 경제 용어 사전:\n" + formatTerms(economicTerms);
+                + "\n\n기재부 경제 용어 사전:\n" + formatTerms(economicTerms)
+                + "\n\n이전 검증 피드백:\n" + formatCriticFeedback(criticFeedback);
         Map<String, Object> request = Map.of(
-                "model", properties.model(),
+                "model", pipelineProperties.quizGeneratorModel(),
                 "messages", List.of(
                         Map.of("role", "developer", "content", INSTRUCTIONS),
                         Map.of("role", "user", "content", input)
@@ -151,6 +166,13 @@ public class OpenAiQuizClient {
                     .append('\n');
         }
         return builder.toString().trim();
+    }
+
+    private String formatCriticFeedback(String criticFeedback) {
+        if (criticFeedback == null || criticFeedback.isBlank()) {
+            return "첫 생성 시도입니다. 피드백 없음";
+        }
+        return criticFeedback;
     }
 
     private Map<String, Object> createResponseFormat() {
