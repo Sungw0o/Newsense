@@ -32,4 +32,11 @@ public class UserController implements UserApiDocs {
         UserProfileResponse response = userService.updateUserProfile(userPrincipal.id(), request);
         return ResponseEntity.ok(ApiResponse.success("프로필이 성공적으로 수정되었습니다.", response));
     }
+
+    @Override
+    public ResponseEntity<ApiResponse<Void>> deleteAccount(
+            @AuthenticationPrincipal UserPrincipal userPrincipal) {
+        userService.deleteAccount(userPrincipal.id());
+        return ResponseEntity.ok(ApiResponse.success("회원 탈퇴가 완료되었습니다.", null));
+    }
 }

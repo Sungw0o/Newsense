@@ -78,10 +78,21 @@ const handleUpdateProfile = async () => {
   }
 }
 
-const handleLogout = async () => {
-  if (confirm('정말로 로그아웃 하시겠습니까?')) {
-    await userStore.logout()
+const isWithdrawing = ref(false)
+
+const handleWithdraw = async () => {
+  if (!confirm('정말로 회원 탈퇴하시겠습니까?\n탈퇴 후 계정은 비활성화되며 로그인이 불가합니다.')) return
+  if (!confirm('다시 한번 확인합니다. 정말 탈퇴하시겠습니까?')) return
+
+  isWithdrawing.value = true
+  try {
+    await userStore.deleteAccount()
+    alert('회원 탈퇴가 완료되었습니다. 이용해 주셔서 감사합니다.')
     router.push('/login')
+  } catch (err) {
+    alert('회원 탈퇴 처리 중 오류가 발생했습니다. 다시 시도해 주세요.')
+  } finally {
+    isWithdrawing.value = false
   }
 }
 </script>
@@ -112,12 +123,13 @@ const handleLogout = async () => {
           </div>
         </div>
 
-        <BaseButton 
-          variant="outline" 
-          @click="handleLogout"
-          class="w-full py-2.5 rounded-xl font-bold border-accent-200 dark:border-accent-800/50 text-accent-600 dark:text-accent-400 hover:bg-accent-50 dark:hover:bg-accent-950/40 transition-colors"
+        <BaseButton
+          variant="outline"
+          :loading="isWithdrawing"
+          @click="handleWithdraw"
+          class="w-full py-2.5 rounded-xl font-bold border-red-200 dark:border-red-800/50 text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-950/40 transition-colors"
         >
-          로그아웃
+          회원 탈퇴
         </BaseButton>
       </div>
 

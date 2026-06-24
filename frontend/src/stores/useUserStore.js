@@ -109,6 +109,20 @@ export const useUserStore = defineStore('user', {
         console.error('Update profile error:', error)
         throw error
       }
+    },
+
+    /**
+     * 회원 탈퇴 액션 (soft delete — isActive: false)
+     */
+    async deleteAccount() {
+      try {
+        await axiosInstance.delete('/users/me')
+      } catch (error) {
+        console.error('Delete account error:', error)
+        throw error
+      } finally {
+        this.clearAuth()
+      }
     }
   }
 })
