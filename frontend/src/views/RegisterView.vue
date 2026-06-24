@@ -1,7 +1,8 @@
 <script setup>
-import { ref } from 'vue'
+import { ref, watch, computed } from 'vue'
 import { useRouter } from 'vue-router'
 import { useUserStore } from '../stores/useUserStore'
+import { authApi } from '../api/authApi'
 
 const router = useRouter()
 const userStore = useUserStore()
@@ -13,9 +14,45 @@ const passwordConfirm = ref('')
 const isLoading = ref(false)
 const errorMsg = ref('')
 
+// 'idle' | 'checking' | 'available' | 'taken' | 'error'
+const emailStatus = ref('idle')
+
+function debounce(fn, delay) {
+  let timer
+  return (...args) => {
+    clearTimeout(timer)
+    timer = setTimeout(() => fn(...args), delay)
+  }
+}
+
+const checkEmail = debounce(async (val) => {
+  if (!val || !val.includes('@')) {
+    emailStatus.value = 'idle'
+    return
+  }
+  emailStatus.value = 'checking'
+  try {
+    const res = await authApi.checkUsername(val)
+    emailStatus.value = res?.data?.available ? 'available' : 'taken'
+  } catch {
+    emailStatus.value = 'error'
+  }
+}, 300)
+
+watch(email, (val) => {
+  emailStatus.value = 'idle'
+  checkEmail(val)
+})
+
+const canSubmit = computed(() => emailStatus.value === 'available' && !isLoading.value)
+
 const handleRegister = async () => {
   if (!email.value || !nickname.value || !password.value || !passwordConfirm.value) {
     errorMsg.value = '모든 필드를 입력해 주세요.'
+    return
+  }
+  if (emailStatus.value !== 'available') {
+    errorMsg.value = '이메일 중복 확인을 완료해 주세요.'
     return
   }
   if (password.value !== passwordConfirm.value) {
@@ -96,7 +133,21 @@ const handleRegister = async () => {
 
         <div class="field">
           <label for="email">이메일</label>
-          <input id="email" type="email" v-model="email" placeholder="name@example.com" autocomplete="email" required />
+          <div class="input-wrap">
+            <input
+              id="email"
+              type="email"
+              v-model="email"
+              placeholder="name@example.com"
+              autocomplete="email"
+              required
+              :class="{ 'input-ok': emailStatus === 'available', 'input-err': emailStatus === 'taken' }"
+            />
+            <span v-if="emailStatus === 'checking'" class="input-spinner"></span>
+          </div>
+          <p v-if="emailStatus === 'available'" class="field-feedback ok">사용 가능한 이메일입니다.</p>
+          <p v-else-if="emailStatus === 'taken'" class="field-feedback err">이미 사용 중인 이메일입니다.</p>
+          <p v-else-if="emailStatus === 'error'" class="field-feedback err">확인 중 오류가 발생했습니다.</p>
         </div>
 
         <div class="field">
@@ -113,7 +164,7 @@ const handleRegister = async () => {
           <span>⚠</span> {{ errorMsg }}
         </div>
 
-        <button type="submit" class="btn-primary submit-btn" :disabled="isLoading">
+        <button type="submit" class="btn-primary submit-btn" :disabled="!canSubmit">
           <span v-if="isLoading" class="spinner-sm"></span>
           <span>{{ isLoading ? '가입 중…' : '회원가입' }}</span>
           <span v-if="!isLoading" class="submit-arrow">→</span>
@@ -259,6 +310,40 @@ form { display: flex; flex-direction: column; gap: 14px; }
 .field input::placeholder { color: var(--ink-3, #8a93a3); }
 .dark .field input { background: rgba(20,24,34,0.70); border-color: rgba(255,255,255,0.12); color: #f4f6fa; }
 .dark .field input:focus { background: rgba(20,24,34,0.90); }
+
+.input-wrap { position: relative; }
+.input-wrap input { width: 100%; }
+
+.input-ok { border-color: #1a9e5c !important; }
+.input-ok:focus { box-shadow: 0 0 0 4px rgba(26,158,92,0.12) !important; }
+.dark .input-ok { border-color: #3ad07b !important; }
+
+.input-err { border-color: #b02a2a !important; }
+.input-err:focus { box-shadow: 0 0 0 4px rgba(176,42,42,0.12) !important; }
+.dark .input-err { border-color: #ff6a6a !important; }
+
+.input-spinner {
+  position: absolute;
+  right: 14px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 14px; height: 14px;
+  border: 2px solid rgba(0,132,255,0.2);
+  border-top-color: #0084ff;
+  border-radius: 50%;
+  animation: spin .65s linear infinite;
+  pointer-events: none;
+}
+
+.field-feedback {
+  font-size: 12px;
+  margin: 4px 0 0;
+  font-family: 'JetBrains Mono', monospace;
+}
+.field-feedback.ok { color: #1a9e5c; }
+.field-feedback.err { color: #b02a2a; }
+.dark .field-feedback.ok { color: #3ad07b; }
+.dark .field-feedback.err { color: #ff8a8a; }
 
 .error-msg {
   display: flex; align-items: center; gap: 8px;

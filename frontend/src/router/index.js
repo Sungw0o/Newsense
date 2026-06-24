@@ -63,6 +63,24 @@ const routes = [
     meta: { title: '마이페이지 - Newsense', requiresAuth: true }
   },
   {
+    path: '/community',
+    name: 'Community',
+    component: () => import('../views/CommunityView.vue'),
+    meta: { title: '커뮤니티 - Newsense', requiresAuth: true }
+  },
+  {
+    path: '/community/write',
+    name: 'CommunityWrite',
+    component: () => import('../views/CommunityWriteView.vue'),
+    meta: { title: '글쓰기 - Newsense', requiresAuth: true }
+  },
+  {
+    path: '/community/:id',
+    name: 'CommunityDetail',
+    component: () => import('../views/CommunityDetailView.vue'),
+    meta: { title: '게시글 - Newsense', requiresAuth: true }
+  },
+  {
     path: '/:pathMatch(.*)*',
     redirect: '/'
   }

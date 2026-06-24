@@ -24,6 +24,7 @@ const selectedCategories = ref(new Set())
 
 const isSaving = ref(false)
 const isWithdrawing = ref(false)
+const showS3Modal = ref(false)
 
 const initFormData = () => {
   if (userInfo.value) {
@@ -100,7 +101,15 @@ const nicknameFirst = () => (nickname.value || 'U').substring(0, 1)
       <!-- Profile card -->
       <div class="profile-card">
         <div class="avatar-wrap">
-          <div class="avatar">{{ nicknameFirst() }}</div>
+          <button class="avatar-btn" @click="showS3Modal = true" title="프로필 이미지 변경">
+            <div class="avatar">{{ nicknameFirst() }}</div>
+            <span class="avatar-overlay">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/>
+                <circle cx="12" cy="13" r="4"/>
+              </svg>
+            </span>
+          </button>
         </div>
         <h2 class="profile-name">{{ nickname || '사용자' }}</h2>
         <p class="profile-email">{{ email }}</p>
@@ -159,6 +168,18 @@ const nicknameFirst = () => (nickname.value || 'U').substring(0, 1)
       </div>
     </div>
   </div>
+
+  <!-- S3 준비 중 모달 -->
+  <Teleport to="body">
+    <div v-if="showS3Modal" class="modal-backdrop" @click.self="showS3Modal = false">
+      <div class="modal-box">
+        <div class="modal-icon">📷</div>
+        <h3 class="modal-title">프로필 이미지 변경</h3>
+        <p class="modal-desc">이미지 업로드 기능은 현재 준비 중입니다.<br>곧 업데이트될 예정입니다.</p>
+        <button class="btn-primary" style="width:100%; justify-content:center;" @click="showS3Modal = false">확인</button>
+      </div>
+    </div>
+  </Teleport>
 </template>
 
 <style scoped>
@@ -228,6 +249,18 @@ const nicknameFirst = () => (nickname.value || 'U').substring(0, 1)
 }
 
 .avatar-wrap { margin-bottom: 14px; }
+
+.avatar-btn {
+  position: relative;
+  background: none;
+  border: none;
+  padding: 0;
+  cursor: pointer;
+  border-radius: 50%;
+  display: block;
+}
+.avatar-btn:hover .avatar-overlay { opacity: 1; }
+
 .avatar {
   width: 72px; height: 72px;
   border-radius: 50%;
@@ -238,6 +271,19 @@ const nicknameFirst = () => (nickname.value || 'U').substring(0, 1)
   font-weight: 800;
   font-size: 28px;
   display: flex; align-items: center; justify-content: center;
+}
+
+.avatar-overlay {
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  background: rgba(0,0,0,0.45);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #fff;
+  opacity: 0;
+  transition: opacity .15s;
 }
 
 .profile-name {
@@ -444,6 +490,49 @@ const nicknameFirst = () => (nickname.value || 'U').substring(0, 1)
   animation: spin .65s linear infinite;
 }
 @keyframes spin { to { transform: rotate(360deg); } }
+
+/* S3 modal */
+.modal-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.45);
+  backdrop-filter: blur(6px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 9999;
+}
+.modal-box {
+  width: 320px;
+  padding: 32px 28px;
+  background: rgba(255,255,255,0.90);
+  border: 1px solid rgba(0,0,0,0.07);
+  border-radius: 24px;
+  backdrop-filter: blur(48px) saturate(180%);
+  box-shadow: 0 30px 80px -20px rgba(20,40,80,0.25);
+  text-align: center;
+}
+.dark .modal-box {
+  background: rgba(20,24,34,0.88);
+  border-color: rgba(255,255,255,0.12);
+  box-shadow: 0 30px 80px -20px rgba(0,0,0,0.6);
+}
+.modal-icon { font-size: 40px; margin-bottom: 14px; }
+.modal-title {
+  font-family: 'Fustat', sans-serif;
+  font-weight: 800;
+  font-size: 20px;
+  color: var(--ink, #0a0d12);
+  margin: 0 0 8px;
+}
+.dark .modal-title { color: #f4f6fa; }
+.modal-desc {
+  font-size: 13.5px;
+  color: var(--ink-2, #4a5161);
+  line-height: 1.6;
+  margin: 0 0 22px;
+}
+.dark .modal-desc { color: #a4adbf; }
 
 @media (max-width: 800px) {
   .settings-grid { grid-template-columns: 1fr; }
