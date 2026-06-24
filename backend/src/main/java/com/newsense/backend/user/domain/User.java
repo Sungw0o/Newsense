@@ -82,6 +82,10 @@ public class User {
         return new User(email, encodedPassword, nickname);
     }
 
+    public void deactivate() {
+        this.isActive = false;
+    }
+
     public void updateProfile(String nickname, List<String> interests, String profileImageUrl, ArticleDifficulty level) {
         if (nickname != null && !nickname.isBlank()) {
             this.nickname = nickname;

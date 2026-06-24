@@ -18,6 +18,8 @@ import org.springframework.stereotype.Component;
 @ConditionalOnProperty(prefix = "crawler", name = "bootstrap-enabled", havingValue = "true")
 public class LocalArticleBootstrapRunner implements ApplicationRunner {
 
+    private static final int MAX_BOOTSTRAP_ATTEMPTS = 3;
+
     private final ArticleMetaRepository articleMetaRepository;
     private final PublicNewsCrawlerService crawlerService;
     private final CrawlerProperties properties;
@@ -39,15 +41,40 @@ public class LocalArticleBootstrapRunner implements ApplicationRunner {
                 currentCount,
                 properties.minimumArticles()
         );
-        CrawlRunResult result = crawlerService.collectAll();
-        long updatedCount = articleMetaRepository.count();
+
+        long updatedCount = currentCount;
+        for (int attempt = 1; attempt <= MAX_BOOTSTRAP_ATTEMPTS; attempt++) {
+            CrawlRunResult result = crawlerService.collectAll();
+            updatedCount = articleMetaRepository.count();
+            log.info(
+                    "Local article bootstrap attempt completed: attempt={}/{}, discovered={}, saved={}, skipped={}, failed={}, updatedCount={}",
+                    attempt,
+                    MAX_BOOTSTRAP_ATTEMPTS,
+                    result.discovered(),
+                    result.saved(),
+                    result.skipped(),
+                    result.failed(),
+                    updatedCount
+            );
+
+            if (updatedCount >= properties.minimumArticles()) {
+                break;
+            }
+
+            if (result.saved() == 0) {
+                log.warn(
+                        "Local article bootstrap stopped because no new articles were saved: updatedCount={}, minimumArticles={}",
+                        updatedCount,
+                        properties.minimumArticles()
+                );
+                break;
+            }
+        }
+
         log.info(
-                "Local article bootstrap completed: discovered={}, saved={}, skipped={}, failed={}, updatedCount={}",
-                result.discovered(),
-                result.saved(),
-                result.skipped(),
-                result.failed(),
-                updatedCount
+                "Local article bootstrap completed: updatedCount={}, minimumArticles={}",
+                updatedCount,
+                properties.minimumArticles()
         );
 
         if (updatedCount < properties.minimumArticles()) {

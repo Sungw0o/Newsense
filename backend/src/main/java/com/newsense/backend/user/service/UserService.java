@@ -44,4 +44,11 @@ public class UserService {
 
         return UserProfileResponse.from(user);
     }
+
+    @Transactional
+    public void deleteAccount(Long userId) {
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new CustomException(ErrorCode.ENTITY_NOT_FOUND));
+        user.deactivate();
+    }
 }

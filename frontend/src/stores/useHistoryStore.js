@@ -3,8 +3,8 @@ import { learningApi } from '../api/learningApi'
 
 export const useHistoryStore = defineStore('history', {
   state: () => ({
-    /** 학습 이력 목록 (날짜별 그룹) */
-    history: [],
+    /** 학습 이력 응답 (LearningHistoryResponse: { days, ... }) */
+    history: null,
     /** 종합 통계 */
     stats: null,
     isLoading: false,
