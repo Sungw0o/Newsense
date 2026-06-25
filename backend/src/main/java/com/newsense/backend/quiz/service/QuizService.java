@@ -14,6 +14,7 @@ import com.newsense.backend.common.exception.CustomException;
 import com.newsense.backend.common.exception.ErrorCode;
 import com.newsense.backend.quiz.domain.Quiz;
 import com.newsense.backend.quiz.domain.QuizAnswer;
+import com.newsense.backend.quiz.domain.QuizPurpose;
 import com.newsense.backend.quiz.domain.QuizType;
 import com.newsense.backend.quiz.dto.QuizAnswerRequest;
 import com.newsense.backend.quiz.dto.QuizAnswerResponse;
@@ -128,6 +129,7 @@ public class QuizService {
             quizzes.add(Quiz.create(
                     article,
                     item.type(),
+                    item.purpose(),
                     item.question(),
                     item.options(),
                     item.correctAnswer(),
@@ -216,6 +218,7 @@ public class QuizService {
         return List.of(
                 new GeneratedQuiz(
                         QuizType.OX,
+                        QuizPurpose.BASIC_CONCEPT,
                         "이 기사는 " + categoryName + " 흐름을 이해하는 데 필요한 내용을 다룬다.",
                         List.of("O", "X"),
                         "O",
@@ -223,6 +226,7 @@ public class QuizService {
                 ),
                 new GeneratedQuiz(
                         QuizType.MULTIPLE,
+                        QuizPurpose.FACT_CHECK,
                         "기사에서 가장 먼저 확인해야 할 핵심 개념은 무엇인가요?",
                         List.of(keyword, "운동 경기 결과", "연예 일정", "날씨 예보"),
                         keyword,
@@ -230,6 +234,7 @@ public class QuizService {
                 ),
                 new GeneratedQuiz(
                         QuizType.MULTIPLE,
+                        QuizPurpose.CAUSAL_REASONING,
                         "이 기사를 읽을 때 적절한 학습 관점은 무엇인가요?",
                         List.of("원인과 시장 영향을 함께 파악한다", "제목만 보고 결론을 확정한다", "본문 수치를 모두 무시한다", "기사 출처를 확인하지 않는다"),
                         "원인과 시장 영향을 함께 파악한다",

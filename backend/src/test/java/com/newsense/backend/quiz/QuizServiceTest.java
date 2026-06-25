@@ -13,6 +13,7 @@ import com.newsense.backend.common.exception.CustomException;
 import com.newsense.backend.common.exception.ErrorCode;
 import com.newsense.backend.quiz.domain.Quiz;
 import com.newsense.backend.quiz.domain.QuizAnswer;
+import com.newsense.backend.quiz.domain.QuizPurpose;
 import com.newsense.backend.quiz.domain.QuizType;
 import com.newsense.backend.quiz.dto.QuizAnswerRequest;
 import com.newsense.backend.quiz.dto.QuizAnswerResponse;
@@ -125,6 +126,7 @@ class QuizServiceTest {
         given(openAiQuizClient.generate(anyString(), anyString(), anyList(), anyList(), isNull()))
                 .willReturn(List.of(new GeneratedQuiz(
                         QuizType.OX,
+                        QuizPurpose.BASIC_CONCEPT,
                         "기준금리는 정책 금리다.",
                         List.of("O", "X"),
                         "O",
@@ -137,6 +139,7 @@ class QuizServiceTest {
         List<QuizResponse> responses = quizService.getArticleQuizzes(1L);
 
         assertThat(responses).hasSize(1);
+        assertThat(responses.getFirst().purpose()).isEqualTo(QuizPurpose.BASIC_CONCEPT.name());
         then(quizRepository).should().saveAll(anyList());
     }
 

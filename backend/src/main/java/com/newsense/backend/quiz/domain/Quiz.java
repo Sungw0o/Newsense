@@ -45,6 +45,10 @@ public class Quiz {
     @Column(nullable = false, length = 20)
     private QuizType type;
 
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false, length = 30)
+    private QuizPurpose purpose;
+
     @Column(nullable = false, length = 1000)
     private String question;
 
@@ -78,9 +82,23 @@ public class Quiz {
             String explanation,
             int displayOrder
     ) {
+        return create(article, type, QuizPurpose.BASIC_CONCEPT, question, options, correctAnswer, explanation, displayOrder);
+    }
+
+    public static Quiz create(
+            ArticleMeta article,
+            QuizType type,
+            QuizPurpose purpose,
+            String question,
+            List<String> options,
+            String correctAnswer,
+            String explanation,
+            int displayOrder
+    ) {
         Quiz quiz = new Quiz();
         quiz.article = article;
         quiz.type = type;
+        quiz.purpose = purpose == null ? QuizPurpose.BASIC_CONCEPT : purpose;
         quiz.question = question;
         quiz.options = new ArrayList<>(options);
         quiz.correctAnswer = correctAnswer;
