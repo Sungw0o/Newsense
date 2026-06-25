@@ -8,12 +8,12 @@ import java.util.regex.Pattern;
 /**
  * 종목 코드 유효성 검증 서비스.
  *
- * <p>한국 주식 종목 코드는 6자리 숫자입니다.
+ * <p>Toss Invest Open API symbols 규격에 맞춰 국내 6자리 코드와 미국 심볼을 허용합니다.
  */
 @Service
 public class StockValidationService {
 
-    private static final Pattern VALID_CODE_PATTERN = Pattern.compile("^[0-9]{6}$");
+    private static final Pattern VALID_CODE_PATTERN = Pattern.compile("^[A-Za-z0-9.\\-]+$");
 
     /**
      * 단일 종목 코드 유효성 검증.
