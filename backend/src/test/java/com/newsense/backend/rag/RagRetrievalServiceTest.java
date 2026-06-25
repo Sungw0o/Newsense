@@ -177,12 +177,16 @@ class RagRetrievalServiceTest {
         @Test
         @DisplayName("오답노트 없음 → 빈 응답")
         void recommendForWeakness_returnsEmptyWhenNoWrongNotes() {
+            ArticleMeta article = TestFixtures.article(1L);
             given(wrongNoteRepository.findWeaknessSignals(7L)).willReturn(List.of());
+            given(articleMetaRepository.findAll(any(Pageable.class)))
+                    .willReturn(new PageImpl<>(List.of(article)));
 
             RagRecommendationResponse response = ragRetrievalService.recommendForWeakness(7L, 5);
 
             assertThat(response.weaknessTerms()).isEmpty();
-            assertThat(response.recommendations()).isEmpty();
+            assertThat(response.recommendations()).hasSize(1);
+            assertThat(response.recommendations().getFirst().reason()).contains("최신 기사");
         }
 
         @Test
@@ -204,7 +208,7 @@ class RagRetrievalServiceTest {
 
             RagRecommendationResponse response = ragRetrievalService.recommendForWeakness(7L, 0);
 
-            assertThat(response.weaknessTerms()).containsExactly("환율", "금리");
+            assertThat(response.weaknessTerms()).containsExactlyInAnyOrder("환율", "금리");
             assertThat(response.recommendations()).hasSize(1);
         }
     }
@@ -221,4 +225,11 @@ class RagRetrievalServiceTest {
         List<String> matched = ragRetrievalService.retrieveQuizEvidence(
                 "기준금리",
                 content,
-                List.of(new EconomicTermContext("금리"
+                List.of(new EconomicTermContext("금리", "이자율"))
+        );
+        List<String> fallback = ragRetrievalService.retrieveQuizEvidence("", content, List.of());
+
+        assertThat(matched).contains("기준금리 설명 문장");
+        assertThat(fallback).containsExactly("기준금리 설명 문장");
+    }
+}

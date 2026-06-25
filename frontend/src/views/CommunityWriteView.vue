@@ -1,5 +1,5 @@
 <script setup>
-import { ref, onMounted } from 'vue'
+import { computed, ref, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import { useCommunityStore } from '../stores/useCommunityStore'
 import { useArticleStore } from '../stores/useArticleStore'
@@ -14,9 +14,33 @@ const selectedArticle = ref(null)
 const showArticlePicker = ref(false)
 const isSubmitting = ref(false)
 const errorMsg = ref('')
+const articleSearch = ref('')
+const articleCategory = ref('')
+const searchTimer = ref(null)
 
-onMounted(() => {
-  if (articleStore.articles.length === 0) articleStore.fetchArticles()
+const categoryOptions = ['거시경제', '금융/투자', '정책/제도', '기업/산업', '글로벌경제']
+const pickerArticles = computed(() => articleStore.articles)
+
+const loadPickerArticles = async () => {
+  articleStore.filters.keyword = articleSearch.value.trim()
+  articleStore.filters.category = articleCategory.value
+  articleStore.filters.difficulty = ''
+  articleStore.filters.page = 0
+  articleStore.filters.size = 12
+  articleStore.articles = []
+  articleStore.hasMore = true
+  await articleStore.fetchArticles()
+}
+
+const openArticlePicker = () => {
+  showArticlePicker.value = true
+  loadPickerArticles()
+}
+
+watch([articleSearch, articleCategory], () => {
+  if (!showArticlePicker.value) return
+  window.clearTimeout(searchTimer.value)
+  searchTimer.value = window.setTimeout(loadPickerArticles, 300)
 })
 
 const selectArticle = (article) => {
@@ -88,7 +112,7 @@ const categoryColor = {
           <p class="scrap-att-summary">{{ selectedArticle.summary }}</p>
         </div>
 
-        <button v-else class="scrap-trigger" @click="showArticlePicker = true">
+        <button v-else class="scrap-trigger" @click="openArticlePicker">
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
           기사 요약 첨부하기
         </button>
@@ -142,17 +166,44 @@ const categoryColor = {
               <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
             </button>
           </div>
-          <p class="picker-hint">첨부할 기사를 선택하세요.</p>
+          <p class="picker-hint">검색어와 카테고리로 첨부할 기사를 찾으세요.</p>
+          <div class="picker-controls">
+            <input
+              v-model="articleSearch"
+              class="picker-search"
+              type="search"
+              placeholder="기사 제목이나 요약 검색"
+            />
+            <select v-model="articleCategory" class="picker-select">
+              <option value="">전체 카테고리</option>
+              <option v-for="category in categoryOptions" :key="category" :value="category">
+                {{ category }}
+              </option>
+            </select>
+          </div>
+          <div v-if="selectedArticle" class="picker-preview">
+            <div>
+              <span class="pick-cat" :style="{ color: categoryColor[selectedArticle.category] || '#0084ff' }">{{ selectedArticle.category }}</span>
+              <p class="preview-title">{{ selectedArticle.title }}</p>
+            </div>
+            <button class="preview-clear" @click="removeScrap">선택 취소</button>
+          </div>
           <div class="picker-list">
             <button
-              v-for="article in articleStore.articles.length ? articleStore.articles : communityStore.posts.filter(p => p.articleScrap).map(p => p.articleScrap)"
+              v-for="article in pickerArticles"
               :key="article.articleId"
               class="picker-item"
+              :class="{ selected: selectedArticle?.articleId === article.articleId }"
               @click="selectArticle(article)"
             >
               <span class="pick-cat" :style="{ color: categoryColor[article.category] || '#0084ff' }">{{ article.category }}</span>
-              <span class="pick-title">{{ article.title }}</span>
+              <span class="pick-body">
+                <span class="pick-title">{{ article.title }}</span>
+                <span class="pick-summary">{{ article.summary }}</span>
+              </span>
             </button>
+            <p v-if="articleStore.isLoading" class="picker-state">검색 중입니다.</p>
+            <p v-else-if="!pickerArticles.length" class="picker-state">검색 결과가 없습니다.</p>
           </div>
         </div>
       </div>
@@ -340,6 +391,45 @@ const categoryColor = {
 
 .picker-hint { font-size: 13px; color: var(--ink-3, #8a93a3); margin: 0 0 16px; }
 
+.picker-controls {
+  display: grid;
+  grid-template-columns: 1fr 150px;
+  gap: 10px;
+  margin-bottom: 12px;
+}
+
+.picker-search,
+.picker-select {
+  min-width: 0;
+  padding: 11px 12px;
+  border: 1px solid rgba(0,0,0,0.10);
+  border-radius: 10px;
+  background: rgba(255,255,255,0.82);
+  color: var(--ink, #0a0d12);
+  font: inherit;
+  font-size: 13px;
+  outline: none;
+}
+.picker-search:focus,
+.picker-select:focus { border-color: #0084ff; box-shadow: 0 0 0 3px rgba(0,132,255,0.12); }
+.dark .picker-search,
+.dark .picker-select { background: rgba(20,24,34,0.70); border-color: rgba(255,255,255,0.12); color: #f4f6fa; }
+
+.picker-preview {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  align-items: center;
+  padding: 12px;
+  margin-bottom: 12px;
+  border: 1px solid rgba(0,132,255,0.22);
+  border-radius: 12px;
+  background: rgba(0,132,255,0.07);
+}
+.preview-title { margin: 4px 0 0; font-size: 13px; font-weight: 700; color: var(--ink, #0a0d12); }
+.dark .preview-title { color: #f4f6fa; }
+.preview-clear { border: none; background: transparent; color: #b02a2a; font-size: 12px; cursor: pointer; white-space: nowrap; }
+
 .picker-list { overflow-y: auto; display: flex; flex-direction: column; gap: 8px; }
 .picker-item {
   display: flex; align-items: flex-start; gap: 12px;
@@ -352,12 +442,16 @@ const categoryColor = {
   transition: all .15s;
 }
 .picker-item:hover { border-color: #0084ff; background: rgba(0,132,255,0.05); }
+.picker-item.selected { border-color: #0084ff; background: rgba(0,132,255,0.10); }
 .dark .picker-item { background: rgba(20,24,34,0.55); border-color: rgba(255,255,255,0.10); }
 .dark .picker-item:hover { border-color: #0084ff; background: rgba(0,132,255,0.10); }
 
 .pick-cat { font-family: 'Nanum Gothic', monospace; font-size: 11px; font-weight: 600; flex-shrink: 0; padding-top: 2px; }
+.pick-body { min-width: 0; display: flex; flex-direction: column; gap: 4px; }
 .pick-title { font-size: 14px; font-weight: 500; color: var(--ink, #0a0d12); line-height: 1.45; }
 .dark .pick-title { color: #e0e4ef; }
+.pick-summary { font-size: 12px; line-height: 1.45; color: var(--ink-3, #8a93a3); display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+.picker-state { margin: 12px 0 0; text-align: center; font-size: 13px; color: var(--ink-3, #8a93a3); }
 
 .spinner-sm {
   width: 14px; height: 14px;
@@ -372,5 +466,7 @@ const categoryColor = {
   .write-shell { padding: 24px 0 60px; }
   .write-card { padding: 20px; }
   .picker-box { width: 90vw; }
+  .picker-controls { grid-template-columns: 1fr; }
+  .picker-preview { align-items: flex-start; flex-direction: column; }
 }
 </style>

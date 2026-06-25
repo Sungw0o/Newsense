@@ -15,6 +15,7 @@ import com.newsense.backend.user.domain.User;
 import com.newsense.backend.user.repository.UserRepository;
 import io.jsonwebtoken.Claims;
 import lombok.RequiredArgsConstructor;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -45,7 +46,18 @@ public class AuthService {
                 passwordEncoder.encode(request.password()),
                 nickname
         );
-        User savedUser = userRepository.save(user);
+        User savedUser;
+        try {
+            savedUser = userRepository.save(user);
+        } catch (DataIntegrityViolationException exception) {
+            if (userRepository.existsByEmail(email)) {
+                throw new CustomException(ErrorCode.EMAIL_ALREADY_EXISTS);
+            }
+            if (userRepository.existsByNickname(nickname)) {
+                throw new CustomException(ErrorCode.NICKNAME_ALREADY_EXISTS);
+            }
+            throw exception;
+        }
         return new SignupResponse(savedUser.getId(), savedUser.getEmail(), savedUser.getNickname());
     }
 
@@ -96,4 +108,14 @@ public class AuthService {
         return new RefreshResult(new TokenResponse(tokenPair.accessToken(), "Bearer"), tokenPair);
     }
 
-    public void log
+    public void logout(String accessToken) {
+        Claims claims = jwtTokenProvider.parseAccessToken(accessToken);
+        Long userId = Long.valueOf(claims.getSubject());
+        tokenStore.blacklistAccessToken(claims.getId(), claims.getExpiration().toInstant());
+        tokenStore.deleteRefreshToken(userId);
+    }
+
+    private String normalizeEmail(String email) {
+        return email.trim().toLowerCase(Locale.ROOT);
+    }
+}

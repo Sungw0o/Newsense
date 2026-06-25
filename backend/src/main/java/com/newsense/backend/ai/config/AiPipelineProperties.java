@@ -3,17 +3,28 @@ package com.newsense.backend.ai.config;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 
 @ConfigurationProperties(prefix = "ai.pipeline")
-public record AiPipelineProperties(
-        Models models,
-        int maxQuizRetries
-) {
-    public AiPipelineProperties {
+public class AiPipelineProperties {
+
+    private final Models models;
+    private final int maxQuizRetries;
+
+    public AiPipelineProperties(Models models, int maxQuizRetries) {
         if (models == null) {
             models = new Models(null, null, null, null, null);
         }
         if (maxQuizRetries <= 0) {
             maxQuizRetries = 2;
         }
+        this.models = models;
+        this.maxQuizRetries = maxQuizRetries;
+    }
+
+    public Models models() {
+        return models;
+    }
+
+    public int maxQuizRetries() {
+        return maxQuizRetries;
     }
 
     public String embeddingModel() {

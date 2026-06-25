@@ -44,4 +44,12 @@ public interface AuthApiDocs {
 
     @Operation(summary = "JWT 토큰 재발급")
     @PostMapping("/api/v1/auth/refresh")
-    ResponseEntity<
+    ResponseEntity<ApiResponse<TokenResponse>> refresh(
+            @CookieValue(name = "refreshToken", required = false) String refreshToken
+    );
+
+    @Operation(summary = "로그아웃")
+    @SecurityRequirement(name = "BearerAuth")
+    @PostMapping("/api/v1/auth/logout")
+    ResponseEntity<ApiResponse<Void>> logout(@RequestHeader("Authorization") String authorization);
+}

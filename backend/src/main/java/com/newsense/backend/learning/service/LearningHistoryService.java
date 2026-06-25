@@ -166,6 +166,13 @@ public class LearningHistoryService {
         );
     }
 
+    @Transactional
+    public void deleteHistory(Long userId, Long historyId) {
+        LearningHistory history = learningHistoryRepository.findByIdAndUserId(historyId, userId)
+                .orElseThrow(() -> new CustomException(ErrorCode.ENTITY_NOT_FOUND));
+        learningHistoryRepository.delete(history);
+    }
+
     private void syncMissingHistories(Long userId) {
         User user = getUser(userId);
         syncArticleReadHistories(user);

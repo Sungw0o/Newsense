@@ -64,6 +64,8 @@ const toggleGroup = (dayDate, articleId) => {
 const isExpanded = (dayDate, articleId) => expanded.value.has(`${dayDate}__${articleId}`)
 
 const openSections = ref(new Set(['timeline', 'recommendations', 'bookmarks', 'wrongNotes']))
+const pendingDeleteItem = ref(null)
+const isDeleting = ref(false)
 const toggleSection = (key) => {
   if (openSections.value.has(key)) {
     openSections.value.delete(key)
@@ -73,6 +75,25 @@ const toggleSection = (key) => {
   openSections.value = new Set(openSections.value)
 }
 const isSectionOpen = (key) => openSections.value.has(key)
+
+const askDeleteHistory = (item) => {
+  pendingDeleteItem.value = item
+}
+
+const cancelDeleteHistory = () => {
+  if (!isDeleting.value) pendingDeleteItem.value = null
+}
+
+const confirmDeleteHistory = async () => {
+  if (!pendingDeleteItem.value?.historyId) return
+  isDeleting.value = true
+  try {
+    await historyStore.deleteHistory(pendingDeleteItem.value.historyId)
+    pendingDeleteItem.value = null
+  } finally {
+    isDeleting.value = false
+  }
+}
 </script>
 
 <template>
@@ -234,6 +255,7 @@ const isSectionOpen = (key) => openSections.value.has(key)
                       <button v-else-if="item.type === 'REVIEW'" class="btn-ghost" @click="navigate(`/articles/${group.articleId}/review`)">
                         리뷰 보기
                       </button>
+                      <button class="btn-delete" @click="askDeleteHistory(item)">삭제</button>
                     </div>
                   </div>
                 </div>
@@ -351,6 +373,27 @@ const isSectionOpen = (key) => openSections.value.has(key)
         </div>
       </div>
     </section>
+
+    <Teleport to="body">
+      <div v-if="pendingDeleteItem" class="modal-backdrop" @click.self="cancelDeleteHistory">
+        <div class="confirm-modal">
+          <h3 class="confirm-title">학습 이력을 삭제할까요?</h3>
+          <p class="confirm-desc">삭제한 이력은 타임라인과 통계에서 제외됩니다.</p>
+          <div class="confirm-target">
+            <span class="type-badge" :style="{ background: (typeColor[pendingDeleteItem.type] ?? '#0084ff') + '18', color: typeColor[pendingDeleteItem.type] ?? '#0084ff' }">
+              {{ typeLabel[pendingDeleteItem.type] ?? pendingDeleteItem.type }}
+            </span>
+            <p>{{ pendingDeleteItem.articleTitle }}</p>
+          </div>
+          <div class="confirm-actions">
+            <button class="cancel-btn" :disabled="isDeleting" @click="cancelDeleteHistory">취소</button>
+            <button class="danger-btn" :disabled="isDeleting" @click="confirmDeleteHistory">
+              {{ isDeleting ? '삭제 중' : '삭제' }}
+            </button>
+          </div>
+        </div>
+      </div>
+    </Teleport>
   </div>
 </template>
 
@@ -759,6 +802,65 @@ const isSectionOpen = (key) => openSections.value.has(key)
 .btn-ghost:hover { border-color: #0084ff; color: #0084ff; }
 .dark .btn-ghost { border-color: rgba(255,255,255,0.12); color: #a4adbf; }
 .dark .btn-ghost:hover { border-color: #4FB3FF; color: #4FB3FF; }
+
+.btn-delete {
+  margin-left: 8px;
+  padding: 6px 10px;
+  border-radius: 9px;
+  border: 1px solid rgba(176,42,42,0.18);
+  background: rgba(176,42,42,0.06);
+  color: #b02a2a;
+  font-size: 12px;
+  font-weight: 700;
+  cursor: pointer;
+}
+.btn-delete:hover { background: rgba(176,42,42,0.12); }
+
+.modal-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 9999;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  background: rgba(0,0,0,0.42);
+  backdrop-filter: blur(6px);
+}
+
+.confirm-modal {
+  width: min(420px, 100%);
+  padding: 24px;
+  border-radius: 18px;
+  border: 1px solid rgba(0,0,0,0.08);
+  background: rgba(255,255,255,0.95);
+  box-shadow: 0 24px 70px -24px rgba(20,40,80,0.38);
+}
+.dark .confirm-modal { background: rgba(20,24,34,0.95); border-color: rgba(255,255,255,0.12); }
+.confirm-title { margin: 0 0 6px; color: var(--ink); font-size: 19px; font-weight: 800; }
+.dark .confirm-title { color: #f4f6fa; }
+.confirm-desc { margin: 0 0 16px; color: var(--ink-3); font-size: 13px; }
+.confirm-target {
+  padding: 12px;
+  border-radius: 12px;
+  background: var(--bg-soft);
+  border: 1px solid var(--line);
+}
+.confirm-target p { margin: 8px 0 0; font-size: 14px; color: var(--ink); font-weight: 700; line-height: 1.45; }
+.dark .confirm-target p { color: #f4f6fa; }
+.confirm-actions { display: flex; justify-content: flex-end; gap: 8px; margin-top: 18px; }
+.cancel-btn,
+.danger-btn {
+  padding: 9px 16px;
+  border-radius: 10px;
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+}
+.cancel-btn { border: 1px solid var(--line); background: var(--bg-soft); color: var(--ink-2); }
+.danger-btn { border: 1px solid rgba(176,42,42,0.2); background: #b02a2a; color: #fff; }
+.danger-btn:disabled,
+.cancel-btn:disabled { opacity: .6; cursor: default; }
 
 /* AI Recommendations */
 .ai-rec { border-color: rgba(0,132,255,0.20); }

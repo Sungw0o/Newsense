@@ -88,7 +88,7 @@ onMounted(() => {
       </div>
 
       <template v-else-if="indicators?.items?.length">
-        <p v-if="indicators.insight" class="indicator-insight">{{ indicators.insight }}</p>
+        <p class="indicator-insight">{{ indicators.insight || '지표로 흐름을 보고, 뉴스로 이유를 이해하세요.' }}</p>
         <ul class="indicator-list">
           <li v-for="item in indicators.items" :key="item.key" class="indicator-row">
             <span class="ind-label">{{ item.label }}</span>
@@ -136,15 +136,15 @@ onMounted(() => {
       </div>
       <div class="stats-grid">
         <div class="stat-card">
-          <span class="stat-value">{{ stats.totalReadArticles ?? 0 }}</span>
+          <span class="stat-value">{{ stats.totalReadArticleCount ?? 0 }}</span>
           <span class="stat-label">읽은 기사</span>
         </div>
         <div class="stat-card">
-          <span class="stat-value">{{ stats.correctRate != null ? `${Math.round(stats.correctRate)}%` : '-' }}</span>
+          <span class="stat-value">{{ stats.quizAccuracyRate != null ? `${Math.round(stats.quizAccuracyRate)}%` : '-' }}</span>
           <span class="stat-label">퀴즈 정답률</span>
         </div>
         <div class="stat-card">
-          <span class="stat-value">{{ stats.streakDays ?? 0 }}일</span>
+          <span class="stat-value">{{ stats.consecutiveLearningDays ?? 0 }}일</span>
           <span class="stat-label">연속 학습</span>
         </div>
         <div class="stat-card">
@@ -403,5 +403,26 @@ onMounted(() => {
   text-align: center;
   padding: 8px 0;
   margin: 0;
+}
+
+@media (max-width: 1024px) {
+  .side-panel {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 640px) {
+  .side-panel {
+    display: flex;
+  }
+
+  .panel-section {
+    padding: 15px;
+  }
+
+  .indicator-row {
+    padding-inline: 0;
+  }
 }
 </style>

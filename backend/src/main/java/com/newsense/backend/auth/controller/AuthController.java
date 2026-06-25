@@ -77,4 +77,16 @@ public class AuthController implements AuthApiDocs {
 
     @Override
     public ResponseEntity<ApiResponse<Void>> logout(String authorization) {
-        authService.logout(extractAcc
+        authService.logout(extractAccessToken(authorization));
+        return ResponseEntity.ok()
+                .header(HttpHeaders.SET_COOKIE, cookieManager.delete().toString())
+                .body(ApiResponse.success("로그아웃이 완료되었습니다.", null));
+    }
+
+    private String extractAccessToken(String authorization) {
+        if (authorization == null || !authorization.startsWith(BEARER_PREFIX)) {
+            throw new CustomException(ErrorCode.INVALID_TOKEN);
+        }
+        return authorization.substring(BEARER_PREFIX.length());
+    }
+}

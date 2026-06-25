@@ -6,7 +6,6 @@ import com.newsense.backend.ai.quiz.OpenAiQuizClient;
 import com.newsense.backend.ai.quiz.QuizCriticClient;
 import com.newsense.backend.ai.quiz.QuizCritiqueResult;
 import com.newsense.backend.article.document.ArticleContent;
-import com.newsense.backend.article.domain.ArticleDifficulty;
 import com.newsense.backend.article.domain.ArticleMeta;
 import com.newsense.backend.article.repository.ArticleContentRepository;
 import com.newsense.backend.article.repository.ArticleMetaRepository;
@@ -30,18 +29,14 @@ import com.newsense.backend.term.repository.TermRepository;
 import com.newsense.backend.user.domain.User;
 import com.newsense.backend.user.repository.UserRepository;
 import com.newsense.backend.wrongnote.service.WrongNoteRecorder;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
-import org.mockito.Answers;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.data.mongodb.core.MongoTemplate;
-import org.springframework.data.redis.core.StringRedisTemplate;
-import tools.jackson.databind.ObjectMapper;
 
 import java.util.List;
 import java.util.Optional;
@@ -104,23 +99,12 @@ class QuizServiceTest {
     @Mock
     MongoTemplate mongoTemplate;
 
-    @Mock(answer = Answers.RETURNS_DEEP_STUBS)
-    StringRedisTemplate redisTemplate;
-
-    @Mock
-    ObjectMapper objectMapper;
-
-    @BeforeEach
-    void setUpRedisCache() {
-        // Redis 캐시 미스 기본 동작 — 모든 테스트에서 캐시를 무시하고 DB/AI 경로 검증
-        given(redisTemplate.opsForValue().get(anyString())).willReturn(null);
-    }
-
     @Test
     void getArticleQuizzes_returnsExistingQuizzesWithoutAiCall() {
         ArticleMeta article = TestFixtures.article(1L);
         Quiz quiz = TestFixtures.quiz(10L, article, "금리");
-        given(quizRepository.findByArticleIdAndIsActiveTrueOrderByDisplayOrder(1L))
+        given(articleMetaRepository.findById(1L)).willReturn(Optional.of(article));
+        given(quizRepository.findByArticleIdAndUserLevelAndIsActiveTrueOrderByDisplayOrder(1L, article.getDifficulty()))
                 .willReturn(List.of(quiz));
 
         List<QuizResponse> responses = quizService.getArticleQuizzes(1L);
@@ -133,14 +117,14 @@ class QuizServiceTest {
     void getArticleQuizzes_generatesWhenAbsent() {
         ArticleMeta article = TestFixtures.article(1L);
         ArticleContent content = TestFixtures.content("mongo-1", "기준금리와 환율 설명");
-        given(quizRepository.findByArticleIdAndIsActiveTrueOrderByDisplayOrder(1L)).willReturn(List.of());
         given(articleMetaRepository.findById(1L)).willReturn(Optional.of(article));
+        given(quizRepository.findByArticleIdAndUserLevelAndIsActiveTrueOrderByDisplayOrder(1L, article.getDifficulty())).willReturn(List.of());
         given(articleContentRepository.findById("mongo-1")).willReturn(Optional.of(content));
         given(termRepository.findAll()).willReturn(List.of(Term.create("기준금리", "정책 금리", "BOK")));
         given(pipelineProperties.maxQuizRetries()).willReturn(1);
         given(ragRetrievalService.retrieveQuizEvidence(anyString(), any(), anyList()))
                 .willReturn(List.of("근거 문장"));
-        given(openAiQuizClient.generate(anyString(), anyString(), anyList(), anyList(), isNull(), any(ArticleDifficulty.class)))
+        given(openAiQuizClient.generate(anyString(), any(), anyString(), anyList(), anyList(), isNull()))
                 .willReturn(List.of(new GeneratedQuiz(
                         QuizType.OX,
                         QuizPurpose.BASIC_CONCEPT,
@@ -185,3 +169,22 @@ class QuizServiceTest {
         given(quizRepository.findByIdAndIsActiveTrue(10L)).willReturn(Optional.of(quiz));
         given(userRepository.findById(7L)).willReturn(Optional.of(user));
         given(quizAnswerRepository.save(any(QuizAnswer.class))).willAnswer(invocation -> invocation.getArgument(0));
+        given(articleTermRepository.findAllByArticleIdWithTerm(1L)).willReturn(List.of());
+
+        QuizAnswerResponse response = quizService.submitAnswer(10L, 7L, new QuizAnswerRequest("X"));
+
+        assertThat(response.correct()).isFalse();
+        assertThat(response.wrongNoteRecorded()).isTrue();
+        then(wrongNoteRecorder).should().record(7L, quiz, "X", List.of());
+    }
+
+    @Test
+    void submitAnswer_throwsWhenQuizMissing() {
+        given(quizRepository.findByIdAndIsActiveTrue(404L)).willReturn(Optional.empty());
+
+        assertThatThrownBy(() -> quizService.submitAnswer(404L, 7L, new QuizAnswerRequest("O")))
+                .isInstanceOf(CustomException.class)
+                .satisfies(error -> assertThat(((CustomException) error).getErrorCode())
+                        .isEqualTo(ErrorCode.QUIZ_NOT_FOUND));
+    }
+}

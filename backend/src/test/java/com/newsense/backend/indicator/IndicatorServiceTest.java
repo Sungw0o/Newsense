@@ -1,7 +1,6 @@
 package com.newsense.backend.indicator;
 
 import tools.jackson.databind.ObjectMapper;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -42,15 +41,11 @@ class IndicatorServiceTest {
         return new IndicatorResponse("OK", "코스피 2600pt · 달러/원 1380원", items, LocalDateTime.now());
     }
 
-    @BeforeEach
-    void setUp() {
-        given(redisTemplate.opsForValue()).willReturn(valueOps);
-    }
-
     @Test
     void getLatest_cacheHit_returnsStaleResponse() throws Exception {
         String json = "{\"status\":\"OK\"}";
         IndicatorResponse cached = sampleResponse();
+        given(redisTemplate.opsForValue()).willReturn(valueOps);
         given(valueOps.get("indicator:latest")).willReturn(json);
         given(objectMapper.readValue(json, IndicatorResponse.class)).willReturn(cached);
 
@@ -64,6 +59,7 @@ class IndicatorServiceTest {
     @Test
     void getLatest_cacheMiss_callsRefresh() {
         IndicatorResponse mockResp = sampleResponse();
+        given(redisTemplate.opsForValue()).willReturn(valueOps);
         given(valueOps.get("indicator:latest")).willReturn(null);
         doReturn(mockResp).when(indicatorService).refresh();
 

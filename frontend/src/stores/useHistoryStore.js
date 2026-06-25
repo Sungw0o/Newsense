@@ -56,6 +56,14 @@ export const useHistoryStore = defineStore('history', {
       } catch {
         this.recommendations = null
       }
+    },
+
+    async deleteHistory(historyId, params = {}) {
+      await learningApi.deleteHistory(historyId)
+      await Promise.all([
+        this.fetchHistory(params),
+        this.fetchStats()
+      ])
     }
   }
 })

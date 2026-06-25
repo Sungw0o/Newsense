@@ -7,8 +7,6 @@ import com.newsense.backend.article.crawler.util.PdfOcrExtractor;
 import com.newsense.backend.article.crawler.util.PdfTextExtractor;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.jsoup.Connection;
-import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.springframework.stereotype.Component;
@@ -26,7 +24,6 @@ import java.util.List;
 @RequiredArgsConstructor
 public class PublicNewsCrawlerClient {
 
-    private static final String USER_AGENT = "NewsenseCrawler/1.0";
     private static final List<DateTimeFormatter> DATE_FORMATTERS = List.of(
             DateTimeFormatter.ofPattern("yyyy.MM.dd"),
             DateTimeFormatter.ofPattern("yyyy-MM-dd"),
@@ -36,6 +33,7 @@ public class PublicNewsCrawlerClient {
     private final CrawlerProperties properties;
     private final PdfTextExtractor pdfTextExtractor;
     private final PdfOcrExtractor pdfOcrExtractor;
+    private final CharsetAwareDocumentFetcher documentFetcher;
 
     public List<ArticleCandidate> fetchCandidates(CrawlerProperties.Source source) {
         Document document = fetchDocument(source.listUrl());
@@ -105,12 +103,7 @@ public class PublicNewsCrawlerClient {
         RuntimeException lastException = null;
         for (int attempt = 1; attempt <= properties.maxRetries(); attempt++) {
             try {
-                Connection connection = Jsoup.connect(url)
-                        .userAgent(USER_AGENT)
-                        .timeout(properties.connectionTimeout())
-                        .followRedirects(true)
-                        .ignoreHttpErrors(false);
-                return connection.get();
+                return documentFetcher.fetch(url, properties.connectionTimeout(), false);
             } catch (IOException exception) {
                 lastException = new IllegalStateException("Failed to fetch " + url, exception);
                 log.warn("Crawler request failed: attempt={}/{}, url={}", attempt, properties.maxRetries(), url);

@@ -95,4 +95,4 @@ rag:
     # $vectorSearch numCandidates (보통 limit * 10~20)
     num-candidates: ${RAG_VECTOR_SEARCH_NUM_CANDIDATES:200}
     # 임베딩 차원 수 (text-embedding-3-large = 3072)
-    dimensions: ${RAG_VECTOR_SEARCH_DIMENSIONS:307
+    dimensions: ${RAG_VECTOR_SEARCH_DIMENSIONS:3072}

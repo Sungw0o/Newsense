@@ -7,7 +7,6 @@ import com.newsense.backend.article.crawler.model.CrawledArticle;
 import com.newsense.backend.article.crawler.service.ArticlePersistenceService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.springframework.stereotype.Component;
@@ -28,6 +27,7 @@ public class GoogleNewsRssCollector {
     private final CrawlerProperties properties;
     private final HtmlArticleExtractor htmlArticleExtractor;
     private final ArticlePersistenceService persistenceService;
+    private final CharsetAwareDocumentFetcher documentFetcher;
 
     public CrawlRunResult collect() {
         List<ArticleCandidate> candidates = fetchCandidates();
@@ -36,11 +36,7 @@ public class GoogleNewsRssCollector {
 
     private List<ArticleCandidate> fetchCandidates() {
         try {
-            Document document = Jsoup.connect(RSS_URL)
-                    .userAgent("NewsenseCrawler/1.0")
-                    .timeout(properties.connectionTimeout())
-                    .ignoreContentType(true)
-                    .get();
+            Document document = documentFetcher.fetch(RSS_URL, properties.connectionTimeout(), true);
             return document.select("item").stream()
                     .limit(properties.maxItemsPerSource())
                     .map(item -> new ArticleCandidate(

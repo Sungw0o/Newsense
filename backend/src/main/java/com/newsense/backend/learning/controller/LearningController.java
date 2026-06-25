@@ -57,4 +57,18 @@ public class LearningController implements LearningApiDocs {
                 userWeaknessService.getWeaknessSummary(userPrincipal.id())
         ));
     }
+
+    @Override
+    public ResponseEntity<ApiResponse<WeaknessSummaryResponse>> getWeakness(UserPrincipal userPrincipal) {
+        return ResponseEntity.ok(ApiResponse.success(
+                "취약 개념 분석 조회에 성공했습니다.",
+                userWeaknessService.getWeaknessSummary(userPrincipal.id())
+        ));
+    }
+
+    @Override
+    public ResponseEntity<ApiResponse<Void>> deleteHistory(UserPrincipal userPrincipal, Long historyId) {
+        learningHistoryService.deleteHistory(userPrincipal.id(), historyId);
+        return ResponseEntity.ok(ApiResponse.success("학습 이력이 삭제되었습니다.", null));
+    }
 }

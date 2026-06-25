@@ -13,7 +13,9 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestParam;
 
 import java.time.LocalDate;
@@ -53,5 +55,18 @@ public interface LearningApiDocs {
     @GetMapping("/api/v1/learning/weakness-summary")
     ResponseEntity<ApiResponse<WeaknessSummaryResponse>> getWeaknessSummary(
             @AuthenticationPrincipal UserPrincipal userPrincipal
+    );
+
+    @Operation(summary = "취약 개념 분석", description = "오답 노트를 기반으로 취약 용어와 카테고리를 분석합니다.")
+    @GetMapping("/api/v1/learning/weakness")
+    ResponseEntity<ApiResponse<WeaknessSummaryResponse>> getWeakness(
+            @AuthenticationPrincipal UserPrincipal userPrincipal
+    );
+
+    @Operation(summary = "학습 이력 삭제", description = "현재 로그인한 사용자의 학습 이력을 삭제합니다.")
+    @DeleteMapping("/api/v1/learning/history/{historyId}")
+    ResponseEntity<ApiResponse<Void>> deleteHistory(
+            @AuthenticationPrincipal UserPrincipal userPrincipal,
+            @PathVariable Long historyId
     );
 }

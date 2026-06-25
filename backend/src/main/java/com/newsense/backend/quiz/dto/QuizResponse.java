@@ -12,4 +12,7 @@ public record QuizResponse(Long id, String type, String purpose, String question
                 quiz.getType().name(),
                 quiz.getPurpose().name(),
                 quiz.getQuestion(),
-           
+                List.copyOf(quiz.getOptions())
+        );
+    }
+}

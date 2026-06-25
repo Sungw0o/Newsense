@@ -9,6 +9,7 @@ export const articleApi = {
     const queryParams = new URLSearchParams()
     if (params.category) queryParams.append('category', params.category)
     if (params.difficulty) queryParams.append('difficulty', params.difficulty)
+    if (params.keyword) queryParams.append('keyword', params.keyword)
     if (params.page !== undefined) queryParams.append('page', params.page)
     if (params.size !== undefined) queryParams.append('size', params.size)
     return axiosInstance.get(`/articles?${queryParams.toString()}`)

@@ -14,4 +14,8 @@ public interface QuizRepository extends JpaRepository<Quiz, Long> {
     List<Quiz> findByArticleIdAndIsActiveTrueOrderByDisplayOrder(Long articleId);
 
     @EntityGraph(attributePaths = "options")
-    List<Qu
+    List<Quiz> findByArticleIdAndUserLevelAndIsActiveTrueOrderByDisplayOrder(Long articleId, ArticleDifficulty userLevel);
+
+    @EntityGraph(attributePaths = {"article", "options"})
+    Optional<Quiz> findByIdAndIsActiveTrue(Long quizId);
+}

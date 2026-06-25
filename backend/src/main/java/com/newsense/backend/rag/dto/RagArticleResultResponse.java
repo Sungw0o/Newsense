@@ -9,4 +9,7 @@ public record RagArticleResultResponse(
         List<RagMatchedChunkResponse> matchedChunks,
         List<String> matchedKeywords,
         int score,
-        ScoreBreakdown scoreBre
+        ScoreBreakdown scoreBreakdown,
+        String reason
+) {
+}

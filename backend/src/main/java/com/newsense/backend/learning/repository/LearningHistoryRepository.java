@@ -9,10 +9,13 @@ import org.springframework.data.repository.query.Param;
 
 import java.time.LocalDate;
 import java.util.List;
+import java.util.Optional;
 
 public interface LearningHistoryRepository extends JpaRepository<LearningHistory, Long> {
 
     boolean existsByUserIdAndTypeAndReferenceId(Long userId, LearningHistoryType type, Long referenceId);
+
+    Optional<LearningHistory> findByIdAndUserId(Long id, Long userId);
 
     @EntityGraph(attributePaths = "article")
     List<LearningHistory> findAllByUserIdAndLearningDateBetweenOrderByLearningDateDescLearnedAtDesc(

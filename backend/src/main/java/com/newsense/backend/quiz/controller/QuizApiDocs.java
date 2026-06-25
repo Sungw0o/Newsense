@@ -23,18 +23,24 @@ public interface QuizApiDocs {
 
     @Operation(
             summary = "기사 퀴즈 조회",
-            description = "저장된 퀴즈가 없으면 기사 본문을 기반으로 생성합니다. "
-                    + "인증된 사용자는 프로필에 설정된 학습 난이도(BASIC·INTERMEDIATE·ADVANCED)에 맞는 "
-                    + "퀴즈를 받으며, 미인증 시에는 기본(BASIC) 퀴즈가 반환됩니다. "
-                    + "정답과 해설은 노출하지 않습니다."
+            description = "저장된 퀴즈가 없으면 기사 본문을 기반으로 생성합니다. 정답과 해설은 노출하지 않습니다."
     )
     @SecurityRequirement(name = "BearerAuth")
     @GetMapping("/api/v1/articles/{articleId}/quiz")
     ResponseEntity<ApiResponse<List<QuizResponse>>> getArticleQuizzes(
             @PathVariable Long articleId,
-            @AuthenticationPrincipal(required = false) UserPrincipal userPrincipal
+            @AuthenticationPrincipal UserPrincipal userPrincipal
     );
 
     @Operation(
             summary = "퀴즈 답변 제출 및 채점",
-            description = "사용자 답안을 저장하고 정오답, 실제 정답, 해설을 반환합니다. 오답은 오답노트에 자�
+            description = "사용자 답안을 저장하고 정오답, 실제 정답, 해설을 반환합니다. 오답은 오답노트에 자동 누적됩니다."
+    )
+    @SecurityRequirement(name = "BearerAuth")
+    @PostMapping("/api/v1/quiz/{quizId}/answer")
+    ResponseEntity<ApiResponse<QuizAnswerResponse>> submitAnswer(
+            @PathVariable Long quizId,
+            @AuthenticationPrincipal UserPrincipal userPrincipal,
+            @Valid @RequestBody QuizAnswerRequest request
+    );
+}

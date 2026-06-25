@@ -203,4 +203,54 @@ public class OpenAiArticleClassifierClient {
         for (JsonNode item : node) {
             String name = item.path("stockName").asText("");
             String code = item.path("stockCode").asText("");
-            String reason 
+            String reason = item.path("relationReason").asText("");
+            if (!name.isBlank() && !code.isBlank()) {
+                result.add(new RelatedStockInfo(name, code, reason));
+            }
+        }
+        return result;
+    }
+
+    private Map<String, Object> createResponseFormat() {
+        Map<String, Object> stockItemProps = new LinkedHashMap<>();
+        stockItemProps.put("stockName", Map.of("type", "string"));
+        stockItemProps.put("stockCode", Map.of("type", "string"));
+        stockItemProps.put("relationReason", Map.of("type", "string"));
+
+        Map<String, Object> stockItemSchema = new LinkedHashMap<>();
+        stockItemSchema.put("type", "object");
+        stockItemSchema.put("additionalProperties", false);
+        stockItemSchema.put("properties", stockItemProps);
+        stockItemSchema.put("required", List.of("stockName", "stockCode", "relationReason"));
+
+        Map<String, Object> properties = new LinkedHashMap<>();
+        properties.put("category", Map.of(
+                "type", "string",
+                "enum", List.of("거시경제", "금융/투자", "정책/제도", "기업/산업", "글로벌경제")
+        ));
+        properties.put("difficulty", Map.of(
+                "type", "string",
+                "enum", List.of("초급", "중급", "고급")
+        ));
+        properties.put("summary", Map.of("type", "string"));
+        properties.put("related_stocks", Map.of(
+                "type", "array",
+                "items", stockItemSchema
+        ));
+
+        Map<String, Object> schema = new LinkedHashMap<>();
+        schema.put("type", "object");
+        schema.put("additionalProperties", false);
+        schema.put("properties", properties);
+        schema.put("required", List.of("category", "difficulty", "summary", "related_stocks"));
+
+        return Map.of(
+                "type", "json_schema",
+                "json_schema", Map.of(
+                        "name", "article_classification",
+                        "strict", true,
+                        "schema", schema
+                )
+        );
+    }
+}

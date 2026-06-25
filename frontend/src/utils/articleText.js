@@ -47,3 +47,12 @@ export const splitSummaryItems = (summary) => {
 
   return splitSentences(summary).slice(0, 3)
 }
+
+export const splitStructuredSummaryItems = (summary) => {
+  const labels = ['핵심 사건', '주요 수치', '경제적 의미']
+  const items = splitSummaryItems(summary)
+  return labels.map((label, index) => ({
+    label,
+    text: items[index] ?? ''
+  })).filter(item => item.text)
+}

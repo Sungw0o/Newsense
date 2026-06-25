@@ -24,6 +24,14 @@ export const learningApi = {
    */
   getBookmarks() {
     return axiosInstance.get('/learning/bookmarks')
+  },
+
+  getWeakness() {
+    return axiosInstance.get('/learning/weakness')
+  },
+
+  deleteHistory(historyId) {
+    return axiosInstance.delete(`/learning/history/${historyId}`)
   }
 }
 

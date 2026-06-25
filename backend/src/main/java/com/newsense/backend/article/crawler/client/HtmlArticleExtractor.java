@@ -2,7 +2,6 @@ package com.newsense.backend.article.crawler.client;
 
 import com.newsense.backend.article.crawler.config.CrawlerProperties;
 import lombok.RequiredArgsConstructor;
-import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.springframework.stereotype.Component;
@@ -13,7 +12,6 @@ import java.io.IOException;
 @RequiredArgsConstructor
 public class HtmlArticleExtractor {
 
-    private static final String USER_AGENT = "NewsenseCrawler/1.0";
     private static final String BODY_SELECTORS = String.join(", ",
             "article",
             "div#dic_area",
@@ -28,15 +26,11 @@ public class HtmlArticleExtractor {
     );
 
     private final CrawlerProperties properties;
+    private final CharsetAwareDocumentFetcher documentFetcher;
 
     public Document fetchDocument(String url) {
         try {
-            return Jsoup.connect(url)
-                    .userAgent(USER_AGENT)
-                    .timeout(properties.connectionTimeout())
-                    .followRedirects(true)
-                    .ignoreHttpErrors(false)
-                    .get();
+            return documentFetcher.fetch(url, properties.connectionTimeout(), false);
         } catch (IOException exception) {
             throw new IllegalStateException("Failed to fetch article HTML: " + url, exception);
         }
