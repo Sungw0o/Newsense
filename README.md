@@ -4,19 +4,22 @@
 
 <p align="center">
   <a href="https://sonarcloud.io/summary/new_code?id=Sungw0o_Newsense">
-    <img src="https://sonarcloud.io/api/project_badges/measure?project=Sungw0o_Newsense&metric=alert_status" alt="Quality Gate Status" />
+    <img height="20" src="https://sonarcloud.io/api/project_badges/measure?project=Sungw0o_Newsense&metric=alert_status" alt="Quality Gate Status" />
   </a>
   <a href="https://sonarcloud.io/summary/new_code?id=Sungw0o_Newsense">
-    <img src="https://sonarcloud.io/api/project_badges/measure?project=Sungw0o_Newsense&metric=coverage" alt="Coverage" />
+    <img height="20" src="https://sonarcloud.io/api/project_badges/measure?project=Sungw0o_Newsense&metric=coverage" alt="Coverage" />
   </a>
   <a href="https://sonarcloud.io/summary/new_code?id=Sungw0o_Newsense">
-    <img src="https://sonarcloud.io/api/project_badges/measure?project=Sungw0o_Newsense&metric=bugs" alt="Bugs" />
+    <img height="20" src="https://sonarcloud.io/api/project_badges/measure?project=Sungw0o_Newsense&metric=bugs" alt="Bugs" />
   </a>
   <a href="https://sonarcloud.io/summary/new_code?id=Sungw0o_Newsense">
-    <img src="https://sonarcloud.io/api/project_badges/measure?project=Sungw0o_Newsense&metric=vulnerabilities" alt="Vulnerabilities" />
+    <img height="20" src="https://sonarcloud.io/api/project_badges/measure?project=Sungw0o_Newsense&metric=vulnerabilities" alt="Vulnerabilities" />
   </a>
   <a href="https://sonarcloud.io/summary/new_code?id=Sungw0o_Newsense">
-    <img src="https://sonarcloud.io/api/project_badges/measure?project=Sungw0o_Newsense&metric=code_smells" alt="Code Smells" />
+    <img height="20" src="https://sonarcloud.io/api/project_badges/measure?project=Sungw0o_Newsense&metric=code_smells" alt="Code Smells" />
+  </a>
+  <a href="https://sonarcloud.io/summary/new_code?id=Sungw0o_Newsense">
+    <img height="20" src="https://sonarcloud.io/api/project_badges/measure?project=Sungw0o_Newsense&metric=duplicated_lines_density" alt="Duplicated Lines" />
   </a>
 </p>
 
@@ -33,14 +36,17 @@
 | 뉴스 피드 | 카테고리·난이도 필터와 함께 경제 기사 목록 제공 |
 | AI 3줄 요약 | Gemini + GPT 멀티 모델로 본문 핵심 수치·인과관계 포함 요약 생성 |
 | AI 퀴즈 | 개념 이해 / 사실 확인 / 인과 추론 3단계 OX·객관식 문항 자동 생성 |
+| 난이도별 퀴즈 | 사용자 레벨(BASIC·INTERMEDIATE·ADVANCED)에 맞는 맞춤형 퀴즈 생성 및 Redis 캐싱 |
 | Generator-Critic 자가 교정 | 퀴즈 생성 후 별도 모델이 정답·근거·선택지 품질 검증 및 재출제 |
 | RAG 추천 | 기사 청크 + 기재부 경제사전 임베딩 기반 하이브리드 검색 및 취약 개념 추천 |
+| 취약점 분석 | 오답 패턴 기반 사용자 취약 개념 분석 및 맞춤 기사 추천 |
+| 연관 종목 | AI가 기사에서 추출한 연관 기업 정보 및 Toss 주가 연동 |
 | 학습 이력 | 읽기 완료·퀴즈 풀이·리뷰 작성 이력 기록 및 통계 |
 | 오답노트 | 틀린 문제와 취약 개념 누적 관리, 복습 흐름 제공 |
 | 커뮤니티 | 경제 이슈 게시글·댓글·좋아요 |
 | 소셜 로그인 | Google · Naver · Kakao OAuth2 + JWT (Access Token + HttpOnly Refresh Cookie) |
 | 관리자 | 기사 수집 제어, AI 요약 상태 모니터링, 회원 관리, 권한 기반 접근 제어 |
-| 경제 지표 | 주요 경제 지표 자동 수집 및 노출 |
+| 경제 지표 | 주요 경제 지표 자동 수집 및 홈 사이드 패널 노출 |
 
 ## 기술 스택
 
@@ -52,5 +58,80 @@
 | 데이터베이스 | ![MySQL 8](https://img.shields.io/badge/MySQL_8-4479A1?style=flat-square&logo=mysql&logoColor=white) ![MongoDB 7](https://img.shields.io/badge/MongoDB_7-47A248?style=flat-square&logo=mongodb&logoColor=white) ![Redis 7](https://img.shields.io/badge/Redis_7-DC382D?style=flat-square&logo=redis&logoColor=white) |
 | AI | ![OpenAI](https://img.shields.io/badge/GPT--4o_mini-412991?style=flat-square&logo=openai&logoColor=white) ![OpenAI](https://img.shields.io/badge/o3--mini-412991?style=flat-square&logo=openai&logoColor=white) ![Google Gemini](https://img.shields.io/badge/Gemini_2.5_Flash_Lite-4285F4?style=flat-square&logo=google&logoColor=white) ![OpenAI](https://img.shields.io/badge/text--embedding--3--large-412991?style=flat-square&logo=openai&logoColor=white) |
 | 인프라 | ![AWS EC2](https://img.shields.io/badge/AWS_EC2-FF9900?style=flat-square&logo=amazonec2&logoColor=white) ![Docker](https://img.shields.io/badge/Docker-2496ED?style=flat-square&logo=docker&logoColor=white) ![Nginx](https://img.shields.io/badge/Nginx-009639?style=flat-square&logo=nginx&logoColor=white) ![AWS S3](https://img.shields.io/badge/AWS_S3-569A31?style=flat-square&logo=amazons3&logoColor=white) ![CloudFront](https://img.shields.io/badge/CloudFront-FF9900?style=flat-square&logo=amazonaws&logoColor=white) |
-| 외부 API | ![Naver](https://img.shields.io/badge/Naver_API-03C75A?style=flat-square&logo=naver&logoColor=white) ![NewsAPI](https://img.shields.io/badge/NewsAPI-FFA500?style=flat-square&logo=rss&logoColor=white) ![OAuth2](https://img.shields.io/badge/OAuth2-EB5424?style=flat-square&logo=auth0&logoColor=white) |
-| 품질 | ![SonarCloud](https://im
+| 외부 API | ![Naver](https://img.shields.io/badge/Naver_API-03C75A?style=flat-square&logo=naver&logoColor=white) ![NewsAPI](https://img.shields.io/badge/NewsAPI-FFA500?style=flat-square&logo=rss&logoColor=white) ![Toss](https://img.shields.io/badge/Toss_Invest_API-0064FF?style=flat-square&logo=toss&logoColor=white) ![OAuth2](https://img.shields.io/badge/OAuth2-EB5424?style=flat-square&logo=auth0&logoColor=white) |
+| 품질 | ![SonarCloud](https://img.shields.io/badge/SonarCloud-F3702A?style=flat-square&logo=sonarcloud&logoColor=white) ![GitHub Actions](https://img.shields.io/badge/GitHub_Actions-2088FF?style=flat-square&logo=githubactions&logoColor=white) |
+
+## 아키텍처
+
+```
+사용자
+  │
+  ├─ CloudFront + S3 (Vue 3 SPA)
+  │
+  └─ Nginx (Reverse Proxy)
+       │
+       └─ Spring Boot 4.1 (EC2)
+            ├─ MySQL 8   — 회원·기사 메타·퀴즈·학습 이력
+            ├─ MongoDB 7 — 기사 본문·임베딩 청크
+            └─ Redis 7   — JWT 블랙리스트·퀴즈 캐시
+```
+
+## AI 파이프라인
+
+```
+기사 수집 (Naver API / NewsAPI / 한국은행)
+  │
+  ├─ 본문 정제 (크롤링 + 꼬리말 필터)
+  ├─ AI 요약 (Gemini 2.5 Flash Lite → GPT-4o-mini fallback)
+  ├─ 경제 용어 하이라이트 (RAG 하이브리드 검색)
+  └─ 퀴즈 생성 (GPT-4o-mini Generator → o3-mini Critic → 재출제)
+       └─ 난이도 분기 (BASIC / INTERMEDIATE / ADVANCED)
+```
+
+## 프로젝트 구조
+
+```
+Newsense/
+├── backend/          # Spring Boot 4.1 (Java 21)
+│   └── src/main/java/com/newsense/backend/
+│       ├── ai/       # OpenAI·Gemini 클라이언트, 퀴즈·요약 파이프라인
+│       ├── article/  # 기사 메타·본문·크롤러
+│       ├── quiz/     # 퀴즈 도메인·서비스·컨트롤러
+│       ├── rag/      # 임베딩·하이브리드 검색
+│       ├── user/     # 회원·취약점 분석
+│       └── wrongnote/# 오답노트
+└── frontend/         # Vue 3 + Vite + Pinia + Tailwind CSS
+    └── src/
+        ├── api/      # Axios 클라이언트
+        ├── stores/   # Pinia 상태 관리
+        └── views/    # 페이지 컴포넌트
+```
+
+## 시작하기
+
+### 백엔드
+
+```bash
+cd backend
+./gradlew bootRun --args='--spring.profiles.active=local'
+```
+
+### 프론트엔드
+
+```bash
+cd frontend
+npm install
+npm run dev
+```
+
+### 환경 변수 (`.env`)
+
+| 변수 | 설명 |
+| --- | --- |
+| `DB_URL` | MySQL 접속 URL |
+| `MONGO_URI` | MongoDB 접속 URI |
+| `REDIS_HOST` | Redis 호스트 |
+| `OPENAI_API_KEY` | OpenAI API 키 |
+| `GEMINI_API_KEY` | Google Gemini API 키 |
+| `NAVER_CLIENT_ID` | 네이버 뉴스 API 클라이언트 ID |
+| `TOSS_INVEST_API_KEY` | Toss 주가 API 키 |
