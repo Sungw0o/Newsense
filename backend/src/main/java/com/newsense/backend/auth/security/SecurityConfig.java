@@ -28,6 +28,8 @@ public class SecurityConfig {
             "/api/v1/categories",
             "/api/v1/rag/search",
             "/api/v1/indicators",
+            "/api/v1/stocks",
+            "/api/v1/stocks/**",
             "/oauth2/**",
             "/login/oauth2/**",
             "/swagger-ui/**",
