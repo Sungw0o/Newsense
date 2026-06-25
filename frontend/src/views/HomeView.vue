@@ -4,7 +4,6 @@ import { useRouter } from 'vue-router'
 import { storeToRefs } from 'pinia'
 import { useArticleStore } from '../stores/useArticleStore'
 import ArticleCard from '../components/article/ArticleCard.vue'
-import HomeSidePanel from '../components/home/HomeSidePanel.vue'
 
 const router = useRouter()
 const articleStore = useArticleStore()
@@ -141,8 +140,6 @@ const clearSearch = () => {
           <div class="spinner"></div>
         </div>
       </div>
-
-      <HomeSidePanel class="feed-side" />
     </div>
   </div>
 </template>
@@ -326,19 +323,11 @@ const clearSearch = () => {
 }
 
 .feed-body {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) 280px;
-  gap: 24px;
-  align-items: start;
+  display: block;
 }
 
 .feed-main {
   min-width: 0;
-}
-
-.feed-side {
-  position: sticky;
-  top: 76px;
 }
 
 .feed-grid {
@@ -395,21 +384,7 @@ const clearSearch = () => {
   to { transform: rotate(360deg); }
 }
 
-@media (max-width: 1200px) {
-  .feed-body {
-    grid-template-columns: minmax(0, 1fr) 260px;
-  }
-}
-
 @media (max-width: 1024px) {
-  .feed-body {
-    grid-template-columns: 1fr;
-  }
-
-  .feed-side {
-    position: static;
-  }
-
   .feed-grid {
     grid-template-columns: repeat(3, minmax(0, 1fr));
   }

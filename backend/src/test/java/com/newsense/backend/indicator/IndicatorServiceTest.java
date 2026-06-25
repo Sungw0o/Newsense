@@ -16,6 +16,7 @@ import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.BDDMockito.given;
+import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.verify;
 
@@ -71,6 +72,8 @@ class IndicatorServiceTest {
 
     @Test
     void refresh_externalApiFails_returnsMockResponse() {
+        doThrow(new RuntimeException("network disabled")).when(indicatorService).createClient();
+
         IndicatorResponse result = indicatorService.refresh();
 
         assertThat(result).isNotNull();

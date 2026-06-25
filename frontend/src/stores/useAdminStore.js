@@ -6,6 +6,14 @@ export const useAdminStore = defineStore('admin', {
     stats: null,
     users: [],
     articles: [],
+    articlePage: {
+      number: 0,
+      size: 20,
+      totalPages: 0,
+      totalElements: 0,
+      first: true,
+      last: true,
+    },
     isLoadingStats: false,
     isLoadingUsers: false,
     isLoadingArticles: false,
@@ -65,6 +73,16 @@ export const useAdminStore = defineStore('admin', {
         const res = await adminApi.getArticles(params)
         const data = res?.data ?? res
         this.articles = Array.isArray(data) ? data : (data?.content ?? [])
+        if (!Array.isArray(data)) {
+          this.articlePage = {
+            number: data?.number ?? 0,
+            size: data?.size ?? params.size ?? 20,
+            totalPages: data?.totalPages ?? 0,
+            totalElements: data?.totalElements ?? this.articles.length,
+            first: data?.first ?? true,
+            last: data?.last ?? true,
+          }
+        }
       } catch (e) {
         this.error = e?.response?.data?.message ?? '기사 목록 조회에 실패했습니다.'
       } finally {
@@ -88,6 +106,12 @@ export const useAdminStore = defineStore('admin', {
       } finally {
         this.summarizingArticleIds = this.summarizingArticleIds.filter(id => id !== articleId)
       }
+    },
+
+    async deleteArticle(articleId) {
+      await adminApi.deleteArticle(articleId)
+      this.articles = this.articles.filter(article => article.articleId !== articleId)
+      this.articlePage.totalElements = Math.max(0, this.articlePage.totalElements - 1)
     },
   },
 })

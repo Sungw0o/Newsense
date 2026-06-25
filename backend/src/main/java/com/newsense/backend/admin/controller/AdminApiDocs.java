@@ -67,6 +67,12 @@ public interface AdminApiDocs {
             @PathVariable Long articleId
     );
 
+    @Operation(summary = "수집 기사 삭제 (관리자)")
+    @DeleteMapping("/api/v1/admin/articles/{articleId}")
+    ResponseEntity<ApiResponse<Void>> deleteArticle(
+            @PathVariable Long articleId
+    );
+
     @Operation(summary = "수동 크롤링 트리거 (공공기관 + 포털)",
                description = "maxPerSource: 소스당 최대 수집 기사 수 (기본 50, 최대 200)")
     @PostMapping("/api/v1/admin/crawl")

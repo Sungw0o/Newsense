@@ -22,6 +22,9 @@ const adminApi = {
   refreshArticleSummary(articleId) {
     return axiosInstance.patch(`/admin/articles/${articleId}/summary`)
   },
+  deleteArticle(articleId) {
+    return axiosInstance.delete(`/admin/articles/${articleId}`)
+  },
   triggerCrawl(maxPerSource = 50) {
     return axiosInstance.post('/admin/crawl', null, { params: { maxPerSource } })
   },

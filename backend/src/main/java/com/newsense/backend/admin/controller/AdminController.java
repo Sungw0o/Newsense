@@ -59,6 +59,12 @@ public class AdminController implements AdminApiDocs {
     }
 
     @Override
+    public ResponseEntity<ApiResponse<Void>> deleteArticle(Long articleId) {
+        adminService.deleteArticle(articleId);
+        return ResponseEntity.ok(ApiResponse.success("기사가 삭제되었습니다.", null));
+    }
+
+    @Override
     public ResponseEntity<ApiResponse<CrawlResultResponse>> triggerCrawl(int maxPerSource) {
         return ResponseEntity.ok(ApiResponse.success("크롤링이 완료되었습니다.", adminService.triggerCrawl(maxPerSource)));
     }

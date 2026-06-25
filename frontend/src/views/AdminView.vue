@@ -18,6 +18,11 @@ const reports = ref([])
 const isLoadingReports = ref(false)
 const inquiries = ref([])
 const isLoadingInquiries = ref(false)
+const articleQuery = ref({
+  page: 0,
+  size: 20,
+  sort: 'collectedAt,desc',
+})
 
 onMounted(async () => {
   await store.fetchStats()
@@ -83,7 +88,7 @@ const handleTabChange = (key) => {
   activeTab.value = key
   if (key === 'reports')   loadReports()
   if (key === 'inquiries') loadInquiries()
-  if (key === 'articles' && store.articles.length === 0) store.fetchArticles({ size: 50, sort: 'collectedAt,desc' })
+  if (key === 'articles' && store.articles.length === 0) loadArticles()
 }
 
 const formatArticleDate = (value) => {
@@ -93,6 +98,10 @@ const formatArticleDate = (value) => {
 
 const formatLength = (length) => `${Number(length ?? 0).toLocaleString()}자`
 const canRequestSummary = (article) => !article.hasAiSummary
+const loadArticles = (patch = {}) => {
+  articleQuery.value = { ...articleQuery.value, ...patch }
+  return store.fetchArticles(articleQuery.value)
+}
 
 const handleRefreshSummary = async (articleId) => {
   try {
@@ -100,6 +109,30 @@ const handleRefreshSummary = async (articleId) => {
   } catch {
     alert(store.error || 'AI 요약 생성에 실패했습니다.')
   }
+}
+
+const handleDeleteArticle = async (article) => {
+  if (!confirm(`"${article.title}" 기사를 삭제하시겠습니까?`)) return
+  try {
+    await store.deleteArticle(article.articleId)
+    if (store.articles.length === 0 && articleQuery.value.page > 0) {
+      await loadArticles({ page: articleQuery.value.page - 1 })
+      return
+    }
+    await loadArticles()
+  } catch {
+    alert(store.error || '기사 삭제에 실패했습니다.')
+  }
+}
+
+const handleArticlePage = (page) => {
+  const nextPage = Math.max(0, Math.min(page, Math.max(0, store.articlePage.totalPages - 1)))
+  if (nextPage === articleQuery.value.page) return
+  loadArticles({ page: nextPage })
+}
+
+const handleArticleSize = (event) => {
+  loadArticles({ page: 0, size: Number(event.target.value) })
 }
 
 const formatDate = (iso) => {
@@ -292,7 +325,14 @@ const handleTriggerCrawl = async () => {
     <section v-if="activeTab === 'articles'" class="tab-content">
       <div class="section-toolbar">
         <p class="section-help">본문 길이와 AI 요약본 저장 상태를 확인하고, 누락된 요약을 수동으로 생성할 수 있습니다.</p>
-        <button class="action-btn" :disabled="store.isLoadingArticles" @click="store.fetchArticles({ size: 50, sort: 'collectedAt,desc' })">새로고침</button>
+        <div class="toolbar-actions">
+          <select class="page-size" :value="articleQuery.size" @change="handleArticleSize">
+            <option :value="10">10개</option>
+            <option :value="20">20개</option>
+            <option :value="50">50개</option>
+          </select>
+          <button class="action-btn" :disabled="store.isLoadingArticles" @click="loadArticles()">새로고침</button>
+        </div>
       </div>
       <div v-if="store.isLoadingArticles" class="loading-state"><div class="spinner"></div></div>
       <div v-else class="user-table-wrap">
@@ -326,12 +366,25 @@ const handleTriggerCrawl = async () => {
                 >
                   {{ store.summarizingArticleIds.includes(article.articleId) ? '생성 중' : '요약 생성' }}
                 </button>
+                <button class="action-btn danger" @click="handleDeleteArticle(article)">삭제</button>
               </td>
             </tr>
           </tbody>
         </table>
         <div v-if="store.articles.length === 0" class="empty">
           <p class="eyebrow" style="text-align:center;">수집된 기사가 없습니다</p>
+        </div>
+      </div>
+      <div v-if="store.articlePage.totalElements > 0" class="pager">
+        <span class="pager-count">
+          총 {{ Number(store.articlePage.totalElements).toLocaleString() }}건 ·
+          {{ store.articlePage.number + 1 }} / {{ Math.max(1, store.articlePage.totalPages) }}페이지
+        </span>
+        <div class="pager-controls">
+          <button class="action-btn" :disabled="store.articlePage.first" @click="handleArticlePage(0)">처음</button>
+          <button class="action-btn" :disabled="store.articlePage.first" @click="handleArticlePage(store.articlePage.number - 1)">이전</button>
+          <button class="action-btn" :disabled="store.articlePage.last" @click="handleArticlePage(store.articlePage.number + 1)">다음</button>
+          <button class="action-btn" :disabled="store.articlePage.last" @click="handleArticlePage(store.articlePage.totalPages - 1)">끝</button>
         </div>
       </div>
     </section>
@@ -434,6 +487,29 @@ const handleTriggerCrawl = async () => {
   justify-content: space-between;
   gap: 16px;
   margin-bottom: 14px;
+}
+
+.toolbar-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.page-size {
+  height: 31px;
+  padding: 0 9px;
+  border: 1px solid rgba(0,0,0,0.12);
+  border-radius: 8px;
+  background: rgba(255,255,255,0.8);
+  color: var(--ink, #0a0d12);
+  font-size: 12.5px;
+  font-weight: 700;
+}
+
+.dark .page-size {
+  background: rgba(20,24,34,0.65);
+  border-color: rgba(255,255,255,0.14);
+  color: #f4f6fa;
 }
 
 .section-help {
@@ -584,6 +660,31 @@ const handleTriggerCrawl = async () => {
 .dark .action-btn:hover { background: rgba(0,132,255,0.18); }
 .action-btn.danger { color: #dc2626; background: rgba(239,68,68,0.07); border-color: rgba(239,68,68,0.25); }
 .action-btn.danger:hover { background: rgba(239,68,68,0.15); border-color: rgba(239,68,68,0.45); }
+
+td .action-btn + .action-btn {
+  margin-left: 6px;
+}
+
+.pager {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-top: 14px;
+  flex-wrap: wrap;
+}
+
+.pager-count {
+  font-size: 12.5px;
+  color: var(--ink-3, #8a93a3);
+}
+
+.pager-controls {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+}
 
 .loading-state { display: flex; justify-content: center; padding: 80px 0; }
 .spinner {

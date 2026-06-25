@@ -1,13 +1,12 @@
 <script setup>
-import { ref, onMounted, onUnmounted } from 'vue'
+import { computed, ref, onMounted } from 'vue'
 import { indicatorApi } from '../../api/indicatorApi'
 
 const items = ref([])
 const status = ref(null)
 const loading = ref(true)
 const refreshing = ref(false)
-
-let timer = null
+const updatedAt = ref(null)
 
 const fmt = (item) => {
   if (item.value == null) return '—'
@@ -28,9 +27,10 @@ const load = async (manual = false) => {
   if (manual) refreshing.value = true
   try {
     const res = await indicatorApi.getIndicators()
-    const raw = res.data?.data ?? res.data
+    const raw = res?.data ?? res
     items.value = raw?.items ?? []
     status.value = raw?.status ?? null
+    updatedAt.value = new Date()
   } catch {
     // silent
   } finally {
@@ -39,12 +39,14 @@ const load = async (manual = false) => {
   }
 }
 
-onMounted(() => {
-  load()
-  timer = setInterval(() => load(), 30_000)
+const footerText = computed(() => {
+  const date = updatedAt.value ?? new Date()
+  return `${String(date.getHours()).padStart(2, '0')}:${String(date.getMinutes()).padStart(2, '0')} 기준`
 })
 
-onUnmounted(() => clearInterval(timer))
+onMounted(() => {
+  load()
+})
 </script>
 
 <template>
@@ -52,7 +54,6 @@ onUnmounted(() => clearInterval(timer))
     <div class="widget-head">
       <span class="widget-title">금융 지표</span>
       <span v-if="status === 'MOCK'" class="badge mock">준비 중</span>
-      <span v-else-if="status === 'STALE'" class="badge stale">캐시</span>
       <button
         class="refresh-btn"
         :class="{ spinning: refreshing }"
@@ -96,8 +97,7 @@ onUnmounted(() => clearInterval(timer))
     <p v-else class="empty">지표를 불러올 수 없습니다.</p>
 
     <p class="widget-footer">
-      <span class="live-dot"></span>
-      30초마다 자동 갱신
+      {{ footerText }}
     </p>
   </aside>
 </template>
@@ -141,7 +141,6 @@ onUnmounted(() => clearInterval(timer))
   border-radius: 999px;
 }
 .badge.mock  { background: #ede9fe; color: #5b21b6; }
-.badge.stale { background: #e0f2fe; color: #075985; }
 .refresh-btn {
   font-size: 15px;
   line-height: 1;
@@ -211,22 +210,9 @@ onUnmounted(() => clearInterval(timer))
 .empty { font-size: 11.5px; color: var(--ink-3); text-align: center; padding: 8px 0; margin: 0; }
 .widget-footer {
   display: flex;
-  align-items: center;
-  gap: 5px;
+  justify-content: flex-end;
   margin: 8px 0 0;
   font-size: 10px;
   color: var(--ink-3, #8a93a3);
-}
-.live-dot {
-  display: inline-block;
-  width: 6px;
-  height: 6px;
-  border-radius: 50%;
-  background: #22c55e;
-  animation: pulse 2s infinite;
-}
-@keyframes pulse {
-  0%, 100% { opacity: 1; }
-  50% { opacity: 0.35; }
 }
 </style>

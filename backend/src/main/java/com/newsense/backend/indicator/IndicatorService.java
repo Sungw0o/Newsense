@@ -46,10 +46,13 @@ public class IndicatorService {
 
     public IndicatorResponse refresh() {
         try {
-            RestClient client = RestClient.create();
+            RestClient client = createClient();
             Double kospi  = fetchYahooPrice(client, "^KS11");
             Double kosdaq = fetchYahooPrice(client, "^KQ11");
             Double usdKrw = fetchUsdKrw(client);
+            if (kospi == null && kosdaq == null && usdKrw == null) {
+                return mockResponse();
+            }
 
             List<IndicatorItem> items = buildItems(usdKrw, kospi, kosdaq);
             IndicatorResponse response = new IndicatorResponse(
@@ -60,6 +63,10 @@ public class IndicatorService {
             log.warn("Financial indicator fetch failed, returning mock: {}", e.getMessage());
             return mockResponse();
         }
+    }
+
+    RestClient createClient() {
+        return RestClient.create();
     }
 
     private Double fetchYahooPrice(RestClient client, String symbol) {

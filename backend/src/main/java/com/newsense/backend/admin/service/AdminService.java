@@ -25,6 +25,8 @@ import com.newsense.backend.user.domain.User;
 import com.newsense.backend.user.domain.UserRole;
 import com.newsense.backend.user.dto.UserProfileResponse;
 import com.newsense.backend.user.repository.UserRepository;
+import jakarta.persistence.EntityManager;
+import jakarta.persistence.PersistenceContext;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -44,6 +46,9 @@ public class AdminService {
     private final PublicNewsCrawlerService publicNewsCrawlerService;
     private final PortalNewsCrawlerService portalNewsCrawlerService;
     private final InquiryService inquiryService;
+
+    @PersistenceContext
+    private EntityManager entityManager;
 
     @Transactional(readOnly = true)
     public AdminStatsResponse getStats() {
@@ -100,6 +105,18 @@ public class AdminService {
         return AdminArticleResponse.of(article, articleText == null ? 0 : articleText.length());
     }
 
+    @Transactional
+    public void deleteArticle(Long articleId) {
+        ArticleMeta article = articleMetaRepository.findById(articleId)
+                .orElseThrow(() -> new CustomException(ErrorCode.ARTICLE_NOT_FOUND));
+        String mongoDocumentId = article.getMongoDocumentId();
+        deleteArticleRelations(articleId);
+        articleMetaRepository.delete(article);
+        if (mongoDocumentId != null && !mongoDocumentId.isBlank()) {
+            articleContentRepository.deleteById(mongoDocumentId);
+        }
+    }
+
     public CrawlResultResponse triggerCrawl(int maxPerSource) {
         CrawlRunResult publicResult = publicNewsCrawlerService.collectAll(maxPerSource);
         CrawlRunResult portalResult = portalNewsCrawlerService.collectAll();
@@ -130,5 +147,47 @@ public class AdminService {
                     return c.getRawText() != null ? c.getRawText().length() : 0;
                 })
                 .orElse(0);
+    }
+
+    private void deleteArticleRelations(Long articleId) {
+        entityManager.createNativeQuery("DELETE FROM wrong_note_term WHERE wrong_note_id IN (SELECT id FROM wrong_note WHERE article_id = :articleId)")
+                .setParameter("articleId", articleId)
+                .executeUpdate();
+        entityManager.createNativeQuery("DELETE FROM wrong_note WHERE article_id = :articleId")
+                .setParameter("articleId", articleId)
+                .executeUpdate();
+        entityManager.createNativeQuery("DELETE FROM quiz_answer WHERE article_id = :articleId")
+                .setParameter("articleId", articleId)
+                .executeUpdate();
+        entityManager.createNativeQuery("DELETE FROM quiz_option WHERE quiz_id IN (SELECT id FROM quiz WHERE article_id = :articleId)")
+                .setParameter("articleId", articleId)
+                .executeUpdate();
+        entityManager.createNativeQuery("DELETE FROM quiz WHERE article_id = :articleId")
+                .setParameter("articleId", articleId)
+                .executeUpdate();
+        entityManager.createNativeQuery("DELETE FROM review_difficult_term WHERE review_id IN (SELECT id FROM review WHERE article_id = :articleId)")
+                .setParameter("articleId", articleId)
+                .executeUpdate();
+        entityManager.createNativeQuery("DELETE FROM review WHERE article_id = :articleId")
+                .setParameter("articleId", articleId)
+                .executeUpdate();
+        entityManager.createNativeQuery("DELETE FROM learning_history WHERE article_id = :articleId")
+                .setParameter("articleId", articleId)
+                .executeUpdate();
+        entityManager.createNativeQuery("DELETE FROM article_read WHERE article_id = :articleId")
+                .setParameter("articleId", articleId)
+                .executeUpdate();
+        entityManager.createNativeQuery("DELETE FROM bookmark WHERE article_id = :articleId")
+                .setParameter("articleId", articleId)
+                .executeUpdate();
+        entityManager.createNativeQuery("DELETE FROM article_related_stock WHERE article_meta_id = :articleId")
+                .setParameter("articleId", articleId)
+                .executeUpdate();
+        entityManager.createNativeQuery("DELETE FROM article_term WHERE article_id = :articleId")
+                .setParameter("articleId", articleId)
+                .executeUpdate();
+        entityManager.createNativeQuery("UPDATE post SET article_meta_id = NULL WHERE article_meta_id = :articleId")
+                .setParameter("articleId", articleId)
+                .executeUpdate();
     }
 }

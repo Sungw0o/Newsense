@@ -1,14 +1,18 @@
 <script setup>
-import { onMounted } from 'vue'
+import { computed, onMounted } from 'vue'
+import { useRoute } from 'vue-router'
 import AppHeader from './AppHeader.vue'
 import AppFooter from './AppFooter.vue'
 import StreakWidget from './StreakWidget.vue'
 import IndicatorWidget from './IndicatorWidget.vue'
+import HomeSidePanel from '../home/HomeSidePanel.vue'
 import { useHistoryStore } from '../../stores/useHistoryStore'
 import { useUserStore } from '../../stores/useUserStore'
 
+const route = useRoute()
 const userStore = useUserStore()
 const historyStore = useHistoryStore()
+const isHome = computed(() => route.path === '/')
 
 onMounted(async () => {
   if (userStore.isAuthenticated) {
@@ -28,6 +32,7 @@ onMounted(async () => {
 
       <aside class="sidebar-right">
         <StreakWidget v-if="userStore.isAuthenticated" />
+        <HomeSidePanel v-if="userStore.isAuthenticated && isHome" />
         <IndicatorWidget v-if="userStore.isAuthenticated" />
       </aside>
     </div>
