@@ -14,6 +14,7 @@ import com.newsense.backend.rag.dto.RagArticleResultResponse;
 import com.newsense.backend.rag.dto.RagMatchedChunkResponse;
 import com.newsense.backend.rag.dto.RagRecommendationResponse;
 import com.newsense.backend.rag.dto.RagSearchResponse;
+import com.newsense.backend.rag.dto.ScoreBreakdown;
 import com.newsense.backend.rag.service.RagVectorSearchService.VectorResult;
 import com.newsense.backend.wrongnote.repository.WrongNoteRepository;
 import lombok.RequiredArgsConstructor;
@@ -24,6 +25,8 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.text.Normalizer;
+import java.time.LocalDate;
+import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.LinkedHashSet;
@@ -48,9 +51,13 @@ public class RagRetrievalService {
     private static final int SNIPPET_RADIUS             = 120;
     private static final int MIN_QUERY_LENGTH           = 2;
 
-    /** 하이브리드 점수: 벡터 70% + 키워드 30% */
-    private static final double VECTOR_WEIGHT  = 0.70;
-    private static final double KEYWORD_WEIGHT = 0.30;
+    /** Default hybrid score weights. Runtime values come from rag.vector-search.* properties. */
+    private static final double DEFAULT_VECTOR_WEIGHT = 0.45;
+    private static final double DEFAULT_KEYWORD_WEIGHT = 0.20;
+    private static final double DEFAULT_RECENCY_WEIGHT = 0.10;
+    private static final double DEFAULT_CATEGORY_WEIGHT = 0.10;
+    private static final double DEFAULT_WEAKNESS_WEIGHT = 0.10;
+    private static final double DEFAULT_MARKET_WEIGHT = 0.05;
 
     /** 벡터 후보 배수: 최종 limit보다 더 많이 가져와 키워드 re-scoring */
     private static final int VECTOR_CANDIDATE_MULTIPLIER = 4;
@@ -205,12 +212,17 @@ public class RagRetrievalService {
         final int maxKw = maxKwScore;
         return entries.stream()
                 .map(e -> {
-                    double vecScore    = normalizedVecScores.getOrDefault(e.contentId(), 0.0);
-                    double kwScore     = (double) e.kScore() / maxKw;
-                    double hybridScore = VECTOR_WEIGHT * vecScore + KEYWORD_WEIGHT * kwScore;
-                    // DTO가 int score를 사용하므로 0~100 스케일로 변환
-                    int intScore = (int) Math.round(hybridScore * 100);
-                    return buildResult(e.meta(), e.content(), keywords, intScore, reason);
+                    double vecScore = normalizedVecScores.getOrDefault(e.contentId(), 0.0);
+                    double kwScore = (double) e.kScore() / maxKw;
+                    ScoreBreakdown breakdown = buildScoreBreakdown(
+                            vecScore,
+                            kwScore,
+                            recencyScore(e.meta()),
+                            0.0,
+                            0.0,
+                            0.0
+                    );
+                    return buildResult(e.meta(), e.content(), keywords, toIntScore(breakdown.finalScore()), breakdown, reason);
                 })
                 .sorted(Comparator.comparingInt(RagArticleResultResponse::score).reversed())
                 .limit(limit)
@@ -230,18 +242,43 @@ public class RagRetrievalService {
                         Sort.Order.desc("collectedAt"),
                         Sort.Order.desc("id")));
 
-        return articleMetaRepository.findAll(pageRequest).stream()
-                .map(article -> scoreArticle(article, keywords, reason))
-                .filter(result -> result.score() > 0)
+        record Entry(ArticleMeta article, ArticleContent content, int keywordScore) {}
+
+        List<Entry> entries = articleMetaRepository.findAll(pageRequest).stream()
+                .map(article -> {
+                    ArticleContent content = articleContentRepository.findById(article.getMongoDocumentId()).orElse(null);
+                    return new Entry(article, content, computeKeywordScore(article, content, keywords));
+                })
+                .filter(entry -> entry.keywordScore() > 0)
+                .toList();
+
+        int maxKeywordScore = entries.stream()
+                .mapToInt(Entry::keywordScore)
+                .max()
+                .orElse(1);
+
+        return entries.stream()
+                .map(entry -> {
+                    ScoreBreakdown breakdown = buildScoreBreakdown(
+                            0.0,
+                            (double) entry.keywordScore() / maxKeywordScore,
+                            recencyScore(entry.article()),
+                            0.0,
+                            0.0,
+                            0.0
+                    );
+                    return buildResult(
+                            entry.article(),
+                            entry.content(),
+                            keywords,
+                            toIntScore(breakdown.finalScore()),
+                            breakdown,
+                            reason
+                    );
+                })
                 .sorted(Comparator.comparingInt(RagArticleResultResponse::score).reversed())
                 .limit(limit)
                 .toList();
-    }
-
-    private RagArticleResultResponse scoreArticle(ArticleMeta article, List<String> keywords, String reason) {
-        ArticleContent content = articleContentRepository.findById(article.getMongoDocumentId()).orElse(null);
-        int totalScore = computeKeywordScore(article, content, keywords);
-        return buildResult(article, content, keywords, totalScore, reason);
     }
 
     // ─────────────────────────────────────────────────────────────────────────
@@ -264,6 +301,7 @@ public class RagRetrievalService {
             ArticleContent content,
             List<String> keywords,
             int score,
+            ScoreBreakdown scoreBreakdown,
             String reason) {
 
         List<ScoredChunk> matchedChunks = content == null ? List.of()
@@ -290,12 +328,60 @@ public class RagRetrievalService {
                         .toList(),
                 matchedKeywords,
                 score,
+                scoreBreakdown,
                 reason);
     }
 
     // ─────────────────────────────────────────────────────────────────────────
     // Text scoring utilities
     // ─────────────────────────────────────────────────────────────────────────
+
+    private ScoreBreakdown buildScoreBreakdown(
+            double vectorScore,
+            double keywordScore,
+            double recencyScore,
+            double categoryScore,
+            double weaknessScore,
+            double marketScore) {
+        double finalScore = weight(vectorSearchProperties.vectorWeight(), DEFAULT_VECTOR_WEIGHT) * vectorScore
+                + weight(vectorSearchProperties.keywordWeight(), DEFAULT_KEYWORD_WEIGHT) * keywordScore
+                + weight(vectorSearchProperties.recencyWeight(), DEFAULT_RECENCY_WEIGHT) * recencyScore
+                + weight(vectorSearchProperties.categoryWeight(), DEFAULT_CATEGORY_WEIGHT) * categoryScore
+                + weight(vectorSearchProperties.weaknessWeight(), DEFAULT_WEAKNESS_WEIGHT) * weaknessScore
+                + weight(vectorSearchProperties.marketWeight(), DEFAULT_MARKET_WEIGHT) * marketScore;
+        return new ScoreBreakdown(
+                clamp01(vectorScore),
+                clamp01(keywordScore),
+                clamp01(recencyScore),
+                clamp01(categoryScore),
+                clamp01(weaknessScore),
+                clamp01(marketScore),
+                clamp01(finalScore)
+        );
+    }
+
+    private double recencyScore(ArticleMeta article) {
+        if (article.getPublishedAt() == null) {
+            return 0.0;
+        }
+        long daysAge = Math.max(0, ChronoUnit.DAYS.between(article.getPublishedAt(), LocalDate.now()));
+        return Math.exp(-0.05 * daysAge);
+    }
+
+    private int toIntScore(double finalScore) {
+        return (int) Math.round(clamp01(finalScore) * 100);
+    }
+
+    private double weight(double configured, double fallback) {
+        return configured > 0 ? configured : fallback;
+    }
+
+    private double clamp01(double value) {
+        if (Double.isNaN(value) || Double.isInfinite(value)) {
+            return 0.0;
+        }
+        return Math.max(0.0, Math.min(1.0, value));
+    }
 
     private List<ScoredChunk> scoreChunks(List<String> chunks, List<String> keywords) {
         List<ScoredChunk> scored = new ArrayList<>();

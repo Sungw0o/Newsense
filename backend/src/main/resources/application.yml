@@ -96,6 +96,12 @@ rag:
     num-candidates: ${RAG_VECTOR_SEARCH_NUM_CANDIDATES:200}
     # 임베딩 차원 수 (text-embedding-3-large = 3072)
     dimensions: ${RAG_VECTOR_SEARCH_DIMENSIONS:3072}
+    vector-weight: ${RAG_VECTOR_WEIGHT:0.45}
+    keyword-weight: ${RAG_KEYWORD_WEIGHT:0.20}
+    recency-weight: ${RAG_RECENCY_WEIGHT:0.10}
+    category-weight: ${RAG_CATEGORY_WEIGHT:0.10}
+    weakness-weight: ${RAG_WEAKNESS_WEIGHT:0.10}
+    market-weight: ${RAG_MARKET_WEIGHT:0.05}
   embedding:
     backfill:
       # true면 앱 기동 시 임베딩 없는 기존 기사에 대해 백필 실행
