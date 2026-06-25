@@ -150,4 +150,16 @@ export const useArticleStore = defineStore('article', {
       }
     },
 
-    async t
+    async toggleBookmark(articleId) {
+      try {
+        const response = await articleApi.toggleBookmark(articleId)
+        const data = response.data?.data ?? response.data
+        if (this.selectedArticle) {
+          this.selectedArticle.isBookmarked = data.isBookmarked
+        }
+      } catch (err) {
+        throw err
+      }
+    },
+  },
+})
