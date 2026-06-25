@@ -96,14 +96,4 @@ public class AuthService {
         return new RefreshResult(new TokenResponse(tokenPair.accessToken(), "Bearer"), tokenPair);
     }
 
-    public void logout(String accessToken) {
-        Claims claims = jwtTokenProvider.parseAccessToken(accessToken);
-        Long userId = Long.valueOf(claims.getSubject());
-        tokenStore.blacklistAccessToken(claims.getId(), claims.getExpiration().toInstant());
-        tokenStore.deleteRefreshToken(userId);
-    }
-
-    private String normalizeEmail(String email) {
-        return email.trim().toLowerCase(Locale.ROOT);
-    }
-}
+    public void log

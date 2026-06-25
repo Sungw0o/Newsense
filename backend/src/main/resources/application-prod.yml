@@ -89,14 +89,4 @@ rag:
     vector-weight: ${RAG_VECTOR_WEIGHT:0.45}
     keyword-weight: ${RAG_KEYWORD_WEIGHT:0.20}
     recency-weight: ${RAG_RECENCY_WEIGHT:0.10}
-    category-weight: ${RAG_CATEGORY_WEIGHT:0.10}
-    weakness-weight: ${RAG_WEAKNESS_WEIGHT:0.10}
-    market-weight: ${RAG_MARKET_WEIGHT:0.05}
-  embedding:
-    backfill:
-      enabled: ${RAG_EMBEDDING_BACKFILL_ENABLED:false}
-
-logging:
-  level:
-    com.newsense.backend: INFO
-    org.hibernate.SQL: WARN
+    catego

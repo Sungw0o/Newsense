@@ -12,6 +12,8 @@ import org.springframework.web.client.RestClientException;
 
 import java.time.Duration;
 import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.List;
 
 @Slf4j
 @Service
@@ -20,17 +22,20 @@ public class IndicatorService {
 
     private static final String REDIS_KEY = "indicator:latest";
     private static final Duration CACHE_TTL = Duration.ofMinutes(10);
-    private static final double BOK_BASE_RATE = 3.5;
+    private static final double BOK_BASE_RATE = 2.75; // 2025년 기준금리
     private static final String EXCHANGE_RATE_URL = "https://open.er-api.com/v6/latest/USD";
 
     private final StringRedisTemplate redisTemplate;
     private final ObjectMapper objectMapper;
 
+    /** 캐시 우선 조회 — 캐시 없으면 실시간 수집 */
     public IndicatorResponse getLatest() {
         String cached = redisTemplate.opsForValue().get(REDIS_KEY);
         if (cached != null) {
             try {
-                return objectMapper.readValue(cached, IndicatorResponse.class);
+                IndicatorResponse response = objectMapper.readValue(cached, IndicatorResponse.class);
+                // 캐시 상태면 status를 STALE로 재표기
+                return new IndicatorResponse("STALE", response.insight(), response.items(), response.fetchedAt());
             } catch (JacksonException e) {
                 log.warn("Failed to deserialize cached indicator, refreshing: {}", e.getMessage());
             }
@@ -38,14 +43,19 @@ public class IndicatorService {
         return refresh();
     }
 
+    /** 실시간 수집 후 캐시 갱신 */
     public IndicatorResponse refresh() {
         try {
             RestClient client = RestClient.create();
-            Double kospi = fetchYahooPrice(client, "^KS11");
-            Double kosdaq = fetchYahooPrice(client, "^KQ11");
+
+            YahooQuote kospiQuote = fetchYahooQuote(client, "^KS11");
+            YahooQuote kosdaqQuote = fetchYahooQuote(client, "^KQ11");
             Double usdKrw = fetchUsdKrw(client);
 
-            IndicatorResponse response = new IndicatorResponse(usdKrw, BOK_BASE_RATE, kospi, kosdaq, LocalDateTime.now());
+            List<IndicatorItem> items = buildItems(usdKrw, kospiQuote, kosdaqQuote);
+            String insight = buildInsight(usdKrw, kospiQuote, kosdaqQuote);
+
+            IndicatorResponse response = new IndicatorResponse("OK", insight, items, LocalDateTime.now());
             cacheResponse(response);
             return response;
         } catch (Exception e) {
@@ -54,53 +64,36 @@ public class IndicatorService {
         }
     }
 
-    private Double fetchYahooPrice(RestClient client, String symbol) {
-        try {
-            String url = "https://query1.finance.yahoo.com/v8/finance/chart/"
-                    + java.net.URLEncoder.encode(symbol, java.nio.charset.StandardCharsets.UTF_8)
-                    + "?range=1d&interval=1d";
-            JsonNode root = client.get()
-                    .uri(java.net.URI.create(url))
-                    .header("User-Agent", "Mozilla/5.0")
-                    .retrieve()
-                    .body(JsonNode.class);
+    // ──────────────────────────────────────────────────────────────────────────
+    // 헬퍼 메서드
+    // ──────────────────────────────────────────────────────────────────────────
 
-            if (root == null) return null;
-            JsonNode meta = root.path("chart").path("result").path(0).path("meta");
-            double price = meta.path("regularMarketPrice").asDouble(0.0);
-            return price > 0 ? price : null;
-        } catch (RestClientException e) {
-            log.debug("Yahoo Finance fetch failed for {}: {}", symbol, e.getMessage());
-            return null;
-        }
+    private List<IndicatorItem> buildItems(Double usdKrw, YahooQuote kospi, YahooQuote kosdaq) {
+        List<IndicatorItem> items = new ArrayList<>();
+
+        items.add(IndicatorItem.of(
+                "USD_KRW", "달러/원",
+                usdKrw, "원",
+                null, null)); // 환율은 전일 대비 없음
+
+        items.add(IndicatorItem.of(
+                "KOSPI", "코스피",
+                kospi != null ? kospi.price() : null, "pt",
+                kospi != null ? kospi.change() : null,
+                kospi != null ? kospi.changePct() : null));
+
+        items.add(IndicatorItem.of(
+                "KOSDAQ", "코스닥",
+                kosdaq != null ? kosdaq.price() : null, "pt",
+                kosdaq != null ? kosdaq.change() : null,
+                kosdaq != null ? kosdaq.changePct() : null));
+
+        items.add(IndicatorItem.of(
+                "BOK_RATE", "기준금리",
+                BOK_BASE_RATE, "%",
+                null, null));
+
+        return items;
     }
 
-    private Double fetchUsdKrw(RestClient client) {
-        try {
-            JsonNode root = client.get()
-                    .uri(EXCHANGE_RATE_URL)
-                    .retrieve()
-                    .body(JsonNode.class);
-
-            if (root == null) return null;
-            double krw = root.path("rates").path("KRW").asDouble(0.0);
-            return krw > 0 ? krw : null;
-        } catch (RestClientException e) {
-            log.debug("Exchange rate fetch failed: {}", e.getMessage());
-            return null;
-        }
-    }
-
-    private void cacheResponse(IndicatorResponse response) {
-        try {
-            String json = objectMapper.writeValueAsString(response);
-            redisTemplate.opsForValue().set(REDIS_KEY, json, CACHE_TTL);
-        } catch (JacksonException e) {
-            log.warn("Failed to cache indicator response: {}", e.getMessage());
-        }
-    }
-
-    private IndicatorResponse mockResponse() {
-        return new IndicatorResponse(1380.0, BOK_BASE_RATE, 2600.0, 860.0, LocalDateTime.now());
-    }
-}
+    private String buildInsight(Double usdKrw, Y

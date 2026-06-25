@@ -9,8 +9,4 @@ public record GeneratedQuiz(
         QuizType type,
         QuizPurpose purpose,
         String question,
-        List<String> options,
-        String correctAnswer,
-        String explanation
-) {
-}
+        List<S

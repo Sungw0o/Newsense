@@ -1,16 +1,22 @@
 # Newsense
 
-> AI 요약, 퀴즈, 학습 이력으로 경제 뉴스를 학습 콘텐츠로 바꾸는 금융·경제 문해력 플랫폼
+> AI 요약·퀴즈·RAG 기반 경제 뉴스 학습 플랫폼 — 뉴스를 읽고, 개념을 익히고, 퀴즈로 점검합니다.
 
 <p align="center">
   <a href="https://sonarcloud.io/summary/new_code?id=Sungw0o_Newsense">
-    <img src="https://sonarcloud.io/api/project_badges/measure?project=Sungw0o_Newsense&metric=alert_status" alt="SonarCloud Quality Gate" />
+    <img src="https://sonarcloud.io/api/project_badges/measure?project=Sungw0o_Newsense&metric=alert_status" alt="Quality Gate Status" />
   </a>
   <a href="https://sonarcloud.io/summary/new_code?id=Sungw0o_Newsense">
-    <img src="https://sonarcloud.io/api/project_badges/measure?project=Sungw0o_Newsense&metric=coverage" alt="SonarCloud Coverage" />
+    <img src="https://sonarcloud.io/api/project_badges/measure?project=Sungw0o_Newsense&metric=coverage" alt="Coverage" />
   </a>
   <a href="https://sonarcloud.io/summary/new_code?id=Sungw0o_Newsense">
-    <img src="https://sonarcloud.io/api/project_badges/measure?project=Sungw0o_Newsense&metric=vulnerabilities" alt="SonarCloud Vulnerabilities" />
+    <img src="https://sonarcloud.io/api/project_badges/measure?project=Sungw0o_Newsense&metric=bugs" alt="Bugs" />
+  </a>
+  <a href="https://sonarcloud.io/summary/new_code?id=Sungw0o_Newsense">
+    <img src="https://sonarcloud.io/api/project_badges/measure?project=Sungw0o_Newsense&metric=vulnerabilities" alt="Vulnerabilities" />
+  </a>
+  <a href="https://sonarcloud.io/summary/new_code?id=Sungw0o_Newsense">
+    <img src="https://sonarcloud.io/api/project_badges/measure?project=Sungw0o_Newsense&metric=code_smells" alt="Code Smells" />
   </a>
 </p>
 
@@ -18,68 +24,33 @@
 
 **Newsense**는 청년층과 학생이 경제 뉴스를 읽으며 핵심 개념을 익히고, AI 퀴즈와 오답노트로 이해도를 점검할 수 있는 자기주도 경제 학습 서비스입니다.
 
-뉴스 수집부터 본문 정제, AI 요약, 카테고리 분류, 퀴즈 생성, 학습 이력 기록까지 하나의 흐름으로 연결해 경제 문해력 학습 경험을 제공합니다.
+뉴스 수집 → 본문 정제 → AI 멀티 모델 파이프라인(요약·분류·퀴즈) → RAG 기반 경제 용어 검색 → 학습 이력·오답노트 루프까지, 경제 문해력 향상을 위한 전 과정을 하나의 흐름으로 연결합니다.
 
 ## 주요 기능
 
 | 기능 | 설명 |
 | --- | --- |
-| 뉴스 피드 | 경제 기사 목록, 검색, 카테고리 필터, 최신 업데이트 정보 제공 |
-| AI 요약 | 기사 본문 기반 3줄 요약 및 관리자 수동 요약 생성 지원 |
-| AI 퀴즈 | 기사 내용과 경제 개념을 바탕으로 OX/객관식 퀴즈 생성 |
-| RAG 검색 | 기사 청크와 경제 용어 기반 검색 및 추천 |
-| 학습 이력 | 읽기 완료, 퀴즈 풀이, 리뷰 작성 기록 관리 |
-| 오답노트 | 틀린 문제와 취약 개념을 누적해 복습 흐름 제공 |
-| 커뮤니티 | 경제 이슈 게시글, 댓글, 좋아요 기능 제공 |
-| 소셜 로그인 | Google, Naver, Kakao OAuth2 로그인과 JWT 인증 연동 |
-| 관리자 기능 | 기사 관리, AI 요약 상태 모니터링, 권한 기반 접근 제어 |
+| 뉴스 피드 | 카테고리·난이도 필터와 함께 경제 기사 목록 제공 |
+| AI 3줄 요약 | Gemini + GPT 멀티 모델로 본문 핵심 수치·인과관계 포함 요약 생성 |
+| AI 퀴즈 | 개념 이해 / 사실 확인 / 인과 추론 3단계 OX·객관식 문항 자동 생성 |
+| Generator-Critic 자가 교정 | 퀴즈 생성 후 별도 모델이 정답·근거·선택지 품질 검증 및 재출제 |
+| RAG 추천 | 기사 청크 + 기재부 경제사전 임베딩 기반 하이브리드 검색 및 취약 개념 추천 |
+| 학습 이력 | 읽기 완료·퀴즈 풀이·리뷰 작성 이력 기록 및 통계 |
+| 오답노트 | 틀린 문제와 취약 개념 누적 관리, 복습 흐름 제공 |
+| 커뮤니티 | 경제 이슈 게시글·댓글·좋아요 |
+| 소셜 로그인 | Google · Naver · Kakao OAuth2 + JWT (Access Token + HttpOnly Refresh Cookie) |
+| 관리자 | 기사 수집 제어, AI 요약 상태 모니터링, 회원 관리, 권한 기반 접근 제어 |
+| 경제 지표 | 주요 경제 지표 자동 수집 및 노출 |
 
 ## 기술 스택
 
 | 구분 | 스택 |
 | --- | --- |
-| 언어 | <img src="https://img.shields.io/badge/Java_21-FFFFFF?style=for-the-badge&logo=openjdk&logoColor=E76F00" alt="Java 21" /> <img src="https://img.shields.io/badge/JavaScript-FFFFFF?style=for-the-badge&logo=javascript&logoColor=F7DF1E" alt="JavaScript" /> |
-| 프레임워크 | <img src="https://img.shields.io/badge/Spring_Boot-FFFFFF?style=for-the-badge&logo=springboot&logoColor=6DB33F" alt="Spring Boot" /> <img src="https://img.shields.io/badge/Spring_Security-FFFFFF?style=for-the-badge&logo=springsecurity&logoColor=6DB33F" alt="Spring Security" /> <img src="https://img.shields.io/badge/Vue_3-FFFFFF?style=for-the-badge&logo=vuedotjs&logoColor=4FC08D" alt="Vue 3" /> <img src="https://img.shields.io/badge/Vite-FFFFFF?style=for-the-badge&logo=vite&logoColor=646CFF" alt="Vite" /> <img src="https://img.shields.io/badge/Pinia-FFFFFF?style=for-the-badge&logo=pinia&logoColor=FFD859" alt="Pinia" /> |
-| DB | <img src="https://img.shields.io/badge/MySQL_8-FFFFFF?style=for-the-badge&logo=mysql&logoColor=4479A1" alt="MySQL" /> <img src="https://img.shields.io/badge/MongoDB_7-FFFFFF?style=for-the-badge&logo=mongodb&logoColor=47A248" alt="MongoDB" /> <img src="https://img.shields.io/badge/Redis_7-FFFFFF?style=for-the-badge&logo=redis&logoColor=DC382D" alt="Redis" /> |
-| 기타 API | <img src="https://img.shields.io/badge/SSAFY_GMS-FFFFFF?style=for-the-badge&logo=openai&logoColor=412991" alt="SSAFY GMS" /> <img src="https://img.shields.io/badge/Naver_API-FFFFFF?style=for-the-badge&logo=naver&logoColor=03C75A" alt="Naver API" /> <img src="https://img.shields.io/badge/NewsAPI-FFFFFF?style=for-the-badge&logo=rss&logoColor=FFA500" alt="NewsAPI" /> <img src="https://img.shields.io/badge/OAuth2-FFFFFF?style=for-the-badge&logo=auth0&logoColor=EB5424" alt="OAuth2" /> |
-
-## 시스템 흐름
-
-```mermaid
-flowchart LR
-    Crawler["뉴스 수집<br/>Naver / NewsAPI / RSS"] --> Cleaner["본문 정제<br/>중복 제거"]
-    Cleaner --> AI["AI 처리<br/>요약 / 분류 / 퀴즈"]
-    AI --> Store["데이터 저장<br/>MySQL / MongoDB / Redis"]
-    Store --> API["Spring Boot API"]
-    API --> Web["Vue SPA"]
-    Web --> User["학습자"]
-    API --> Admin["관리자"]
-```
-
-## 프로젝트 구조
-
-```text
-newsense/
-├── backend/                 # Spring Boot API, AI, OAuth2, 크롤러, 학습 도메인
-├── frontend/                # Vue 3 SPA, Pinia store, 화면 컴포넌트
-├── infra/nginx/             # EC2 Docker Compose용 Nginx 프록시 설정
-├── docs/                    # 실행, 배포, AI/RAG 운영 문서
-├── docker-compose.yml       # 백엔드 운영 컨테이너 구성
-└── .env.example             # Docker Compose 환경변수 예시
-```
-
-## 문서
-
-| 문서 | 내용 |
-| --- | --- |
-| [실행 가이드](docs/run-guide.md) | 로컬, Docker Compose, 프론트엔드 실행 방법 |
-| [배포 환경변수](docs/deployment-secrets.md) | GitHub Secrets/Variables와 EC2 `.env` 관리 |
-| [Docker Compose](docs/docker-compose.md) | Compose 기반 백엔드 실행 및 운영 |
-| [AI 파이프라인 전략](docs/ai-pipeline-strategy.md) | 비용 효율형 멀티 모델 요약/퀴즈 전략 |
-| [RAG 문서](docs/rag.md) | 기사 청크 검색과 추천 구조 |
-
-## API 문서
-
-로컬 백엔드 실행 후 Swagger UI에서 전체 API를 확인할 수 있습니다.
-
-[http://localhost:8080/swagger-ui/index.html](http://localhost:8080/swagger-ui/index.html)
+| 언어 | ![Java 21](https://img.shields.io/badge/Java_21-ED8B00?style=flat-square&logo=openjdk&logoColor=white) ![JavaScript](https://img.shields.io/badge/JavaScript-F7DF1E?style=flat-square&logo=javascript&logoColor=black) |
+| 백엔드 | ![Spring Boot 4.1](https://img.shields.io/badge/Spring_Boot_4.1-6DB33F?style=flat-square&logo=springboot&logoColor=white) ![Spring Security](https://img.shields.io/badge/Spring_Security-6DB33F?style=flat-square&logo=springsecurity&logoColor=white) ![Spring Data JPA](https://img.shields.io/badge/Spring_Data_JPA-6DB33F?style=flat-square&logo=spring&logoColor=white) |
+| 프론트엔드 | ![Vue 3](https://img.shields.io/badge/Vue_3-4FC08D?style=flat-square&logo=vuedotjs&logoColor=white) ![Vite](https://img.shields.io/badge/Vite-646CFF?style=flat-square&logo=vite&logoColor=white) ![Pinia](https://img.shields.io/badge/Pinia-FFD859?style=flat-square&logo=pinia&logoColor=black) ![Tailwind CSS](https://img.shields.io/badge/Tailwind_CSS-06B6D4?style=flat-square&logo=tailwindcss&logoColor=white) |
+| 데이터베이스 | ![MySQL 8](https://img.shields.io/badge/MySQL_8-4479A1?style=flat-square&logo=mysql&logoColor=white) ![MongoDB 7](https://img.shields.io/badge/MongoDB_7-47A248?style=flat-square&logo=mongodb&logoColor=white) ![Redis 7](https://img.shields.io/badge/Redis_7-DC382D?style=flat-square&logo=redis&logoColor=white) |
+| AI | ![OpenAI](https://img.shields.io/badge/GPT--4o_mini-412991?style=flat-square&logo=openai&logoColor=white) ![OpenAI](https://img.shields.io/badge/o3--mini-412991?style=flat-square&logo=openai&logoColor=white) ![Google Gemini](https://img.shields.io/badge/Gemini_2.5_Flash_Lite-4285F4?style=flat-square&logo=google&logoColor=white) ![OpenAI](https://img.shields.io/badge/text--embedding--3--large-412991?style=flat-square&logo=openai&logoColor=white) |
+| 인프라 | ![AWS EC2](https://img.shields.io/badge/AWS_EC2-FF9900?style=flat-square&logo=amazonec2&logoColor=white) ![Docker](https://img.shields.io/badge/Docker-2496ED?style=flat-square&logo=docker&logoColor=white) ![Nginx](https://img.shields.io/badge/Nginx-009639?style=flat-square&logo=nginx&logoColor=white) ![AWS S3](https://img.shields.io/badge/AWS_S3-569A31?style=flat-square&logo=amazons3&logoColor=white) ![CloudFront](https://img.shields.io/badge/CloudFront-FF9900?style=flat-square&logo=amazonaws&logoColor=white) |
+| 외부 API | ![Naver](https://img.shields.io/badge/Naver_API-03C75A?style=flat-square&logo=naver&logoColor=white) ![NewsAPI](https://img.shields.io/badge/NewsAPI-FFA500?style=flat-square&logo=rss&logoColor=white) ![OAuth2](https://img.shields.io/badge/OAuth2-EB5424?style=flat-square&logo=auth0&logoColor=white) |
+| 품질 | ![SonarCloud](https://im

@@ -24,6 +24,7 @@ const nextQuiz = () => quizStore.nextQuiz()
 const prevQuiz = () => quizStore.prevQuiz()
 
 const isSubmitting = ref(false)
+const fetchError = ref(false)
 
 const submitQuiz = async () => {
   if (isSubmitting.value) return
@@ -46,6 +47,7 @@ onMounted(async () => {
     await quizStore.fetchQuizzes(articleId)
   } catch (err) {
     console.error('Failed to fetch quizzes:', err)
+    fetchError.value = true
   }
 })
 </script>
@@ -86,6 +88,17 @@ onMounted(async () => {
     <div v-if="isLoading" class="center-state">
       <div class="spinner"></div>
       <p class="eyebrow" style="margin-top:16px; justify-content:center;">AI가 퀴즈를 생성하는 중</p>
+    </div>
+
+    <!-- Error -->
+    <div v-else-if="fetchError" class="center-state">
+      <p style="font-size:24px; margin-bottom:12px;">😓</p>
+      <p style="font-size:15px; font-weight:700; color:var(--ink);">퀴즈를 준비하지 못했어요.</p>
+      <p style="font-size:13px; color:var(--ink-2); margin-top:6px;">잠시 후 다시 시도해 주세요.</p>
+      <button
+        style="margin-top:20px; padding:10px 20px; border-radius:10px; border:1px solid rgba(0,0,0,0.12); background:#fff; cursor:pointer; font-size:13px; font-weight:700;"
+        @click="router.push(`/articles/${articleId}`)"
+      >기사로 돌아가기</button>
     </div>
 
     <!-- Empty -->
@@ -405,35 +418,4 @@ onMounted(async () => {
   display: flex;
   flex-direction: column;
   align-items: center;
-  padding: 80px 0;
-  gap: 16px;
-}
-
-.spinner {
-  width: 32px; height: 32px;
-  border: 3px solid rgba(0, 132, 255, 0.15);
-  border-top-color: #0084ff;
-  border-radius: 50%;
-  animation: spin .7s linear infinite;
-}
-@keyframes spin { to { transform: rotate(360deg); } }
-
-/* Tag pills (local) */
-.tag-pill {
-  display: inline-flex;
-  align-items: center;
-  padding: 4px 10px;
-  border-radius: 999px;
-  font-family: 'Nanum Gothic', monospace;
-  font-size: 11px;
-  font-weight: 600;
-  letter-spacing: 0.3px;
-}
-.tag-eco { background: #E8FBF1; color: #1f7a3a; }
-
-@media (max-width: 640px) {
-  .qcard { padding: 22px 18px 20px; }
-  .q-text { font-size: 20px; }
-  .quiz-shell { padding: 24px 0 60px; }
-}
-</style>
+  padding: 80p

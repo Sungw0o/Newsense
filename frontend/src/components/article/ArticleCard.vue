@@ -8,15 +8,38 @@ const props = defineProps({
 
 const emit = defineEmits(['click'])
 
+// 카테고리 → 태그 클래스
 const categoryTag = computed(() => {
   const map = {
     '거시경제': 'macro',
+    '금융': 'finance',
     '금융/투자': 'finance',
+    '부동산': 'realestate',
+    '주식': 'stock',
+    '환율': 'exchange',
     '정책/제도': 'policy',
-    '기업/산업': 'stock',
+    '기업/산업': 'industry',
     '글로벌경제': 'global',
+    '통화정책': 'monetary',
   }
   return map[props.article.category] ?? 'default'
+})
+
+// 카테고리별 placeholder 아이콘 + 그라디언트
+const categoryPlaceholder = computed(() => {
+  const map = {
+    '거시경제':  { emoji: '📈', from: '#e0f2fe', to: '#bae6fd' },
+    '금융':      { emoji: '💰', from: '#e8f2ff', to: '#bfdbfe' },
+    '금융/투자': { emoji: '💰', from: '#e8f2ff', to: '#bfdbfe' },
+    '부동산':    { emoji: '🏠', from: '#fef3c7', to: '#fde68a' },
+    '주식':      { emoji: '📊', from: '#fff4e5', to: '#fed7aa' },
+    '환율':      { emoji: '💱', from: '#ecfdf5', to: '#bbf7d0' },
+    '정책/제도': { emoji: '⚖️', from: '#f0ebff', to: '#ddd6fe' },
+    '기업/산업': { emoji: '🏭', from: '#fef2f2', to: '#fecaca' },
+    '글로벌경제':{ emoji: '🌐', from: '#e8fbf1', to: '#bbf7d0' },
+    '통화정책':  { emoji: '🏦', from: '#fdf4ff', to: '#f5d0fe' },
+  }
+  return map[props.article.category] ?? { emoji: '📰', from: '#f1f5f9', to: '#e2e8f0' }
 })
 
 const readTime = computed(() => props.article.estimatedMinutes ?? props.article.readTime ?? 3)
@@ -46,6 +69,15 @@ const viewCount = computed(() => {
     tabindex="0"
     @keydown.enter="emit('click', article.articleId)"
   >
+    <!-- 카테고리 thumbnail placeholder -->
+    <div
+      class="card-thumb"
+      :style="`background: linear-gradient(135deg, ${categoryPlaceholder.emoji ? categoryPlaceholder.from : '#f1f5f9'} 0%, ${categoryPlaceholder.to} 100%)`"
+    >
+      <span class="thumb-emoji">{{ categoryPlaceholder.emoji }}</span>
+      <span v-if="article.difficulty" class="thumb-difficulty">{{ article.difficulty }}</span>
+    </div>
+
     <div class="card-top">
       <span class="tag" :class="categoryTag">{{ article.category || '경제' }}</span>
       <span class="meta-time">{{ readTime }}분 읽기</span>
@@ -67,7 +99,8 @@ const viewCount = computed(() => {
   position: relative;
   display: flex;
   flex-direction: column;
-  padding: 22px;
+  overflow: hidden;
+  padding: 0; /* thumbnail이 최상단 차지, 내부 요소에 개별 padding */
   background: rgba(255, 255, 255, 0.88);
   border: 1px solid rgba(0, 0, 0, 0.08);
   border-radius: 12px;
@@ -76,6 +109,62 @@ const viewCount = computed(() => {
   color: inherit;
   transition: transform .2s ease, box-shadow .2s ease, border-color .2s ease;
   min-height: 248px;
+}
+
+/* 카테고리 placeholder 썸네일 */
+.card-thumb {
+  height: 72px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 18px;
+  flex-shrink: 0;
+}
+
+.thumb-emoji {
+  font-size: 28px;
+  line-height: 1;
+  user-select: none;
+}
+
+.thumb-difficulty {
+  font-size: 11px;
+  font-weight: 800;
+  padding: 3px 9px;
+  border-radius: 999px;
+  background: rgba(255,255,255,0.65);
+  color: #4a5161;
+  backdrop-filter: blur(4px);
+}
+
+.card .card-top,
+.card h3,
+.card .summary,
+.card .card-foot {
+  padding-left: 18px;
+  padding-right: 18px;
+}
+
+.card .card-top {
+  padding-top: 14px;
+  margin-bottom: 10px;
+}
+
+.card .summary {
+  padding-bottom: 0;
+}
+
+.card .card-foot {
+  padding-bottom: 16px;
+}
+
+.dark .card-thumb {
+  filter: brightness(0.75) saturate(0.8);
+}
+
+.dark .thumb-difficulty {
+  background: rgba(0,0,0,0.35);
+  color: #c8d0e0;
 }
 
 .card:hover {
@@ -189,32 +278,3 @@ h3 {
 }
 
 .dark .card-foot {
-  border-color: rgba(255, 255, 255, 0.1);
-}
-
-.view-count,
-.pub-date {
-  white-space: nowrap;
-}
-
-@media (max-width: 900px) {
-  .card.featured {
-    grid-column: span 2;
-  }
-}
-
-@media (max-width: 640px) {
-  .card.featured {
-    grid-column: span 1;
-  }
-
-  .card.featured h3,
-  .card.featured .summary {
-    max-width: 100%;
-  }
-
-  .card.featured h3 {
-    font-size: 20px;
-  }
-}
-</style>

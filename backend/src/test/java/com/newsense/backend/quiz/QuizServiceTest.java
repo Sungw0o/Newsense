@@ -182,8 +182,4 @@ class QuizServiceTest {
         given(quizRepository.findByIdAndIsActiveTrue(404L)).willReturn(Optional.empty());
 
         assertThatThrownBy(() -> quizService.submitAnswer(404L, 7L, new QuizAnswerRequest("O")))
-                .isInstanceOf(CustomException.class)
-                .satisfies(error -> assertThat(((CustomException) error).getErrorCode())
-                        .isEqualTo(ErrorCode.QUIZ_NOT_FOUND));
-    }
-}
+               

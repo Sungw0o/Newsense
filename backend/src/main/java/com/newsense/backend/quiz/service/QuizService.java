@@ -253,10 +253,4 @@ public class QuizService {
                 .toUpperCase(Locale.ROOT);
     }
 
-    private List<String> getRelatedTermNames(Long articleId) {
-        return articleTermRepository.findAllByArticleIdWithTerm(articleId).stream()
-                .map(ArticleTerm::getTerm)
-                .map(term -> term.getName())
-                .toList();
-    }
-}
+    private List<String> getRe

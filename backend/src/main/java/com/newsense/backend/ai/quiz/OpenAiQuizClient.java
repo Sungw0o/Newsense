@@ -207,29 +207,4 @@ public class OpenAiQuizClient {
 
         Map<String, Object> quizSchema = Map.of(
                 "type", "object",
-                "additionalProperties", false,
-                "properties", quizProperties,
-                "required", List.of("type", "purpose", "question", "options", "correctAnswer", "explanation")
-        );
-        Map<String, Object> schema = Map.of(
-                "type", "object",
-                "additionalProperties", false,
-                "properties", Map.of("quizzes", Map.of(
-                        "type", "array",
-                        "items", quizSchema,
-                        "minItems", 3,
-                        "maxItems", 3
-                )),
-                "required", List.of("quizzes")
-        );
-
-        return Map.of(
-                "type", "json_schema",
-                "json_schema", Map.of(
-                        "name", "article_quizzes",
-                        "strict", true,
-                        "schema", schema
-                )
-        );
-    }
-}
+                "additiona

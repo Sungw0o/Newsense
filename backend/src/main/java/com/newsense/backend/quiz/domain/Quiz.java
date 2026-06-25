@@ -92,24 +92,4 @@ public class Quiz {
             String question,
             List<String> options,
             String correctAnswer,
-            String explanation,
-            int displayOrder
-    ) {
-        Quiz quiz = new Quiz();
-        quiz.article = article;
-        quiz.type = type;
-        quiz.purpose = purpose == null ? QuizPurpose.BASIC_CONCEPT : purpose;
-        quiz.question = question;
-        quiz.options = new ArrayList<>(options);
-        quiz.correctAnswer = correctAnswer;
-        quiz.explanation = explanation;
-        quiz.displayOrder = displayOrder;
-        quiz.isActive = true;
-        quiz.generatedAt = LocalDateTime.now();
-        return quiz;
-    }
-
-    public void deactivate() {
-        this.isActive = false;
-    }
-}
+            St
