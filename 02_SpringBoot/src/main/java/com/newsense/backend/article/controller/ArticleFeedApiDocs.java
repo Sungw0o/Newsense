@@ -28,7 +28,7 @@ public interface ArticleFeedApiDocs {
             @Parameter(description = "Keyword search in title and summary") @RequestParam(required = false) String keyword,
             @Parameter(description = "Zero-based page number") @RequestParam(defaultValue = "0") @Min(0) int page,
             @Parameter(description = "Page size (1-100)") @RequestParam(defaultValue = "20") @Min(1) @Max(100) int size,
-            @Parameter(description = "Feed sort order") @RequestParam(defaultValue = "LATEST") ArticleFeedSort sort);
+            @Parameter(description = "Feed sort order") @RequestParam(defaultValue = "MOST_VIEWED") ArticleFeedSort sort);
 
     @Operation(summary = "Get article categories", description = "Returns categories and article counts.")
     @GetMapping("/api/v1/categories")

@@ -11,7 +11,7 @@ export const useArticleStore = defineStore('article', {
       category: '',
       difficulty: '',
       keyword: '',
-      sort: 'LATEST',
+      sort: 'MOST_VIEWED',
       page: 0,
       size: 20,
     },
