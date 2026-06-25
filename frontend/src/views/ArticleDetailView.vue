@@ -6,6 +6,7 @@ import { useArticleStore } from '../stores/useArticleStore'
 import BaseButton from '../components/common/BaseButton.vue'
 import BaseBadge from '../components/common/BaseBadge.vue'
 import LoadingSpinner from '../components/common/LoadingSpinner.vue'
+import { splitArticleParagraphs, splitSummaryItems } from '../utils/articleText'
 
 const route = useRoute()
 const router = useRouter()
@@ -13,6 +14,7 @@ const articleStore = useArticleStore()
 
 const articleId = computed(() => route.params.id)
 const selectedTerm = ref(null)
+const isArticleExpanded = ref(false)
 
 const { selectedArticle, selectedArticleTerms, isLoading } = storeToRefs(articleStore)
 
@@ -30,14 +32,21 @@ const termPattern = computed(() => {
   return new RegExp(`(${names.map(escapeRegExp).join('|')})`, 'g')
 })
 
+const summaryItems = computed(() => splitSummaryItems(selectedArticle.value?.summary))
+const articleParagraphTexts = computed(() => splitArticleParagraphs(selectedArticle.value?.content))
+const canExpandArticle = computed(() => articleParagraphTexts.value.length > 5)
+const visibleArticleParagraphs = computed(() => {
+  if (isArticleExpanded.value || !canExpandArticle.value) {
+    return articleParagraphTexts.value
+  }
+  return articleParagraphTexts.value.slice(0, 5)
+})
 // 텍스트에서 대괄호 [용어] 패턴을 감지하여 클릭 가능한 엘리먼트로 변환
 const formattedParagraphs = computed(() => {
-  const selected = selectedArticle.value
-  if (!selected || !selected.content) return []
+  if (visibleArticleParagraphs.value.length === 0) return []
   
   const highlightedTerms = new Set()
-  const paragraphs = selected.content.split('\n\n')
-  return paragraphs.map(p => {
+  return visibleArticleParagraphs.value.map(p => {
     const regex = termPattern.value
     if (!regex) {
       return [{ type: 'text', value: p }]
@@ -115,6 +124,7 @@ const articleMetaText = computed(() => {
 watch(articleId, async (newId) => {
   if (!newId) return
   selectedTerm.value = null
+  isArticleExpanded.value = false
   try {
     await articleStore.fetchArticleDetail(newId)
     // 기사 읽음 완료 처리 API 호출
@@ -161,9 +171,9 @@ watch(articleId, async (newId) => {
       </div>
 
       <!-- Article & Term Split Layout -->
-      <div class="grid lg:grid-cols-3 gap-8">
+      <div class="grid xl:grid-cols-[minmax(0,760px)_minmax(280px,1fr)] lg:grid-cols-[minmax(0,720px)_minmax(260px,1fr)] gap-8 justify-center">
         <!-- Main Content (2/3 width) -->
-        <article class="lg:col-span-2 bg-white rounded-3xl border border-slate-200/80 p-8 shadow-premium">
+        <article class="bg-white rounded-3xl border border-slate-200/80 p-6 md:p-8 shadow-premium">
           <!-- Meta -->
           <div class="flex items-center gap-2 mb-4 flex-wrap">
             <BaseBadge :value="selectedArticle.category" />
@@ -190,20 +200,24 @@ watch(articleId, async (newId) => {
           </div>
 
           <!-- AI 3-line Summary -->
-          <div v-if="selectedArticle.summary" class="mb-8 p-4 bg-amber-50 border border-amber-200/70 rounded-2xl">
+          <div v-if="summaryItems.length" class="mb-8 p-5 bg-amber-50 border border-amber-200/70 rounded-2xl">
             <div class="flex items-center gap-2 mb-2">
               <span class="text-base">💡</span>
               <span class="text-xs font-bold text-amber-700 uppercase tracking-wider">AI 3줄 요약</span>
             </div>
-            <p class="text-sm text-amber-900 leading-relaxed whitespace-pre-line font-light">{{ selectedArticle.summary }}</p>
+            <ol class="summary-list">
+              <li v-for="(item, index) in summaryItems" :key="`${index}-${item}`">
+                {{ item }}
+              </li>
+            </ol>
           </div>
 
           <!-- Body Text with Clickable Terms -->
-          <div class="space-y-6 text-slate-700 leading-relaxed font-light text-base md:text-lg">
+          <div class="article-body">
             <p 
               v-for="(parts, pIdx) in formattedParagraphs" 
               :key="pIdx"
-              class="whitespace-pre-line"
+              class="article-paragraph"
             >
               <template v-for="(part, partIdx) in parts" :key="partIdx">
                 <span v-if="part.type === 'text'">{{ part.value }}</span>
@@ -218,6 +232,16 @@ watch(articleId, async (newId) => {
                 <span v-else class="font-medium text-slate-900">{{ part.value }}</span>
               </template>
             </p>
+          </div>
+
+          <div v-if="canExpandArticle" class="mt-8 flex justify-center">
+            <button
+              type="button"
+              class="rounded-full border border-slate-200 bg-slate-50 px-5 py-2 text-sm font-semibold text-slate-600 transition-colors duration-200 hover:border-primary-300 hover:bg-primary-50 hover:text-primary-700"
+              @click="isArticleExpanded = !isArticleExpanded"
+            >
+              {{ isArticleExpanded ? '기사 접기' : '전체 기사 펼치기' }}
+            </button>
           </div>
 
           <!-- Related Listed Companies -->
@@ -315,5 +339,64 @@ watch(articleId, async (newId) => {
 @keyframes fadeIn {
   from { opacity: 0; transform: translateY(8px); }
   to { opacity: 1; transform: translateY(0); }
+}
+
+.summary-list {
+  display: grid;
+  gap: 10px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  color: #78350f;
+  font-size: 14px;
+  line-height: 1.7;
+  word-break: keep-all;
+}
+
+.summary-list li {
+  display: grid;
+  grid-template-columns: 24px minmax(0, 1fr);
+  gap: 8px;
+  align-items: start;
+}
+
+.summary-list li::before {
+  content: counter(list-item);
+  display: inline-flex;
+  width: 24px;
+  height: 24px;
+  align-items: center;
+  justify-content: center;
+  border-radius: 999px;
+  background: #f59e0b;
+  color: #fff7ed;
+  font-size: 12px;
+  font-weight: 800;
+  line-height: 1;
+}
+
+.article-body {
+  max-width: 720px;
+  color: #334155;
+  font-size: 16px;
+  font-weight: 400;
+  line-height: 1.85;
+  word-break: keep-all;
+  overflow-wrap: anywhere;
+}
+
+.article-paragraph {
+  margin: 0;
+}
+
+.article-paragraph + .article-paragraph {
+  margin-top: 26px;
+}
+
+@media (min-width: 768px) {
+  .article-body {
+    font-size: 17px;
+    line-height: 1.9;
+  }
 }
 </style>
