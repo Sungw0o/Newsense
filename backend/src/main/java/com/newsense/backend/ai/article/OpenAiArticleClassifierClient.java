@@ -27,6 +27,8 @@ import java.util.Map;
 public class OpenAiArticleClassifierClient {
 
     private static final int MAX_ARTICLE_LENGTH = 12_000;
+    private static final int SUMMARY_LINE_LIMIT = 3;
+    private static final int SUMMARY_LINE_MAX_LENGTH = 80;
     private static final String INSTRUCTIONS = """
             당신은 한국 청년층을 위한 경제 뉴스 큐레이터입니다.
             제공된 기사 제목과 본문만 근거로 기사 메타데이터를 분류하세요.
@@ -51,6 +53,16 @@ public class OpenAiArticleClassifierClient {
             상장 종목이 없거나 불확실하면 빈 배열을 반환하세요.
             """;
 
+    private static final String SUMMARY_FORMAT_INSTRUCTIONS = """
+            Summary format is mandatory:
+            - Return summary as exactly 3 newline-separated Korean lines.
+            - Line 1: event or change.
+            - Line 2: the most important number, evidence, or factual basis.
+            - Line 3: meaning or impact.
+            - Each line must be 80 Korean characters or fewer.
+            - Use only article-grounded facts. Do not include investment advice, hype, or speculation.
+            - Do not prefix the lines with bullets, numbers, labels, or markdown.
+            """;
     private final RestClient openAiRestClient;
     private final OpenAiProperties properties;
     private final AiPipelineProperties pipelineProperties;
@@ -65,7 +77,7 @@ public class OpenAiArticleClassifierClient {
         Map<String, Object> request = Map.of(
                 "model", pipelineProperties.articleClassifierModel(properties.model()),
                 "messages", List.of(
-                        Map.of("role", "developer", "content", INSTRUCTIONS),
+                        Map.of("role", "developer", "content", INSTRUCTIONS + "\n" + SUMMARY_FORMAT_INSTRUCTIONS),
                         Map.of("role", "user", "content", createInput(
                                 title,
                                 articleText,
@@ -92,7 +104,7 @@ public class OpenAiArticleClassifierClient {
                 throw new IllegalArgumentException("Summary is empty");
             }
             List<RelatedStockInfo> relatedStocks = parseRelatedStocks(output.path("related_stocks"));
-            return new ArticleClassificationResult(category, difficulty, summary.trim(), relatedStocks);
+            return new ArticleClassificationResult(category, difficulty, normalizeSummary(summary), relatedStocks);
         } catch (RestClientException | JacksonException | IllegalArgumentException exception) {
             log.error("AI article classification failed: {}", exception.getMessage());
             throw new CustomException(ErrorCode.AI_CLASSIFICATION_FAILED);
@@ -143,6 +155,44 @@ public class OpenAiArticleClassifierClient {
         return articleText.length() <= MAX_ARTICLE_LENGTH
                 ? articleText
                 : articleText.substring(0, MAX_ARTICLE_LENGTH);
+    }
+
+    private String normalizeSummary(String summary) {
+        List<String> lines = splitSummaryLines(summary);
+        if (lines.isEmpty()) {
+            throw new IllegalArgumentException("Summary is empty");
+        }
+        return String.join("\n", lines.stream()
+                .limit(SUMMARY_LINE_LIMIT)
+                .map(this::trimSummaryLine)
+                .toList());
+    }
+
+    private List<String> splitSummaryLines(String summary) {
+        String normalized = summary == null ? "" : summary.trim();
+        if (normalized.isBlank()) {
+            return List.of();
+        }
+
+        List<String> lineItems = java.util.Arrays.stream(normalized.split("\\R+"))
+                .map(line -> line.replaceFirst("^\\s*\\d+[.)]\\s*", "").trim())
+                .filter(line -> !line.isBlank())
+                .toList();
+        if (lineItems.size() > 1) {
+            return lineItems;
+        }
+
+        return java.util.Arrays.stream(normalized.split("(?<=[.!?])\\s+"))
+                .map(String::trim)
+                .filter(line -> !line.isBlank())
+                .toList();
+    }
+
+    private String trimSummaryLine(String line) {
+        if (line.length() <= SUMMARY_LINE_MAX_LENGTH) {
+            return line;
+        }
+        return line.substring(0, SUMMARY_LINE_MAX_LENGTH).trim();
     }
 
     private List<RelatedStockInfo> parseRelatedStocks(JsonNode node) {
