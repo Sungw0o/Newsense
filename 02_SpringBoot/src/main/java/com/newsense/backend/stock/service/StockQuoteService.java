@@ -15,6 +15,8 @@ import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
+import static java.util.Map.entry;
+
 /**
  * 주가 조회 서비스 — Toss Invest API + Redis 캐시.
  *
@@ -27,12 +29,17 @@ public class StockQuoteService {
 
     private static final Duration CACHE_TTL         = Duration.ofMinutes(10);
     private static final String   REDIS_KEY_PREFIX   = "stock:quote:";
-    private static final Map<String, StockQuote> DEMO_QUOTES = Map.of(
-            "005930", StockQuote.of("005930", "삼성전자", 89300, 4100, 4.81, 527_300_000_000_000L, 28_542_110L),
-            "000660", StockQuote.of("000660", "SK하이닉스", 512000, 18500, 3.75, 372_740_000_000_000L, 9_834_221L),
-            "005380", StockQuote.of("005380", "현대차", 284000, 4500, 1.61, 59_480_000_000_000L, 1_902_441L),
-            "105560", StockQuote.of("105560", "KB금융", 126400, -1800, -1.40, 49_720_000_000_000L, 1_324_990L),
-            "035720", StockQuote.of("035720", "카카오", 53400, -700, -1.29, 23_650_000_000_000L, 3_418_221L)
+    private static final Map<String, StockQuote> DEMO_QUOTES = Map.ofEntries(
+            entry("005930", StockQuote.of("005930", "삼성전자", 89300, 4100, 4.81, 527_300_000_000_000L, 28_542_110L)),
+            entry("000660", StockQuote.of("000660", "SK하이닉스", 512000, 18500, 3.75, 372_740_000_000_000L, 9_834_221L)),
+            entry("005380", StockQuote.of("005380", "현대차", 284000, 4500, 1.61, 59_480_000_000_000L, 1_902_441L)),
+            entry("105560", StockQuote.of("105560", "KB금융", 126400, -1800, -1.40, 49_720_000_000_000L, 1_324_990L)),
+            entry("035720", StockQuote.of("035720", "카카오", 53400, -700, -1.29, 23_650_000_000_000L, 3_418_221L)),
+            entry("MU", StockQuote.of("MU", "Micron Technology", 127, 4, 3.25, 141_000_000_000L, 33_200_000L)),
+            entry("NVDA", StockQuote.of("NVDA", "NVIDIA", 157, 2, 1.42, 3_860_000_000_000L, 180_000_000L)),
+            entry("WEN", StockQuote.of("WEN", "Wendy's", 12, 3, 26.00, 2_500_000_000L, 48_000_000L)),
+            entry("GME", StockQuote.of("GME", "GameStop", 24, 2, 9.20, 10_700_000_000L, 22_500_000L)),
+            entry("AMC", StockQuote.of("AMC", "AMC Entertainment", 3, 0, 5.80, 1_100_000_000L, 31_000_000L))
     );
 
     private final TossInvestClient     tossInvestClient;
