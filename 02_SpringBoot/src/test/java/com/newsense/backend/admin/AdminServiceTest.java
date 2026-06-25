@@ -9,6 +9,7 @@ import com.newsense.backend.article.domain.ArticleMeta;
 import com.newsense.backend.common.exception.CustomException;
 import com.newsense.backend.community.domain.Post;
 import com.newsense.backend.community.domain.PostType;
+import com.newsense.backend.community.repository.PostCommentRepository;
 import com.newsense.backend.community.repository.PostReportRepository;
 import com.newsense.backend.community.repository.PostRepository;
 import com.newsense.backend.support.TestFixtures;
@@ -25,6 +26,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
+import static org.mockito.ArgumentMatchers.any;
 
 import java.util.List;
 import java.util.Optional;
@@ -42,6 +44,7 @@ class AdminServiceTest {
     AdminService adminService;
 
     @Mock UserRepository userRepository;
+    @Mock PostCommentRepository postCommentRepository;
     @Mock PostRepository postRepository;
     @Mock PostReportRepository postReportRepository;
     @Mock ArticleMetaRepository articleMetaRepository;
@@ -101,6 +104,8 @@ class AdminServiceTest {
 
         adminService.deletePost(1L);
 
+        verify(postReportRepository).deleteAllByPostId(1L);
+        verify(postCommentRepository).deleteAllByPostId(1L);
         verify(postRepository).delete(post);
     }
 
@@ -116,7 +121,7 @@ class AdminServiceTest {
     void getArticles_mapsArticlesToResponse() {
         ArticleMeta article = TestFixtures.article(1L);
         Pageable pageable = PageRequest.of(0, 10);
-        given(articleMetaRepository.findAll(pageable)).willReturn(new PageImpl<>(List.of(article)));
+        given(articleMetaRepository.findAll(any(Pageable.class))).willReturn(new PageImpl<>(List.of(article)));
         given(articleContentRepository.findById(article.getMongoDocumentId()))
                 .willReturn(Optional.of(TestFixtures.content("mongo-1", "본문 텍스트")));
 
