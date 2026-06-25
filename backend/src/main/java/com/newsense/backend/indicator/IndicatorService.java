@@ -19,7 +19,7 @@ import java.util.List;
 @RequiredArgsConstructor
 public class IndicatorService {
 
-    private static final String REDIS_KEY = "indicator:latest";
+    private static final String REDIS_KEY  = "indicator:latest";
     private static final Duration CACHE_TTL = Duration.ofMinutes(10);
     private static final double BOK_BASE_RATE = 3.5;
     private static final String EXCHANGE_RATE_URL = "https://open.er-api.com/v6/latest/USD";
@@ -28,14 +28,18 @@ public class IndicatorService {
     private final ObjectMapper objectMapper;
 
     public IndicatorResponse getLatest() {
-        String cached = redisTemplate.opsForValue().get(REDIS_KEY);
-        if (cached != null) {
-            try {
-                IndicatorResponse response = objectMapper.readValue(cached, IndicatorResponse.class);
-                return new IndicatorResponse("STALE", response.insight(), response.items(), response.fetchedAt());
-            } catch (JacksonException e) {
-                log.warn("Failed to deserialize cached indicator, refreshing: {}", e.getMessage());
+        try {
+            String cached = redisTemplate.opsForValue().get(REDIS_KEY);
+            if (cached != null) {
+                try {
+                    IndicatorResponse response = objectMapper.readValue(cached, IndicatorResponse.class);
+                    return new IndicatorResponse("STALE", response.insight(), response.items(), response.fetchedAt());
+                } catch (JacksonException e) {
+                    log.warn("Failed to deserialize cached indicator, refreshing: {}", e.getMessage());
+                }
             }
+        } catch (Exception e) {
+            log.warn("Redis unavailable for indicator cache read, fetching live: {}", e.getMessage());
         }
         return refresh();
     }
@@ -43,12 +47,13 @@ public class IndicatorService {
     public IndicatorResponse refresh() {
         try {
             RestClient client = RestClient.create();
-            Double kospi = fetchYahooPrice(client, "^KS11");
+            Double kospi  = fetchYahooPrice(client, "^KS11");
             Double kosdaq = fetchYahooPrice(client, "^KQ11");
             Double usdKrw = fetchUsdKrw(client);
 
             List<IndicatorItem> items = buildItems(usdKrw, kospi, kosdaq);
-            IndicatorResponse response = new IndicatorResponse("OK", buildInsight(usdKrw, kospi, kosdaq), items, LocalDateTime.now());
+            IndicatorResponse response = new IndicatorResponse(
+                    "OK", buildInsight(usdKrw, kospi, kosdaq), items, LocalDateTime.now());
             cacheResponse(response);
             return response;
         } catch (Exception e) {
@@ -98,7 +103,7 @@ public class IndicatorService {
         try {
             String json = objectMapper.writeValueAsString(response);
             redisTemplate.opsForValue().set(REDIS_KEY, json, CACHE_TTL);
-        } catch (JacksonException e) {
+        } catch (Exception e) {
             log.warn("Failed to cache indicator response: {}", e.getMessage());
         }
     }
@@ -110,17 +115,17 @@ public class IndicatorService {
 
     private List<IndicatorItem> buildItems(Double usdKrw, Double kospi, Double kosdaq) {
         return List.of(
-                IndicatorItem.of("USD_KRW", "달러/원", usdKrw, "원", null, null),
-                IndicatorItem.of("BOK_RATE", "기준금리", BOK_BASE_RATE, "%", null, null),
-                IndicatorItem.of("KOSPI", "코스피", kospi, "pt", null, null),
-                IndicatorItem.of("KOSDAQ", "코스닥", kosdaq, "pt", null, null)
+                IndicatorItem.of("USD_KRW", "달러/원",  usdKrw,       "원", null, null),
+                IndicatorItem.of("BOK_RATE", "기준금리", BOK_BASE_RATE, "%",  null, null),
+                IndicatorItem.of("KOSPI",    "코스피",   kospi,         "pt", null, null),
+                IndicatorItem.of("KOSDAQ",   "코스닥",   kosdaq,        "pt", null, null)
         );
     }
 
     private String buildInsight(Double usdKrw, Double kospi, Double kosdaq) {
-        String exchange = usdKrw == null ? "환율 확인 중" : "달러/원 " + Math.round(usdKrw) + "원";
-        String market = kospi == null ? "증시 확인 중" : "코스피 " + Math.round(kospi) + "pt";
-        String growth = kosdaq == null ? "코스닥 확인 중" : "코스닥 " + Math.round(kosdaq) + "pt";
+        String exchange = usdKrw  == null ? "환율 확인 중"  : "달러/원 "  + Math.round(usdKrw)  + "원";
+        String market   = kospi   == null ? "증시 확인 중"  : "코스피 "   + Math.round(kospi)   + "pt";
+        String growth   = kosdaq  == null ? "코스닥 확인 중" : "코스닥 "  + Math.round(kosdaq)  + "pt";
         return exchange + " · " + market + " · " + growth;
     }
 }
