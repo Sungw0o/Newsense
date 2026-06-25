@@ -11,6 +11,8 @@ import org.springframework.util.MultiValueMap;
 import org.springframework.web.client.RestClient;
 import tools.jackson.databind.JsonNode;
 
+import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.time.Instant;
 import java.util.Optional;
 
@@ -151,7 +153,13 @@ public class TossInvestClient {
         for (String field : fields) {
             JsonNode value = node.path(field);
             if (!value.isMissingNode() && !value.isNull()) {
-                return value.asLong();
+                if (value.isNumber()) {
+                    return BigDecimal.valueOf(value.asDouble()).setScale(0, RoundingMode.HALF_UP).longValue();
+                }
+                String text = value.asText("");
+                if (!text.isBlank()) {
+                    return new BigDecimal(text).setScale(0, RoundingMode.HALF_UP).longValue();
+                }
             }
         }
         return null;
