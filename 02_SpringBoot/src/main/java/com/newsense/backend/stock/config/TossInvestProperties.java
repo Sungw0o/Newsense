@@ -6,15 +6,11 @@ import org.springframework.boot.context.properties.ConfigurationProperties;
 public record TossInvestProperties(
         boolean enabled,
         String baseUrl,
-        String tokenPath,
         String quotePath,
-        String grantType,
-        String clientId,
-        String clientSecret
+        String secretToken
 ) {
 
     public boolean hasCredentials() {
-        return clientId != null && !clientId.isBlank()
-                && clientSecret != null && !clientSecret.isBlank();
+        return secretToken != null && !secretToken.isBlank();
     }
 }
