@@ -24,7 +24,7 @@ public class InquiryController implements InquiryApiDocs {
             InquiryRequest request) {
         return ResponseEntity.ok(ApiResponse.success(
                 "문의가 접수되었습니다.",
-                inquiryService.submit(userPrincipal.getId(), request)));
+                inquiryService.submit(userPrincipal.id(), request)));
     }
 
     @Override
@@ -33,13 +33,6 @@ public class InquiryController implements InquiryApiDocs {
             Pageable pageable) {
         return ResponseEntity.ok(ApiResponse.success(
                 "내 문의 목록 조회에 성공했습니다.",
-                inquiryService.getMyInquiries(userPrincipal.getId(), pageable)));
-    }
-
-    @Override
-    public ResponseEntity<ApiResponse<InquiryResponse>> resolve(Long inquiryId) {
-        return ResponseEntity.ok(ApiResponse.success(
-                "문의가 처리 완료되었습니다.",
-                inquiryService.resolve(inquiryId)));
+                inquiryService.getMyInquiries(userPrincipal.id(), pageable)));
     }
 }

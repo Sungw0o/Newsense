@@ -14,8 +14,6 @@ import org.springframework.data.web.PageableDefault;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PatchMapping;
-import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 
@@ -35,11 +33,5 @@ public interface InquiryApiDocs {
     ResponseEntity<ApiResponse<Page<InquiryResponse>>> getMyInquiries(
             @AuthenticationPrincipal UserPrincipal userPrincipal,
             @PageableDefault(size = 10) Pageable pageable
-    );
-
-    @Operation(summary = "문의 처리 완료 (관리자)")
-    @PatchMapping("/api/v1/admin/inquiries/{inquiryId}/resolve")
-    ResponseEntity<ApiResponse<InquiryResponse>> resolve(
-            @PathVariable Long inquiryId
     );
 }
