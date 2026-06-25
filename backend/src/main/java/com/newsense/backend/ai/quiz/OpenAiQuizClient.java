@@ -7,6 +7,7 @@ import com.newsense.backend.ai.config.AiPipelineProperties;
 import com.newsense.backend.ai.config.OpenAiProperties;
 import com.newsense.backend.common.exception.CustomException;
 import com.newsense.backend.common.exception.ErrorCode;
+import com.newsense.backend.quiz.domain.QuizPurpose;
 import com.newsense.backend.quiz.domain.QuizType;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -40,6 +41,13 @@ public class OpenAiQuizClient {
             기사에 근거가 부족하면 추측하지 말고 기사에서 직접 확인 가능한 내용으로 출제하세요.
             """;
 
+    private static final String PURPOSE_INSTRUCTIONS = """
+            Each quiz must include a purpose field.
+            Question 1 must be purpose=BASIC_CONCEPT and type=OX.
+            Question 2 must be purpose=FACT_CHECK and type=MULTIPLE.
+            Question 3 must be purpose=CAUSAL_REASONING and type=MULTIPLE.
+            Use evidenceChunks as the primary grounding source for every answer and explanation.
+            """;
     private final RestClient openAiRestClient;
     private final OpenAiProperties properties;
     private final AiPipelineProperties pipelineProperties;
@@ -73,7 +81,7 @@ public class OpenAiQuizClient {
         Map<String, Object> request = Map.of(
                 "model", pipelineProperties.quizGeneratorModel(),
                 "messages", List.of(
-                        Map.of("role", "developer", "content", INSTRUCTIONS),
+                        Map.of("role", "developer", "content", INSTRUCTIONS + "\n" + PURPOSE_INSTRUCTIONS),
                         Map.of("role", "user", "content", input)
                 ),
                 "response_format", createResponseFormat()
@@ -121,6 +129,7 @@ public class OpenAiQuizClient {
 
         for (GeneratedQuiz quiz : quizzes) {
             if (quiz.question() == null || quiz.question().isBlank()
+                    || quiz.purpose() == null
                     || quiz.explanation() == null || quiz.explanation().isBlank()
                     || quiz.options() == null || !quiz.options().contains(quiz.correctAnswer())) {
                 throw new IllegalArgumentException("Generated quiz is invalid");
@@ -178,6 +187,14 @@ public class OpenAiQuizClient {
     private Map<String, Object> createResponseFormat() {
         Map<String, Object> quizProperties = new LinkedHashMap<>();
         quizProperties.put("type", Map.of("type", "string", "enum", List.of("OX", "MULTIPLE")));
+        quizProperties.put("purpose", Map.of(
+                "type", "string",
+                "enum", List.of(
+                        QuizPurpose.BASIC_CONCEPT.name(),
+                        QuizPurpose.FACT_CHECK.name(),
+                        QuizPurpose.CAUSAL_REASONING.name()
+                )
+        ));
         quizProperties.put("question", Map.of("type", "string"));
         quizProperties.put("options", Map.of(
                 "type", "array",
@@ -192,7 +209,7 @@ public class OpenAiQuizClient {
                 "type", "object",
                 "additionalProperties", false,
                 "properties", quizProperties,
-                "required", List.of("type", "question", "options", "correctAnswer", "explanation")
+                "required", List.of("type", "purpose", "question", "options", "correctAnswer", "explanation")
         );
         Map<String, Object> schema = Map.of(
                 "type", "object",

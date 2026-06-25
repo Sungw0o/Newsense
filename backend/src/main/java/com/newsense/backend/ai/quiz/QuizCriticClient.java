@@ -5,6 +5,7 @@ import tools.jackson.databind.JsonNode;
 import tools.jackson.databind.ObjectMapper;
 import com.newsense.backend.ai.config.AiPipelineProperties;
 import com.newsense.backend.ai.config.OpenAiProperties;
+import com.newsense.backend.quiz.domain.QuizPurpose;
 import com.newsense.backend.quiz.domain.QuizType;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -94,6 +95,9 @@ public class QuizCriticClient {
         if (oxCount != 1 || multipleCount != 2) {
             issues.add("OX 1문항과 객관식 2문항 구성이 아닙니다.");
         }
+        validatePurpose(quizzes.get(0), QuizPurpose.BASIC_CONCEPT, issues);
+        validatePurpose(quizzes.get(1), QuizPurpose.FACT_CHECK, issues);
+        validatePurpose(quizzes.get(2), QuizPurpose.CAUSAL_REASONING, issues);
         for (GeneratedQuiz quiz : quizzes) {
             if (quiz.question() == null || quiz.question().isBlank()) {
                 issues.add("질문이 비어 있는 문항이 있습니다.");
@@ -109,6 +113,12 @@ public class QuizCriticClient {
             }
         }
         return new QuizCritiqueResult(issues.isEmpty(), List.copyOf(issues));
+    }
+
+    private void validatePurpose(GeneratedQuiz quiz, QuizPurpose expected, List<String> issues) {
+        if (quiz.purpose() != expected) {
+            issues.add("Quiz purpose must follow BASIC_CONCEPT, FACT_CHECK, CAUSAL_REASONING order.");
+        }
     }
 
     private String createInput(

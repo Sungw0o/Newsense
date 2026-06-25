@@ -75,6 +75,8 @@ class RagRetrievalServiceTest {
             assertThat(response.keywords()).contains("기준금리", "금융");
             assertThat(response.results()).hasSize(1);
             assertThat(response.results().getFirst().score()).isPositive();
+            assertThat(response.results().getFirst().scoreBreakdown()).isNotNull();
+            assertThat(response.results().getFirst().scoreBreakdown().keywordScore()).isPositive();
         }
 
         @Test
@@ -125,6 +127,7 @@ class RagRetrievalServiceTest {
 
             assertThat(response.results()).hasSize(1);
             assertThat(response.results().getFirst().score()).isPositive();
+            assertThat(response.results().getFirst().scoreBreakdown().vectorScore()).isPositive();
             then(vectorSearchService).should().search(anyList(), anyInt());
         }
 
