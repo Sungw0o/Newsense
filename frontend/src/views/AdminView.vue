@@ -336,7 +336,8 @@ const handleTriggerCrawl = async () => {
       <div class="section-toolbar">
         <p class="section-help">본문 길이와 AI 요약본 저장 상태를 확인하고, 누락된 요약을 수동으로 생성할 수 있습니다.</p>
         <div class="toolbar-actions">
-          <select class="page-size" :value="articleQuery.size" @change="handleArticleSize">
+          <label class="sr-only" for="article-page-size">기사 목록 페이지 크기</label>
+          <select id="article-page-size" class="page-size" :value="articleQuery.size" @change="handleArticleSize">
             <option :value="10">10개</option>
             <option :value="20">20개</option>
             <option :value="50">50개</option>
@@ -528,6 +529,18 @@ const handleTriggerCrawl = async () => {
   background: rgba(20,24,34,0.65);
   border-color: rgba(255,255,255,0.14);
   color: #f4f6fa;
+}
+
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
 }
 
 .section-help {
