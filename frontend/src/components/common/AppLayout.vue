@@ -40,11 +40,11 @@ onMounted(async () => {
 .layout-body {
   flex: 1;
   display: grid;
-  grid-template-columns: 1fr 220px;
-  gap: 24px;
-  max-width: 1400px;
+  grid-template-columns: minmax(0, 1fr) 220px;
+  gap: 28px;
+  max-width: 1600px;
   margin: 0 auto;
-  padding: 40px 16px 48px;
+  padding: 36px clamp(18px, 3vw, 44px) 48px;
   width: 100%;
   align-items: start;
   position: relative;

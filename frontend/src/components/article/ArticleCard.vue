@@ -3,7 +3,7 @@ import { computed } from 'vue'
 
 const props = defineProps({
   article: { type: Object, required: true },
-  featured: { type: Boolean, default: false }
+  featured: { type: Boolean, default: false },
 })
 
 const emit = defineEmits(['click'])
@@ -11,17 +11,15 @@ const emit = defineEmits(['click'])
 const categoryTag = computed(() => {
   const map = {
     '거시경제': 'macro',
-    '금융/투자': 'eco',
+    '금융/투자': 'finance',
     '정책/제도': 'policy',
     '기업/산업': 'stock',
-    '글로벌경제': 'fx',
+    '글로벌경제': 'global',
   }
   return map[props.article.category] ?? 'default'
 })
 
-const readTime = computed(() => {
-  return props.article.estimatedMinutes ?? props.article.readTime ?? 3
-})
+const readTime = computed(() => props.article.estimatedMinutes ?? props.article.readTime ?? 3)
 
 const publishedDate = computed(() => {
   const d = props.article.publishedAt ?? props.article.createdAt
@@ -48,33 +46,18 @@ const viewCount = computed(() => {
     tabindex="0"
     @keydown.enter="emit('click', article.articleId)"
   >
-    <!-- Featured ribbon -->
-    <span v-if="featured" class="ribbon">
-      <span class="r-dot"></span> TODAY
-    </span>
-
-    <!-- Card top -->
     <div class="card-top">
-      <span class="tag" :class="categoryTag">{{ article.category }}</span>
+      <span class="tag" :class="categoryTag">{{ article.category || '경제' }}</span>
       <span class="meta-time">{{ readTime }}분 읽기</span>
     </div>
 
-    <!-- Title -->
     <h3>{{ article.title }}</h3>
 
-    <!-- Summary -->
     <p class="summary">{{ article.summary ?? article.preview }}</p>
 
-    <!-- Card footer -->
     <div class="card-foot">
       <span class="pub-date">{{ publishedDate }}</span>
-      <span class="view-count">
-        <svg viewBox="0 0 14 14" fill="none" xmlns="http://www.w3.org/2000/svg">
-          <circle cx="7" cy="7" r="4.5" stroke="currentColor" stroke-width="1.5"/>
-          <circle cx="7" cy="7" r="2" fill="currentColor"/>
-        </svg>
-        조회수 {{ viewCount }}회
-      </span>
+      <span class="view-count">조회 {{ viewCount }}</span>
     </div>
   </article>
 </template>
@@ -84,70 +67,49 @@ const viewCount = computed(() => {
   position: relative;
   display: flex;
   flex-direction: column;
-  padding: 22px 22px 18px;
-  background: #fff;
-  border: 1px solid rgba(0, 0, 0, 0.07);
-  border-radius: 20px;
+  padding: 22px;
+  background: rgba(255, 255, 255, 0.88);
+  border: 1px solid rgba(0, 0, 0, 0.08);
+  border-radius: 12px;
   cursor: pointer;
   text-decoration: none;
   color: inherit;
-  transition: transform .25s ease, box-shadow .25s ease, border-color .25s ease;
-  box-shadow: 0 1px 0 rgba(255, 255, 255, 0.6) inset;
-  min-height: 260px;
+  transition: transform .2s ease, box-shadow .2s ease, border-color .2s ease;
+  min-height: 248px;
 }
+
 .card:hover {
-  transform: translateY(-3px);
-  border-color: rgba(0, 132, 255, 0.25);
-  box-shadow: 0 24px 50px -22px rgba(0, 80, 200, 0.25);
+  transform: translateY(-2px);
+  border-color: rgba(0, 132, 255, 0.28);
+  box-shadow: 0 18px 40px -26px rgba(0, 80, 200, 0.36);
 }
 
 .dark .card {
-  background: rgba(20, 24, 34, 0.65);
-  border-color: rgba(255, 255, 255, 0.10);
+  background: rgba(20, 24, 34, 0.72);
+  border-color: rgba(255, 255, 255, 0.1);
   color: #f4f6fa;
-  box-shadow: 0 1px 0 rgba(255, 255, 255, 0.04) inset;
-}
-.dark .card:hover {
-  border-color: rgba(0, 132, 255, 0.55);
-  box-shadow: 0 24px 50px -22px rgba(0, 80, 200, 0.45);
 }
 
 .card.featured {
   grid-column: span 2;
-  background:
-    radial-gradient(120% 140% at 0% 0%, rgba(0, 132, 255, 0.08) 0%, rgba(0, 132, 255, 0) 60%),
-    #fff;
-  min-height: 300px;
+  min-height: 292px;
+  background: linear-gradient(135deg, rgba(232, 242, 255, 0.98), rgba(255, 255, 255, 0.94));
 }
+
 .dark .card.featured {
-  background:
-    radial-gradient(120% 140% at 0% 0%, rgba(0, 132, 255, 0.20) 0%, rgba(0, 132, 255, 0) 60%),
-    rgba(20, 24, 34, 0.70);
+  background: linear-gradient(135deg, rgba(10, 74, 153, 0.32), rgba(20, 24, 34, 0.78));
 }
-.card.featured h3 { font-size: 26px; max-width: 88%; }
-.card.featured .summary { max-width: 84%; }
 
-/* Ribbon on featured */
-.ribbon {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  padding: 4px 9px;
-  background: var(--ink, #0a0d12);
-  color: #fff;
-  border-radius: 6px;
-  font-family: 'Nanum Gothic', monospace;
-  font-size: 10.5px;
-  letter-spacing: 0.8px;
-  text-transform: uppercase;
-  font-weight: 500;
-  position: absolute;
-  top: 18px; right: 22px;
-  z-index: 3;
+.card.featured h3 {
+  max-width: 90%;
+  font-size: 27px;
 }
-.r-dot { width: 5px; height: 5px; border-radius: 50%; background: #FF801E; }
 
-/* Card top */
+.card.featured .summary {
+  max-width: 86%;
+  -webkit-line-clamp: 4;
+}
+
 .card-top {
   display: flex;
   align-items: center;
@@ -159,61 +121,44 @@ const viewCount = computed(() => {
 .tag {
   display: inline-flex;
   align-items: center;
-  gap: 6px;
-  padding: 4px 10px;
-  font-size: 11.5px;
-  font-weight: 600;
-  letter-spacing: 0.3px;
+  padding: 5px 10px;
+  font-size: 12px;
+  font-weight: 800;
   border-radius: 999px;
 }
-.tag::before {
-  content: "";
-  width: 6px; height: 6px;
-  border-radius: 50%;
-  background: currentColor;
-  opacity: 0.7;
-}
-.tag.eco    { background: #E8F2FF; color: #0a4a99; }
-.tag.macro  { background: #F0EBFF; color: #5a3bbf; }
-.tag.finance { background: #E8F2FF; color: #0a4a99; }
-.tag.estate { background: #FFF1E8; color: #a14a14; }
-.tag.stock  { background: #FFF1E8; color: #a14a14; }
-.tag.fx     { background: #E8FBF1; color: #1f7a3a; }
-.tag.policy { background: #E8FBF1; color: #1f7a3a; }
-.tag.default { background: #E8FBF1; color: #1f7a3a; }
 
-.dark .tag.eco    { background: rgba(0,132,255,0.18); color: #9BCBFF; }
-.dark .tag.macro  { background: rgba(140,100,255,0.20); color: #C9B6FF; }
-.dark .tag.estate,
-.dark .tag.stock  { background: rgba(255,128,30,0.18); color: #FFC089; }
-.dark .tag.fx,
+.tag.finance { background: #E8F2FF; color: #0a4a99; }
+.tag.macro { background: #F0EBFF; color: #5a3bbf; }
+.tag.stock { background: #FFF4E5; color: #9a4a00; }
+.tag.global { background: #E8FBF1; color: #1f7a3a; }
+.tag.policy,
+.tag.default { background: #EEF2F7; color: #405067; }
+
+.dark .tag.finance { background: rgba(0, 132, 255, 0.18); color: #9BCBFF; }
+.dark .tag.macro { background: rgba(140, 100, 255, 0.2); color: #C9B6FF; }
+.dark .tag.stock { background: rgba(255, 128, 30, 0.18); color: #FFC089; }
+.dark .tag.global { background: rgba(58, 208, 123, 0.18); color: #95EAB8; }
 .dark .tag.policy,
-.dark .tag.default { background: rgba(58,208,123,0.18); color: #95EAB8; }
-.dark .tag.finance { background: rgba(0,132,255,0.18); color: #9BCBFF; }
+.dark .tag.default { background: rgba(148, 163, 184, 0.16); color: #CBD5E1; }
 
 .meta-time {
-  font-family: 'Nanum Gothic', monospace;
-  font-size: 11px;
+  font-size: 12px;
   color: var(--ink-3, #8a93a3);
-  letter-spacing: 0.3px;
   flex-shrink: 0;
 }
 
-/* Title */
 h3 {
-  font-family: 'Fustat', sans-serif;
-  font-weight: 700;
+  font-family: 'Fustat', 'Pretendard', sans-serif;
+  font-weight: 800;
   font-size: 19px;
-  line-height: 1.3;
-  letter-spacing: -0.4px;
+  line-height: 1.36;
   margin: 0 0 12px;
   color: var(--ink, #0a0d12);
 }
 
-/* Summary */
 .summary {
-  font-size: 13.5px;
-  line-height: 1.55;
+  font-size: 14px;
+  line-height: 1.62;
   color: var(--ink-2, #4a5161);
   margin: 0 0 18px;
   display: -webkit-box;
@@ -223,43 +168,53 @@ h3 {
   flex: 1;
 }
 
-.dark h3 { color: #f4f6fa; }
-.dark .summary { color: #a4adbf; }
+.dark h3 {
+  color: #f4f6fa;
+}
 
-/* Card footer */
+.dark .summary {
+  color: #a4adbf;
+}
+
 .card-foot {
   margin-top: auto;
   display: flex;
   align-items: center;
   justify-content: space-between;
+  gap: 12px;
   padding-top: 14px;
-  border-top: 1px dashed rgba(0, 0, 0, 0.09);
+  border-top: 1px solid rgba(0, 0, 0, 0.08);
+  color: var(--ink-3, #8a93a3);
+  font-size: 12px;
 }
-.dark .card-foot { border-color: rgba(255, 255, 255, 0.10); }
 
+.dark .card-foot {
+  border-color: rgba(255, 255, 255, 0.1);
+}
+
+.view-count,
 .pub-date {
-  font-family: 'Nanum Gothic', monospace;
-  font-size: 12px;
-  color: var(--ink-3, #8a93a3);
+  white-space: nowrap;
 }
 
-.view-count {
-  display: inline-flex;
-  align-items: center;
-  gap: 4px;
-  font-family: 'Nanum Gothic', monospace;
-  font-size: 12px;
-  color: var(--ink-3, #8a93a3);
-}
-.view-count svg {
-  width: 13px; height: 13px;
-  color: var(--ink-3, #8a93a3);
-  flex-shrink: 0;
+@media (max-width: 900px) {
+  .card.featured {
+    grid-column: span 2;
+  }
 }
 
 @media (max-width: 640px) {
-  .card.featured { grid-column: span 1; }
-  .card.featured h3, .card.featured .summary { max-width: 100%; font-size: 18px; }
-  .ribbon { top: 14px; right: 14px; }
+  .card.featured {
+    grid-column: span 1;
+  }
+
+  .card.featured h3,
+  .card.featured .summary {
+    max-width: 100%;
+  }
+
+  .card.featured h3 {
+    font-size: 20px;
+  }
 }
 </style>

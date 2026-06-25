@@ -35,6 +35,7 @@ const formattedParagraphs = computed(() => {
   const selected = selectedArticle.value
   if (!selected || !selected.content) return []
   
+  const highlightedTerms = new Set()
   const paragraphs = selected.content.split('\n\n')
   return paragraphs.map(p => {
     const regex = termPattern.value
@@ -60,10 +61,13 @@ const formattedParagraphs = computed(() => {
       }
       
       // 용어 텍스트 추가
+      const shouldHighlight = !highlightedTerms.has(termName)
+      if (shouldHighlight) highlightedTerms.add(termName)
+
       parts.push({
-        type: 'term',
+        type: shouldHighlight ? 'term' : 'text',
         value: termName,
-        hasDefinition: true
+        hasDefinition: shouldHighlight
       })
       
       lastIndex = regex.lastIndex

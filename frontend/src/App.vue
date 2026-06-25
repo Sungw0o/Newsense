@@ -13,11 +13,6 @@ onMounted(() => {
 
 <template>
   <div class="relative overflow-x-hidden min-h-screen w-full">
-    <!-- Static glow orbs -->
-    <div class="glow-orb glow-orb-1"></div>
-    <div class="glow-orb glow-orb-2"></div>
-    <div class="glow-orb glow-orb-3"></div>
-
     <div class="relative z-10 min-h-screen flex flex-col w-full">
       <AppLayout />
     </div>
