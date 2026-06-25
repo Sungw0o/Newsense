@@ -86,6 +86,10 @@ public class User {
         this.isActive = false;
     }
 
+    public void reactivate() {
+        this.isActive = true;
+    }
+
     public void changeRole(UserRole newRole) {
         this.role = newRole;
     }

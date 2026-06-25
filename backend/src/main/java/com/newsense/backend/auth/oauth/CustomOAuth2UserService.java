@@ -32,11 +32,14 @@ public class CustomOAuth2UserService extends DefaultOAuth2UserService {
             throw new OAuth2AuthenticationException("소셜 계정 이메일을 확인할 수 없습니다.");
         }
         userRepository.findByEmail(email)
-                .orElseGet(() -> userRepository.save(User.create(
-                        email,
-                        passwordEncoder.encode(UUID.randomUUID().toString()),
-                        createUniqueNickname(profile.nickname(), registrationId)
-                )));
+                .ifPresentOrElse(
+                        User::reactivate,
+                        () -> userRepository.save(User.create(
+                                email,
+                                passwordEncoder.encode(UUID.randomUUID().toString()),
+                                createUniqueNickname(profile.nickname(), registrationId)
+                        ))
+                );
         return oauth2User;
     }
 

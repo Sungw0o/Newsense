@@ -32,4 +32,6 @@ Thumbs.db
 *.log
 *.tmp
 *.pem
+connect.sh
+
 

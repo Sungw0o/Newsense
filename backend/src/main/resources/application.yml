@@ -77,6 +77,13 @@ crawler:
     public-source: ${SPRING_CRAWLER_CRON_PUBLIC:0 0 11,17 * * MON-FRI}
     portal-source: ${SPRING_CRAWLER_CRON_PORTAL:0 0 8,14,20 * * *}
 
+toss:
+  invest:
+    enabled: ${TOSS_INVEST_ENABLED:false}
+    base-url: ${TOSS_INVEST_BASE_URL:https://open-api.tossinvest.com}
+    api-key: ${TOSS_INVEST_API_KEY:}
+    secret-key: ${TOSS_INVEST_SECRET_KEY:}
+
 rag:
   vector-search:
     # 벡터 검색 전체 활성화 여부 (false면 키워드 검색만 사용)

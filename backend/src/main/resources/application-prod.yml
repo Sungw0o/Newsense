@@ -2,6 +2,16 @@ spring:
   config:
     activate:
       on-profile: prod
+  security:
+    oauth2:
+      client:
+        registration:
+          google:
+            redirect-uri: ${OAUTH2_GOOGLE_REDIRECT_URI:${APP_BACKEND_URL:https://api.new5ense.site}/login/oauth2/code/google}
+          naver:
+            redirect-uri: ${OAUTH2_NAVER_REDIRECT_URI:${APP_BACKEND_URL:https://api.new5ense.site}/login/oauth2/code/naver}
+          kakao:
+            redirect-uri: ${OAUTH2_KAKAO_REDIRECT_URI:${APP_BACKEND_URL:https://api.new5ense.site}/login/oauth2/code/kakao}
   datasource:
     url: ${SPRING_DATASOURCE_URL}
     username: ${SPRING_DATASOURCE_USERNAME}
