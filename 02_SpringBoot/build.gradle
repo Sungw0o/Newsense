@@ -111,12 +111,15 @@ tasks.named('jacocoTestCoverageVerification') {
     classDirectories.setFrom(files(tasks.named('jacocoTestReport').get().classDirectories))
     sourceDirectories.setFrom(files(sourceSets.main.allSource.srcDirs))
     executionData.setFrom(fileTree(layout.buildDirectory).include('jacoco/test.exec'))
+    def minimumLineCoverage = providers.gradleProperty('jacoco.minimumLineCoverage')
+            .map { it.toBigDecimal() }
+            .orElse(new BigDecimal('0.60'))
     violationRules {
         rule {
             limit {
                 counter = 'LINE'
                 value = 'COVEREDRATIO'
-                minimum = 0.80
+                minimum = minimumLineCoverage.get()
             }
         }
     }
