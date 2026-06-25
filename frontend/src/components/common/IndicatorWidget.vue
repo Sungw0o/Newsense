@@ -2,11 +2,10 @@
 import { ref, onMounted, onUnmounted } from 'vue'
 import { indicatorApi } from '../../api/indicatorApi'
 
-const items   = ref([])
-const status  = ref(null)   // "OK" | "STALE" | "MOCK"
+const items = ref([])
+const status = ref(null)
 const loading = ref(true)
 const refreshing = ref(false)
-const lastUpdated = ref(null)
 
 let timer = null
 
@@ -30,31 +29,19 @@ const load = async (manual = false) => {
   try {
     const res = await indicatorApi.getIndicators()
     const raw = res.data?.data ?? res.data
-    items.value  = raw?.items ?? []
+    items.value = raw?.items ?? []
     status.value = raw?.status ?? null
-    lastUpdated.value = new Date()
   } catch {
     // silent
   } finally {
-    loading.value   = false
+    loading.value = false
     refreshing.value = false
   }
 }
 
-const timeAgo = () => {
-  if (!lastUpdated.value) return ''
-  const sec = Math.floor((Date.now() - lastUpdated.value) / 1000)
-  if (sec < 60) return `${sec}초 전`
-  return `${Math.floor(sec / 60)}분 전`
-}
-const timeLabel = ref('')
-
 onMounted(() => {
   load()
-  timer = setInterval(() => {
-    load()
-    timeLabel.value = timeAgo()
-  }, 30_000)
+  timer = setInterval(() => load(), 30_000)
 })
 
 onUnmounted(() => clearInterval(timer))
@@ -76,12 +63,10 @@ onUnmounted(() => clearInterval(timer))
       >↻</button>
     </div>
 
-    <!-- 로딩 스켈레톤 -->
     <div v-if="loading" class="skel-wrap">
       <div v-for="n in 4" :key="n" class="skel-row"></div>
     </div>
 
-    <!-- 지표 표 -->
     <table v-else-if="items.length" class="ind-table">
       <thead>
         <tr>
@@ -94,7 +79,10 @@ onUnmounted(() => clearInterval(timer))
         <tr v-for="item in items" :key="item.key">
           <td class="label">{{ item.label }}</td>
           <td class="num val">{{ fmt(item) }}</td>
-          <td class="num chg" :class="item.trend === 'UP' ? 'up' : item.trend === 'DOWN' ? 'down' : ''">
+          <td
+            class="num chg"
+            :class="item.trend === 'UP' ? 'up' : item.trend === 'DOWN' ? 'down' : ''"
+          >
             <template v-if="fmtChange(item)">
               {{ item.trend === 'UP' ? '▲' : item.trend === 'DOWN' ? '▼' : '' }}
               {{ fmtChange(item) }}
@@ -130,8 +118,6 @@ onUnmounted(() => clearInterval(timer))
   background: rgba(20,24,34,0.65);
   border-color: rgba(255,255,255,0.10);
 }
-
-/* 헤더 */
 .widget-head {
   display: flex;
   align-items: center;
@@ -141,7 +127,6 @@ onUnmounted(() => clearInterval(timer))
   border-bottom: 1px solid rgba(0,0,0,0.07);
 }
 .dark .widget-head { border-color: rgba(255,255,255,0.09); }
-
 .widget-title {
   font-size: 12.5px;
   font-weight: 800;
@@ -149,7 +134,6 @@ onUnmounted(() => clearInterval(timer))
   flex: 1;
 }
 .dark .widget-title { color: #f4f6fa; }
-
 .badge {
   font-size: 9.5px;
   font-weight: 700;
@@ -158,7 +142,6 @@ onUnmounted(() => clearInterval(timer))
 }
 .badge.mock  { background: #ede9fe; color: #5b21b6; }
 .badge.stale { background: #e0f2fe; color: #075985; }
-
 .refresh-btn {
   font-size: 15px;
   line-height: 1;
@@ -168,14 +151,12 @@ onUnmounted(() => clearInterval(timer))
   cursor: pointer;
   padding: 2px 3px;
   border-radius: 6px;
-  transition: color .15s, transform .15s;
+  transition: color .15s;
 }
 .refresh-btn:hover { color: #0084ff; }
 .refresh-btn:disabled { opacity: 0.4; cursor: not-allowed; }
 .refresh-btn.spinning { animation: spin-once .6s linear; }
 @keyframes spin-once { to { transform: rotate(360deg); } }
-
-/* 표 */
 .ind-table {
   width: 100%;
   border-collapse: collapse;
@@ -191,8 +172,61 @@ onUnmounted(() => clearInterval(timer))
 }
 .dark .ind-table thead th { border-color: rgba(255,255,255,0.09); }
 .ind-table thead th.num { text-align: right; }
-
 .ind-table tbody tr:hover td { background: rgba(0,0,0,0.025); }
 .dark .ind-table tbody tr:hover td { background: rgba(255,255,255,0.04); }
-
-.
+.ind-table tbody td {
+  padding: 6px 4px;
+  border-bottom: 1px solid rgba(0,0,0,0.04);
+  color: var(--ink, #0a0d12);
+  vertical-align: middle;
+}
+.dark .ind-table tbody td { border-color: rgba(255,255,255,0.06); color: #e0e4ef; }
+.ind-table tbody tr:last-child td { border-bottom: none; }
+.ind-table td.label { font-weight: 600; color: var(--ink-2, #4a5161); }
+.dark .ind-table td.label { color: #a4adbf; }
+.ind-table td.num { text-align: right; font-variant-numeric: tabular-nums; }
+.ind-table td.val { font-weight: 700; }
+.ind-table td.chg {
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--ink-3, #8a93a3);
+  white-space: nowrap;
+}
+.ind-table td.chg.up   { color: #e03b3b; }
+.ind-table td.chg.down { color: #1d7fd4; }
+.flat { color: var(--ink-3); opacity: .5; }
+.skel-wrap { display: flex; flex-direction: column; gap: 7px; padding: 4px 0; }
+.skel-row {
+  height: 24px;
+  border-radius: 6px;
+  background: linear-gradient(90deg, rgba(0,0,0,0.05) 25%, rgba(0,0,0,0.09) 50%, rgba(0,0,0,0.05) 75%);
+  background-size: 200% 100%;
+  animation: shimmer 1.3s infinite;
+}
+.dark .skel-row {
+  background: linear-gradient(90deg, rgba(255,255,255,0.06) 25%, rgba(255,255,255,0.10) 50%, rgba(255,255,255,0.06) 75%);
+  background-size: 200% 100%;
+}
+@keyframes shimmer { to { background-position: -200% 0; } }
+.empty { font-size: 11.5px; color: var(--ink-3); text-align: center; padding: 8px 0; margin: 0; }
+.widget-footer {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  margin: 8px 0 0;
+  font-size: 10px;
+  color: var(--ink-3, #8a93a3);
+}
+.live-dot {
+  display: inline-block;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: #22c55e;
+  animation: pulse 2s infinite;
+}
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.35; }
+}
+</style>

@@ -23,4 +23,8 @@ const adminApi = {
     return axiosInstance.patch(`/admin/articles/${articleId}/summary`)
   },
   triggerCrawl() {
-    return
+    return axiosInstance.post('/admin/crawl')
+  },
+}
+
+export default adminApi
