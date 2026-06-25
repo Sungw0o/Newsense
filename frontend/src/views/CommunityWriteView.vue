@@ -168,13 +168,16 @@ const categoryColor = {
           </div>
           <p class="picker-hint">검색어와 카테고리로 첨부할 기사를 찾으세요.</p>
           <div class="picker-controls">
+            <label class="sr-only" for="article-picker-search">기사 검색어</label>
             <input
+              id="article-picker-search"
               v-model="articleSearch"
               class="picker-search"
               type="search"
               placeholder="기사 제목이나 요약 검색"
             />
-            <select v-model="articleCategory" class="picker-select">
+            <label class="sr-only" for="article-picker-category">기사 카테고리</label>
+            <select id="article-picker-category" v-model="articleCategory" class="picker-select">
               <option value="">전체 카테고리</option>
               <option v-for="category in categoryOptions" :key="category" :value="category">
                 {{ category }}
