@@ -2,103 +2,115 @@
 import { ref, onMounted, onUnmounted } from 'vue'
 import { indicatorApi } from '../../api/indicatorApi'
 
-const data = ref(null)
-const prev = ref(null)
+const items   = ref([])
+const status  = ref(null)   // "OK" | "STALE" | "MOCK"
+const loading = ref(true)
+const refreshing = ref(false)
+const lastUpdated = ref(null)
+
 let timer = null
 
-const fmt = (v, decimals = 2) => v != null ? Number(v).toLocaleString('ko-KR', { minimumFractionDigits: decimals, maximumFractionDigits: decimals }) : '—'
-
-const trendClass = (key) => {
-  if (!data.value || !prev.value) return ''
-  const cur = data.value[key]
-  const old = prev.value[key]
-  if (cur == null || old == null) return ''
-  if (cur > old) return 'up'
-  if (cur < old) return 'down'
-  return ''
+const fmt = (item) => {
+  if (item.value == null) return '—'
+  if (item.key === 'BOK_RATE') return `${item.value.toFixed(2)}%`
+  if (item.key === 'USD_KRW') return `${Math.round(item.value).toLocaleString()}원`
+  return item.value.toLocaleString('ko-KR', { maximumFractionDigits: 2 })
 }
 
-// 백엔드 응답: { status, insight, items: [{key, label, value, unit, ...}] }
-// 프론트 접근: data.kospi / data.kosdaq / data.usdKrwRate / data.bokBaseRate
-const parseResponse = (raw) => {
-  if (!raw) return null
-  const map = {}
-  ;(raw.items || []).forEach(item => { map[item.key] = item.value })
-  return {
-    kospi: map['KOSPI'] ?? null,
-    kosdaq: map['KOSDAQ'] ?? null,
-    usdKrwRate: map['USD_KRW'] ?? null,
-    bokBaseRate: map['BOK_RATE'] ?? null,
-    status: raw.status,
-    insight: raw.insight,
-    fetchedAt: raw.fetchedAt,
-  }
+const fmtChange = (item) => {
+  if (item.change == null) return null
+  const sign = item.change >= 0 ? '+' : ''
+  if (item.key === 'BOK_RATE') return `${sign}${item.change.toFixed(2)}%`
+  if (item.key === 'USD_KRW') return `${sign}${Math.round(item.change)}`
+  return `${sign}${item.change.toFixed(2)}`
 }
 
-const load = async () => {
+const load = async (manual = false) => {
+  if (manual) refreshing.value = true
   try {
     const res = await indicatorApi.getIndicators()
-    prev.value = data.value
-    data.value = parseResponse(res.data?.data || res.data)
+    const raw = res.data?.data ?? res.data
+    items.value  = raw?.items ?? []
+    status.value = raw?.status ?? null
+    lastUpdated.value = new Date()
   } catch {
     // silent
+  } finally {
+    loading.value   = false
+    refreshing.value = false
   }
 }
+
+const timeAgo = () => {
+  if (!lastUpdated.value) return ''
+  const sec = Math.floor((Date.now() - lastUpdated.value) / 1000)
+  if (sec < 60) return `${sec}초 전`
+  return `${Math.floor(sec / 60)}분 전`
+}
+const timeLabel = ref('')
 
 onMounted(() => {
   load()
-  timer = setInterval(load, 120_000)
+  timer = setInterval(() => {
+    load()
+    timeLabel.value = timeAgo()
+  }, 30_000)
 })
+
 onUnmounted(() => clearInterval(timer))
 </script>
 
 <template>
   <aside class="indicator-widget">
     <div class="widget-head">
-      <span class="widget-icon">📊</span>
       <span class="widget-title">금융 지표</span>
+      <span v-if="status === 'MOCK'" class="badge mock">준비 중</span>
+      <span v-else-if="status === 'STALE'" class="badge stale">캐시</span>
+      <button
+        class="refresh-btn"
+        :class="{ spinning: refreshing }"
+        :disabled="refreshing"
+        @click="load(true)"
+        title="새로고침"
+        aria-label="지표 새로고침"
+      >↻</button>
+    </div>
+
+    <!-- 로딩 스켈레톤 -->
+    <div v-if="loading" class="skel-wrap">
+      <div v-for="n in 4" :key="n" class="skel-row"></div>
+    </div>
+
+    <!-- 지표 표 -->
+    <table v-else-if="items.length" class="ind-table">
+      <thead>
+        <tr>
+          <th>지표</th>
+          <th class="num">현재</th>
+          <th class="num">변동</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr v-for="item in items" :key="item.key">
+          <td class="label">{{ item.label }}</td>
+          <td class="num val">{{ fmt(item) }}</td>
+          <td class="num chg" :class="item.trend === 'UP' ? 'up' : item.trend === 'DOWN' ? 'down' : ''">
+            <template v-if="fmtChange(item)">
+              {{ item.trend === 'UP' ? '▲' : item.trend === 'DOWN' ? '▼' : '' }}
+              {{ fmtChange(item) }}
+            </template>
+            <span v-else class="flat">—</span>
+          </td>
+        </tr>
+      </tbody>
+    </table>
+
+    <p v-else class="empty">지표를 불러올 수 없습니다.</p>
+
+    <p class="widget-footer">
       <span class="live-dot"></span>
-    </div>
-
-    <div v-if="!data" class="widget-loading">
-      <span class="skel-line"></span>
-      <span class="skel-line short"></span>
-      <span class="skel-line"></span>
-      <span class="skel-line short"></span>
-    </div>
-
-    <div v-else class="indicator-list">
-      <div class="indicator-row">
-        <span class="ind-label">KOSPI</span>
-        <span class="ind-value" :class="trendClass('kospi')">
-          {{ fmt(data.kospi, 2) }}
-          <span class="arrow" v-if="trendClass('kospi') === 'up'">▲</span>
-          <span class="arrow" v-else-if="trendClass('kospi') === 'down'">▼</span>
-        </span>
-      </div>
-      <div class="indicator-row">
-        <span class="ind-label">KOSDAQ</span>
-        <span class="ind-value" :class="trendClass('kosdaq')">
-          {{ fmt(data.kosdaq, 2) }}
-          <span class="arrow" v-if="trendClass('kosdaq') === 'up'">▲</span>
-          <span class="arrow" v-else-if="trendClass('kosdaq') === 'down'">▼</span>
-        </span>
-      </div>
-      <div class="indicator-row">
-        <span class="ind-label">원/달러</span>
-        <span class="ind-value" :class="trendClass('usdKrwRate')">
-          {{ fmt(data.usdKrwRate, 1) }}원
-          <span class="arrow" v-if="trendClass('usdKrwRate') === 'up'">▲</span>
-          <span class="arrow" v-else-if="trendClass('usdKrwRate') === 'down'">▼</span>
-        </span>
-      </div>
-      <div class="indicator-row">
-        <span class="ind-label">기준금리</span>
-        <span class="ind-value neutral">{{ fmt(data.bokBaseRate, 2) }}%</span>
-      </div>
-    </div>
-
-    <p v-if="data" class="widget-updated">2분마다 갱신</p>
+      30초마다 자동 갱신
+    </p>
   </aside>
 </template>
 
@@ -106,84 +118,81 @@ onUnmounted(() => clearInterval(timer))
 .indicator-widget {
   position: sticky;
   top: 80px;
-  padding: 18px 16px;
-  background: rgba(255, 255, 255, 0.65);
-  border: 1px solid rgba(0, 0, 0, 0.07);
-  border-radius: 20px;
-  backdrop-filter: blur(40px) saturate(160%);
-  -webkit-backdrop-filter: blur(40px) saturate(160%);
-  box-shadow: inset 0 1px 0 rgba(255,255,255,0.85), 0 4px 16px -6px rgba(20,40,80,0.08);
+  padding: 14px 14px 12px;
+  background: rgba(255,255,255,0.70);
+  border: 1px solid rgba(0,0,0,0.07);
+  border-radius: 16px;
+  backdrop-filter: blur(32px) saturate(160%);
+  -webkit-backdrop-filter: blur(32px) saturate(160%);
+  box-shadow: inset 0 1px 0 rgba(255,255,255,0.85), 0 4px 14px -6px rgba(20,40,80,0.08);
 }
 .dark .indicator-widget {
-  background: rgba(20,24,34,0.60);
+  background: rgba(20,24,34,0.65);
   border-color: rgba(255,255,255,0.10);
-  box-shadow: inset 0 1px 0 rgba(255,255,255,0.08), 0 4px 16px -6px rgba(0,0,0,0.35);
 }
 
+/* 헤더 */
 .widget-head {
   display: flex;
   align-items: center;
   gap: 6px;
-  margin-bottom: 14px;
-  padding-bottom: 10px;
-  border-bottom: 1px solid var(--line);
+  margin-bottom: 10px;
+  padding-bottom: 8px;
+  border-bottom: 1px solid rgba(0,0,0,0.07);
 }
-.widget-icon { font-size: 15px; }
+.dark .widget-head { border-color: rgba(255,255,255,0.09); }
+
 .widget-title {
-  font-size: 13px;
-  font-weight: 700;
-  color: var(--ink);
+  font-size: 12.5px;
+  font-weight: 800;
+  color: var(--ink, #0a0d12);
   flex: 1;
 }
 .dark .widget-title { color: #f4f6fa; }
 
-.live-dot {
-  width: 7px; height: 7px;
-  border-radius: 50%;
-  background: #22c55e;
-  animation: pulse-dot 2s infinite;
-}
-@keyframes pulse-dot {
-  0%, 100% { opacity: 1; }
-  50% { opacity: 0.4; }
-}
-
-.indicator-list { display: flex; flex-direction: column; gap: 10px; }
-
-.indicator-row {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-}
-
-.ind-label {
-  font-size: 12px;
-  color: var(--ink-3);
-  font-family: 'Nanum Gothic', monospace;
-}
-
-.ind-value {
-  font-size: 13px;
+.badge {
+  font-size: 9.5px;
   font-weight: 700;
-  color: var(--ink);
-  display: flex;
-  align-items: center;
-  gap: 3px;
+  padding: 2px 6px;
+  border-radius: 999px;
 }
-.dark .ind-value { color: #e0e4ef; }
-.ind-value.up { color: #ef4444; }
-.ind-value.down { color: #3b82f6; }
-.ind-value.neutral { color: var(--ink-2); }
+.badge.mock  { background: #ede9fe; color: #5b21b6; }
+.badge.stale { background: #e0f2fe; color: #075985; }
 
-.arrow { font-size: 10px; }
+.refresh-btn {
+  font-size: 15px;
+  line-height: 1;
+  background: none;
+  border: none;
+  color: var(--ink-3, #8a93a3);
+  cursor: pointer;
+  padding: 2px 3px;
+  border-radius: 6px;
+  transition: color .15s, transform .15s;
+}
+.refresh-btn:hover { color: #0084ff; }
+.refresh-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+.refresh-btn.spinning { animation: spin-once .6s linear; }
+@keyframes spin-once { to { transform: rotate(360deg); } }
 
-.widget-updated {
-  margin: 12px 0 0;
+/* 표 */
+.ind-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 12.5px;
+}
+.ind-table thead th {
+  padding: 0 4px 6px;
   font-size: 10.5px;
-  color: var(--ink-3);
-  text-align: right;
-  font-family: 'Nanum Gothic', monospace;
+  font-weight: 700;
+  color: var(--ink-3, #8a93a3);
+  border-bottom: 1px solid rgba(0,0,0,0.07);
+  white-space: nowrap;
 }
+.dark .ind-table thead th { border-color: rgba(255,255,255,0.09); }
+.ind-table thead th.num { text-align: right; }
 
-/* Skeleton */
-.widget-loading { display: flex; flex-dire
+.ind-table tbody tr:hover td { background: rgba(0,0,0,0.025); }
+.dark .ind-table tbody tr:hover td { background: rgba(255,255,255,0.04); }
+
+.

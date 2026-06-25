@@ -50,10 +50,7 @@ const clearSearch = () => {
 <template>
   <div class="feed-shell">
     <header class="feed-header">
-      <div>
-        <p class="eyebrow-text">오늘의 경제 뉴스</p>
-        <h1>읽을 기사부터 고르고, 모르는 개념은 바로 확인하세요.</h1>
-      </div>
+      <p class="eyebrow-text">오늘의 경제 뉴스</p>
       <p class="feed-meta">
         {{ todayLabel }} 업데이트 <strong>{{ displayArticles.length }}</strong>건
       </p>
@@ -414,3 +411,4 @@ const clearSearch = () => {
   }
 }
 </style>
+                                                                                                                          
