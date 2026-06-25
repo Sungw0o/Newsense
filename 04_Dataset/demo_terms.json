@@ -1,17 +1,60 @@
-[
-  {
-    "term": "기준금리",
-    "definition": "중앙은행이 통화정책 방향을 보여주기 위해 정하는 대표 정책금리이다.",
-    "category": "거시경제"
+{
+  "metadata": {
+    "name": "newsense-demo-terms",
+    "purpose": "RAG term dictionary fallback",
+    "language": "ko-KR",
+    "version": "2026-06-26"
   },
-  {
-    "term": "원/달러 환율",
-    "definition": "미국 달러 1달러를 사기 위해 필요한 원화 금액이다.",
-    "category": "글로벌경제"
+  "promptContract": {
+    "source": "docs/ai-pipeline-strategy.md",
+    "termRules": [
+      "prefer economic dictionary style definitions",
+      "connect each term to article evidence and quiz explanations",
+      "avoid sports, politics-only, celebrity, and non-economic topics"
+    ]
   },
-  {
-    "term": "순이자마진",
-    "definition": "은행이 이자 수익에서 이자 비용을 뺀 뒤 운용자산 대비로 나타낸 수익성 지표이다.",
-    "category": "금융/투자"
-  }
-]
+  "terms": [
+    {
+      "term": "기준금리",
+      "category": "MACRO_ECONOMY",
+      "difficulty": "BASIC",
+      "definition": "중앙은행이 통화정책 방향을 보여주기 위해 정하는 대표 정책금리이다.",
+      "demoArticleExternalIds": ["demo-base-rate-20260625"]
+    },
+    {
+      "term": "시장금리",
+      "category": "FINANCE_INVESTMENT",
+      "difficulty": "BASIC",
+      "definition": "자금 시장에서 수요와 공급, 정책금리 기대, 신용 위험에 따라 형성되는 금리이다.",
+      "demoArticleExternalIds": ["demo-base-rate-20260625"]
+    },
+    {
+      "term": "원/달러 환율",
+      "category": "GLOBAL_ECONOMY",
+      "difficulty": "BASIC",
+      "definition": "미국 달러 1달러를 사기 위해 필요한 원화 금액이다.",
+      "demoArticleExternalIds": ["demo-exchange-rate-20260625"]
+    },
+    {
+      "term": "수입물가",
+      "category": "GLOBAL_ECONOMY",
+      "difficulty": "INTERMEDIATE",
+      "definition": "해외에서 들여오는 상품과 원자재의 가격 수준으로, 환율과 국제 원자재 가격의 영향을 크게 받는다.",
+      "demoArticleExternalIds": ["demo-exchange-rate-20260625"]
+    },
+    {
+      "term": "순이자마진",
+      "category": "FINANCE_INVESTMENT",
+      "difficulty": "INTERMEDIATE",
+      "definition": "은행이 이자 수익에서 이자 비용을 뺀 뒤 운용자산 대비로 나타낸 수익성 지표이다.",
+      "demoArticleExternalIds": ["demo-base-rate-20260625"]
+    },
+    {
+      "term": "변동형 대출",
+      "category": "FINANCE_INVESTMENT",
+      "difficulty": "BASIC",
+      "definition": "시장금리나 기준금리 변동에 따라 적용 금리가 일정 주기마다 바뀌는 대출이다.",
+      "demoArticleExternalIds": ["demo-base-rate-20260625"]
+    }
+  ]
+}

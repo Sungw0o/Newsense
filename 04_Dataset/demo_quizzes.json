@@ -1,38 +1,115 @@
-[
-  {
-    "articleTitle": "기준금리 동결에 대출금리 상승세 둔화",
-    "quizzes": [
-      {
-        "type": "OX",
-        "question": "기준금리가 동결되면 시장금리 변동 폭이 줄어들 수 있다.",
-        "correctAnswer": "O",
-        "explanation": "정책금리가 유지되면 단기금리 기대가 안정되어 시장금리 변동성이 낮아질 수 있다."
-      },
-      {
-        "type": "MULTIPLE",
-        "question": "기사에서 언급된 기준금리 수준은?",
-        "options": ["2.50%", "3.00%", "3.50%", "4.00%"],
-        "correctAnswer": "3.50%",
-        "explanation": "기사 본문은 한국은행 기준금리가 3.50%로 유지됐다고 설명한다."
-      }
+{
+  "metadata": {
+    "name": "newsense-demo-quizzes",
+    "purpose": "Generator-Critic quality fallback",
+    "language": "ko-KR",
+    "version": "2026-06-26"
+  },
+  "promptContract": {
+    "source": "docs/ai-pipeline-strategy.md",
+    "quizShape": [
+      "question 1: OX concept understanding",
+      "question 2: multiple-choice fact check",
+      "question 3: multiple-choice causal reasoning"
+    ],
+    "criticChecks": [
+      "single correct answer",
+      "answer grounded in article evidence",
+      "plausible distractors based on related economic keywords"
     ]
   },
-  {
-    "articleTitle": "환율 1540원대 진입에 수입물가 부담 확대",
-    "quizzes": [
-      {
-        "type": "OX",
-        "question": "원화 약세는 수입 원자재 가격 부담을 키울 수 있다.",
-        "correctAnswer": "O",
-        "explanation": "달러 결제 비용이 늘어나 수입 기업의 원가 부담이 커질 수 있다."
-      },
-      {
-        "type": "MULTIPLE",
-        "question": "환율 상승이 수출 기업에 줄 수 있는 효과로 가장 적절한 것은?",
-        "options": ["원화 환산 매출 증가", "수입 원가 즉시 하락", "기준금리 자동 인하", "소비자물가 즉시 하락"],
-        "correctAnswer": "원화 환산 매출 증가",
-        "explanation": "수출 대금을 달러로 받는 기업은 원화 약세 때 원화 환산 매출이 늘어날 수 있다."
-      }
-    ]
-  }
-]
+  "quizSets": [
+    {
+      "articleExternalId": "demo-base-rate-20260625",
+      "articleTitle": "기준금리 동결에 대출금리 상승세 둔화",
+      "quizzes": [
+        {
+          "purpose": "CONCEPT_UNDERSTANDING",
+          "type": "OX",
+          "question": "기준금리가 동결되면 모든 대출금리가 즉시 같은 폭으로 내려간다.",
+          "options": ["O", "X"],
+          "correctAnswer": "X",
+          "explanation": "기준금리는 시장금리에 영향을 주지만 은행채 금리, 대출 종류, 은행별 가산금리 때문에 모든 대출금리가 즉시 같은 폭으로 움직이지는 않는다.",
+          "evidence": "은행채 금리 안정 영향으로 주택담보대출과 신용대출 금리의 변동 폭이 줄었다.",
+          "distractorStrategy": "기준금리와 대출금리를 동일하게 보는 흔한 오개념을 활용"
+        },
+        {
+          "purpose": "FACT_CHECK",
+          "type": "MULTIPLE_CHOICE",
+          "question": "기사에서 기준금리 동결 이후 가장 먼저 부담 완화가 기대된 영역은 무엇인가요?",
+          "options": [
+            "원유 수입 관세 인상",
+            "변동형 대출 차주의 이자 부담",
+            "반도체 수출 물량 제한",
+            "주택담보대출 원금 자동 감면"
+          ],
+          "correctAnswer": "변동형 대출 차주의 이자 부담",
+          "explanation": "기사의 핵심은 은행채 금리 안정으로 대출금리 상승세가 둔화되어 차주의 이자 부담이 완화될 수 있다는 점이다.",
+          "evidence": "가계대출 금리는 은행채 금리 안정 영향으로 상승세가 둔화됐다.",
+          "distractorStrategy": "무역, 산업, 원금 감면처럼 기사와 무관하거나 과장된 선택지를 섞음"
+        },
+        {
+          "purpose": "CAUSAL_REASONING",
+          "type": "MULTIPLE_CHOICE",
+          "question": "대출금리 상승세가 둔화될 때 소비와 부동산 시장에 나타날 수 있는 경로로 가장 적절한 것은?",
+          "options": [
+            "이자 부담 완화가 가처분소득을 지지하고 주택 매수 심리를 일부 회복시킬 수 있다.",
+            "은행채 금리가 안정되면 모든 수입물가가 즉시 하락한다.",
+            "기준금리 동결은 기업의 해외 매출을 원화로 환산하는 효과만 만든다.",
+            "대출금리 둔화는 중앙은행의 물가 목표를 자동으로 폐지한다."
+          ],
+          "correctAnswer": "이자 부담 완화가 가처분소득을 지지하고 주택 매수 심리를 일부 회복시킬 수 있다.",
+          "explanation": "대출 이자 부담이 낮아지면 가계의 소비 여력이 유지되고 주택 구입 비용 부담도 완화될 수 있다.",
+          "evidence": "대출금리의 추가 상승 압력이 완화되고 있다.",
+          "distractorStrategy": "환율, 해외 매출, 통화정책 제도처럼 기사 키워드와 비슷하지만 인과가 틀린 선택지를 배치"
+        }
+      ]
+    },
+    {
+      "articleExternalId": "demo-exchange-rate-20260625",
+      "articleTitle": "환율 1540원대 진입에 수입물가 부담 확대",
+      "quizzes": [
+        {
+          "purpose": "CONCEPT_UNDERSTANDING",
+          "type": "OX",
+          "question": "원/달러 환율이 상승하면 같은 1달러 상품을 사기 위해 더 많은 원화가 필요하다.",
+          "options": ["O", "X"],
+          "correctAnswer": "O",
+          "explanation": "원/달러 환율은 달러 1달러를 사기 위해 필요한 원화 금액이므로 환율 상승은 원화 가치 하락을 뜻한다.",
+          "evidence": "원/달러 환율이 1540원대에 머물며 수입 원가 부담이 커졌다.",
+          "distractorStrategy": "환율 상승과 원화 강세를 혼동하는 오개념 점검"
+        },
+        {
+          "purpose": "FACT_CHECK",
+          "type": "MULTIPLE_CHOICE",
+          "question": "기사에서 환율 상승이 먼저 밀어 올릴 가능성이 큰 비용은 무엇인가요?",
+          "options": [
+            "원유·원자재 등 수입 결제 비용",
+            "국내 은행의 예금보험료",
+            "개인 신용점수 산정 비용",
+            "상장기업의 액면가"
+          ],
+          "correctAnswer": "원유·원자재 등 수입 결제 비용",
+          "explanation": "환율이 오르면 달러로 결제하는 원자재와 에너지 수입 비용이 원화 기준으로 증가한다.",
+          "evidence": "수입 원자재와 에너지 가격 부담이 커지고 있다.",
+          "distractorStrategy": "금융·증권 용어를 섞되 기사 근거가 없는 항목을 오답으로 구성"
+        },
+        {
+          "purpose": "CAUSAL_REASONING",
+          "type": "MULTIPLE_CHOICE",
+          "question": "환율 상승이 물가와 통화정책 부담으로 이어지는 경로로 가장 알맞은 것은?",
+          "options": [
+            "수입물가 상승이 소비자물가를 자극해 중앙은행의 금리 인하 여지를 좁힌다.",
+            "원화 약세가 발생하면 수입 가격이 즉시 0원이 되어 물가가 하락한다.",
+            "환율 상승은 기업의 대출 원금을 자동으로 탕감한다.",
+            "환율 상승은 뉴스 소비자의 퀴즈 정답률만 변화시킨다."
+          ],
+          "correctAnswer": "수입물가 상승이 소비자물가를 자극해 중앙은행의 금리 인하 여지를 좁힌다.",
+          "explanation": "수입 원가 상승은 시차를 두고 소비자물가에 반영될 수 있고, 물가 부담은 통화정책 완화를 어렵게 만든다.",
+          "evidence": "환율 상승은 수입 기업의 원가를 높이고 소비자물가에도 시차를 두고 반영될 수 있다.",
+          "distractorStrategy": "과장된 자동 효과와 비경제적 결과를 배제하도록 구성"
+        }
+      ]
+    }
+  ]
+}

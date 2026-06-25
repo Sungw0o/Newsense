@@ -1,0 +1,97 @@
+spring:
+  config:
+    activate:
+      on-profile: prod
+  security:
+    oauth2:
+      client:
+        registration:
+          google:
+            redirect-uri: ${OAUTH2_GOOGLE_REDIRECT_URI:${APP_BACKEND_URL:https://api.new5ense.site}/login/oauth2/code/google}
+          naver:
+            redirect-uri: ${OAUTH2_NAVER_REDIRECT_URI:${APP_BACKEND_URL:https://api.new5ense.site}/login/oauth2/code/naver}
+          kakao:
+            redirect-uri: ${OAUTH2_KAKAO_REDIRECT_URI:${APP_BACKEND_URL:https://api.new5ense.site}/login/oauth2/code/kakao}
+  datasource:
+    url: ${SPRING_DATASOURCE_URL}
+    username: ${SPRING_DATASOURCE_USERNAME}
+    password: ${SPRING_DATASOURCE_PASSWORD}
+    driver-class-name: com.mysql.cj.jdbc.Driver
+  jpa:
+    hibernate:
+      ddl-auto: ${SPRING_JPA_DDL_AUTO:validate}
+    show-sql: false
+  mongodb:
+    uri: ${SPRING_MONGODB_URI:${SPRING_DATA_MONGODB_URI}}
+  data:
+    mongodb:
+      auto-index-creation: true
+    redis:
+      host: ${SPRING_DATA_REDIS_HOST}
+      port: ${SPRING_DATA_REDIS_PORT:6379}
+
+jwt:
+  secret: ${JWT_SECRET}
+  access-expiration: ${JWT_ACCESS_EXPIRATION:1800000}
+  refresh-expiration: ${JWT_REFRESH_EXPIRATION:1209600000}
+  secure-cookie: true
+
+crawler:
+  enabled: ${CRAWLER_ENABLED:true}
+  bootstrap-enabled: ${CRAWLER_BOOTSTRAP_ENABLED:false}
+  minimum-articles: ${CRAWLER_MINIMUM_ARTICLES:200}
+  initial-delay: ${CRAWLER_INITIAL_DELAY:60000}
+  fixed-delay: ${CRAWLER_FIXED_DELAY:3600000}
+  connection-timeout: ${CRAWLER_CONNECTION_TIMEOUT:10000}
+  max-items-per-source: ${CRAWLER_MAX_ITEMS:200}
+  max-retries: ${CRAWLER_MAX_RETRIES:3}
+  retry-delay: ${CRAWLER_RETRY_DELAY:1000}
+  request-delay: ${CRAWLER_REQUEST_DELAY:500}
+  chunk-size: ${CRAWLER_CHUNK_SIZE:800}
+  pdf-min-text-length: ${CRAWLER_PDF_MIN_TEXT_LENGTH:500}
+  tess-data-path: ${TESS_DATA_PATH:}
+  naver-client-id: ${NAVER_CLIENT_ID:}
+  naver-client-secret: ${NAVER_CLIENT_SECRET:}
+  news-api-key: ${NEWS_API_KEY:}
+  cron:
+    public-source: ${SPRING_CRAWLER_CRON_PUBLIC:0 0 11,17 * * MON-FRI}
+    portal-source: ${SPRING_CRAWLER_CRON_PORTAL:0 0 8,14,20 * * *}
+  sources:
+    - key: bok
+      name: 한국은행
+      base-url: https://www.bok.or.kr
+      list-url: ${BOK_CRAWLER_LIST_URL}
+      item-selector: ${BOK_CRAWLER_ITEM_SELECTOR:li.bbsRowCls}
+      link-selector: ${BOK_CRAWLER_LINK_SELECTOR:a.title}
+      date-selector: ${BOK_CRAWLER_DATE_SELECTOR:.dataInfo .date}
+      body-selector: ${BOK_CRAWLER_BODY_SELECTOR:meta[property=description]}
+      body-attribute: ${BOK_CRAWLER_BODY_ATTRIBUTE:content}
+      enabled: ${BOK_CRAWLER_ENABLED:false}
+    - key: moef
+      name: 기획재정부
+      base-url: https://www.moef.go.kr
+      list-url: ${MOEF_CRAWLER_LIST_URL}
+      item-selector: ${MOEF_CRAWLER_ITEM_SELECTOR:.board_list tbody tr}
+      link-selector: ${MOEF_CRAWLER_LINK_SELECTOR:a}
+      date-selector: ${MOEF_CRAWLER_DATE_SELECTOR:.date}
+      body-selector: ${MOEF_CRAWLER_BODY_SELECTOR:.view_cont}
+      body-attribute: ${MOEF_CRAWLER_BODY_ATTRIBUTE:}
+      enabled: ${MOEF_CRAWLER_ENABLED:true}
+
+rag:
+  vector-search:
+    # 프로덕션에서는 Atlas Vector Search 사용
+    enabled: ${RAG_VECTOR_SEARCH_ENABLED:true}
+    mode: ${RAG_VECTOR_SEARCH_MODE:atlas}
+    index-name: ${RAG_VECTOR_SEARCH_INDEX_NAME:article_embedding_index}
+    num-candidates: ${RAG_VECTOR_SEARCH_NUM_CANDIDATES:200}
+    dimensions: ${RAG_VECTOR_SEARCH_DIMENSIONS:3072}
+    vector-weight: ${RAG_VECTOR_WEIGHT:0.45}
+    keyword-weight: ${RAG_KEYWORD_WEIGHT:0.20}
+    recency-weight: ${RAG_RECENCY_WEIGHT:0.10}
+    category-weight: ${RAG_CATEGORY_WEIGHT:0.10}
+    weakness-weight: ${RAG_WEAKNESS_WEIGHT:0.10}
+    market-weight: ${RAG_MARKET_WEIGHT:0.05}
+  embedding:
+    backfill:
+      enabled: ${RAG_EMBEDDING_BACKFILL_ENABLED:false}

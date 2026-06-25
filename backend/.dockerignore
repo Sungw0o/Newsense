@@ -1,7 +1,0 @@
-.gradle/
-out/
-bin/
-*.class
-*.log
-
-src/test/

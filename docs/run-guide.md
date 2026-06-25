@@ -29,14 +29,14 @@ docker compose up -d --build
 ## 백엔드 단독 실행
 
 ```bash
-cd backend
+cd 02_SpringBoot
 ./gradlew bootRun --args='--spring.profiles.active=local'
 ```
 
 Windows PowerShell:
 
 ```powershell
-cd backend
+cd 02_SpringBoot
 .\gradlew.bat bootRun --args='--spring.profiles.active=local'
 ```
 
@@ -49,20 +49,20 @@ CREATE DATABASE newsense CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 ## 프론트엔드 실행
 
 ```bash
-cd frontend
+cd 03_Vue
 npm install
 npm run dev
 ```
 
 - 개발 서버: `http://localhost:5173`
-- API 기본값: `frontend/.env.example` 참고
+- API 기본값: `03_Vue/.env.example` 참고
 
 ## 테스트 및 빌드
 
 백엔드:
 
 ```bash
-cd backend
+cd 02_SpringBoot
 ./gradlew test jacocoTestReport jacocoTestCoverageVerification
 ./gradlew bootJar
 ```
@@ -70,7 +70,7 @@ cd backend
 프론트엔드:
 
 ```bash
-cd frontend
+cd 03_Vue
 npm run test:run
 npm run build
 ```

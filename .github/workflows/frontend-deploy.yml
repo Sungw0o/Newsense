@@ -2,19 +2,19 @@ name: Frontend CI / CD
 
 # ─────────────────────────────────────────────────────────────────────────────
 # 트리거 규칙
-#   · frontend/** 변경이 있는 모든 push  → CI (설치 + 테스트)
+#   · 03_Vue/** 변경이 있는 모든 push  → CI (설치 + 테스트)
 #   · develop / main push                → CI 완료 후 S3 배포 + CloudFront 캐시 무효화
 #   · develop / main 으로 향하는 PR      → CI 만 (배포 없음)
 # ─────────────────────────────────────────────────────────────────────────────
 on:
   push:
     paths:
-      - 'frontend/**'
+      - '03_Vue/**'
       - '.github/workflows/frontend-deploy.yml'
   pull_request:
     branches: [develop, main]
     paths:
-      - 'frontend/**'
+      - '03_Vue/**'
 
 jobs:
   # ────────────────────────────────────────────────────────────────────────────
@@ -25,7 +25,7 @@ jobs:
     runs-on: ubuntu-latest
     defaults:
       run:
-        working-directory: frontend
+        working-directory: 03_Vue
 
     steps:
       - name: Checkout
@@ -36,7 +36,7 @@ jobs:
         with:
           node-version: '22'
           cache: 'npm'
-          cache-dependency-path: frontend/package-lock.json
+          cache-dependency-path: 03_Vue/package-lock.json
 
       - name: Install dependencies
         run: npm ci
@@ -57,7 +57,7 @@ jobs:
       (github.ref == 'refs/heads/develop' || github.ref == 'refs/heads/main')
     defaults:
       run:
-        working-directory: frontend
+        working-directory: 03_Vue
 
     steps:
       - name: Checkout
@@ -68,7 +68,7 @@ jobs:
         with:
           node-version: '22'
           cache: 'npm'
-          cache-dependency-path: frontend/package-lock.json
+          cache-dependency-path: 03_Vue/package-lock.json
 
       - name: Install dependencies
         run: npm ci

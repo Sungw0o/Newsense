@@ -2,19 +2,19 @@ name: Backend CI / CD
 
 # ─────────────────────────────────────────────────────────────────────────────
 # 트리거 규칙
-#   · backend/** 변경이 있는 모든 push  → CI (테스트 + SonarQube)
+#   · 02_SpringBoot/** 변경이 있는 모든 push  → CI (테스트 + SonarQube)
 #   · develop / main push               → CI 완료 후 EC2 배포까지 실행
 #   · develop / main 으로 향하는 PR     → CI 만 (배포 없음)
 # ─────────────────────────────────────────────────────────────────────────────
 on:
   push:
     paths:
-      - 'backend/**'
+      - '02_SpringBoot/**'
       - '.github/workflows/backend-deploy.yml'
   pull_request:
     branches: [develop, main]
     paths:
-      - 'backend/**'
+      - '02_SpringBoot/**'
 
 jobs:
   # ────────────────────────────────────────────────────────────────────────────
@@ -25,7 +25,7 @@ jobs:
     runs-on: ubuntu-latest
     defaults:
       run:
-        working-directory: backend
+        working-directory: 02_SpringBoot
     env:
       SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
       SONAR_HOST_URL: ${{ vars.SONAR_HOST_URL || 'https://sonarcloud.io' }}
@@ -71,7 +71,7 @@ jobs:
       (github.ref == 'refs/heads/develop' || github.ref == 'refs/heads/main')
     defaults:
       run:
-        working-directory: backend
+        working-directory: 02_SpringBoot
 
     steps:
       - name: Checkout
@@ -101,7 +101,7 @@ jobs:
           username: ${{ secrets.EC2_USERNAME }}
           key: ${{ secrets.EC2_SSH_KEY }}
           script: |
-            mkdir -p /opt/newsense/backend/build/libs
+            mkdir -p /opt/newsense/02_SpringBoot/build/libs
             mkdir -p /opt/newsense/infra/nginx
 
       - name: Copy Docker Compose manifests to EC2 via SCP
@@ -110,23 +110,29 @@ jobs:
           host: ${{ secrets.EC2_HOST }}
           username: ${{ secrets.EC2_USERNAME }}
           key: ${{ secrets.EC2_SSH_KEY }}
-          source: "docker-compose.yml,infra/nginx/default.conf,backend/Dockerfile.prod"
+          source: "docker-compose.yml,infra/nginx/default.conf,02_SpringBoot/Dockerfile.prod"
           target: "/opt/newsense/"
 
-      # EC2 /opt/newsense/backend/build/libs/ 로 JAR 전송
-      # strip_components: 3 → backend/build/libs/{jar} → {jar} → target 디렉터리에 적재
+      # EC2 /opt/newsense/02_SpringBoot/build/libs/ 로 JAR 전송
+      # strip_components: 3 → 02_SpringBoot/build/libs/{jar} → {jar} → target 디렉터리에 적재
       - name: Copy JAR to EC2 via SCP
         uses: appleboy/scp-action@917f8b81dfc1ccd331fef9e2d61bdc6c8be94634 # v0.1.7
         with:
           host: ${{ secrets.EC2_HOST }}
           username: ${{ secrets.EC2_USERNAME }}
           key: ${{ secrets.EC2_SSH_KEY }}
-          source: "backend/build/libs/*.jar"
-          target: "/opt/newsense/backend/build/libs/"
+          source: "02_SpringBoot/build/libs/*.jar"
+          target: "/opt/newsense/02_SpringBoot/build/libs/"
           strip_components: 3
 
       # Docker Compose로 app 서비스만 리빌드 후 재시작, 이미지 정리
       - name: Restart app via Docker Compose
         uses: appleboy/ssh-action@0ff4204d59e8e51228ff73bce53f80d53301dee2 # v1
         with:
-          host: ${{ secrets.EC2_
+          host: ${{ secrets.EC2_HOST }}
+          username: ${{ secrets.EC2_USERNAME }}
+          key: ${{ secrets.EC2_SSH_KEY }}
+          script: |
+            cd /opt/newsense
+            docker compose up -d --build app
+            docker image prune -f

@@ -3,7 +3,7 @@ name: newsense
 services:
   app:
     build:
-      context: ./backend
+      context: ./02_SpringBoot
       dockerfile: Dockerfile.prod
     image: newsense-backend:latest
     restart: unless-stopped

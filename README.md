@@ -151,7 +151,7 @@ flowchart TD
 
 ```text
 Newsense/
-├── backend/                      # Spring Boot 백엔드
+├── 02_SpringBoot/                      # Spring Boot 백엔드
 │   └── src/main/java/com/newsense/backend/
 │       ├── ai/                   # 기사 분류·요약·퀴즈 AI 클라이언트
 │       ├── article/              # 기사 도메인, 크롤러, 상세/피드 API
@@ -164,17 +164,17 @@ Newsense/
 │       ├── stock/                # 연관 종목 시세
 │       ├── user/                 # 회원·프로필
 │       └── wrongnote/            # 오답노트
-├── frontend/                     # Vue 3 + Vite + Pinia
+├── 03_Vue/                       # Vue 3 + Vite + Pinia
 │   └── src/
 │       ├── api/                  # Axios API 클라이언트
 │       ├── components/           # 공통·기사·홈 컴포넌트
 │       ├── stores/               # Pinia 상태 관리
 │       └── views/                # 화면 단위 컴포넌트
+├── 01_DB/                        # 전체 MySQL DDL 스키마
+├── 04_Dataset/                   # 프롬프트 계약 기반 데모/fallback 데이터셋
 ├── docs/                         # 실행·배포·RAG·인프라 문서
-├── 01_DB/                        # DB 스키마 참고
-├── 02_SpringBoot/                # 백엔드 실행 참고
-├── 03_Vue/                       # 프론트엔드 실행 참고
-└── 04_Dataset/                   # 데모/fallback 데이터셋
+├── infra/                        # Nginx 등 인프라 설정
+└── docker-compose.yml            # EC2 백엔드/DB 운영 Compose
 ```
 
 ## 실행 및 운영 문서
@@ -185,20 +185,20 @@ Newsense/
 | [`docs/docker-compose.md`](docs/docker-compose.md) | 백엔드·DB·Redis·Nginx Compose 실행 |
 | [`docs/deployment-secrets.md`](docs/deployment-secrets.md) | GitHub Secrets, EC2 `.env`, SonarCloud 설정 |
 | [`docs/rag.md`](docs/rag.md) | RAG 검색 구조 |
-| [`02_SpringBoot/README.md`](02_SpringBoot/README.md) | 백엔드 실행 및 seed 참고 |
-| [`03_Vue/README.md`](03_Vue/README.md) | 프론트엔드 실행 참고 |
+| [`02_SpringBoot/RUN.md`](02_SpringBoot/RUN.md) | 백엔드 실행 및 seed 참고 |
+| [`03_Vue/RUN.md`](03_Vue/RUN.md) | 프론트엔드 실행 참고 |
 
 ## 빠른 실행
 
 ```bash
 # backend
-cd backend
+cd 02_SpringBoot
 ./gradlew bootRun --args='--spring.profiles.active=local'
 ```
 
 ```bash
 # frontend
-cd frontend
+cd 03_Vue
 npm install
 npm run dev
 ```
