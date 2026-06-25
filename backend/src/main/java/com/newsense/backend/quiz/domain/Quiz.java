@@ -1,5 +1,6 @@
 package com.newsense.backend.quiz.domain;
 
+import com.newsense.backend.article.domain.ArticleDifficulty;
 import com.newsense.backend.article.domain.ArticleMeta;
 import jakarta.persistence.CollectionTable;
 import jakarta.persistence.Column;
@@ -70,6 +71,11 @@ public class Quiz {
     @Column(name = "is_active", nullable = false)
     private boolean isActive;
 
+    /** 사용자 수준별 맞춤 퀴즈. null = 기본(전체 공용) 퀴즈. */
+    @Enumerated(EnumType.STRING)
+    @Column(name = "user_level", length = 20)
+    private ArticleDifficulty userLevel;
+
     @Column(name = "generated_at", nullable = false)
     private LocalDateTime generatedAt;
 
@@ -82,14 +88,4 @@ public class Quiz {
             String explanation,
             int displayOrder
     ) {
-        return create(article, type, QuizPurpose.BASIC_CONCEPT, question, options, correctAnswer, explanation, displayOrder);
-    }
-
-    public static Quiz create(
-            ArticleMeta article,
-            QuizType type,
-            QuizPurpose purpose,
-            String question,
-            List<String> options,
-            String correctAnswer,
-            St
+        return create(article, type, QuizPurpose.BASIC_CONCEPT, question, options, correctAnswer, explanat

@@ -163,19 +163,39 @@ public class RagRetrievalService {
             String reason) {
 
         // 1. 쿼리 임베딩 생성
-        List<Double> queryEmbedding = embeddingClient.embed(query);
-        if (queryEmbedding.isEmpty()) {
-            log.warn("Query embedding empty — falling back to keyword-only search");
+        long t0 = System.currentTimeMillis();
+        List<Double> queryEmbedding;
+        try {
+            queryEmbedding = embeddingClient.embed(query);
+        } catch (Exception ex) {
+            log.warn("[RAG:FALLBACK] embedding_failed query_len={} reason={} elapsed_ms={} → keyword-only",
+                    query.length(), ex.getMessage(), System.currentTimeMillis() - t0);
             return retrieveByKeywords(keywords, limit, reason);
         }
+        if (queryEmbedding.isEmpty()) {
+            log.warn("[RAG:FALLBACK] embedding_empty query_len={} elapsed_ms={} → keyword-only",
+                    query.length(), System.currentTimeMillis() - t0);
+            return retrieveByKeywords(keywords, limit, reason);
+        }
+        log.debug("[RAG] embedding_ok dim={} elapsed_ms={}", queryEmbedding.size(), System.currentTimeMillis() - t0);
 
         // 2. 벡터 후보 검색 (배수만큼 더 가져옴)
         int candidateLimit = Math.min(limit * VECTOR_CANDIDATE_MULTIPLIER, MAX_CANDIDATE_ARTICLES);
-        List<VectorResult> vectorResults = vectorSearchService.search(queryEmbedding, candidateLimit);
-        if (vectorResults.isEmpty()) {
-            log.debug("Vector search returned no results — falling back to keyword-only search");
+        long t1 = System.currentTimeMillis();
+        List<VectorResult> vectorResults;
+        try {
+            vectorResults = vectorSearchService.search(queryEmbedding, candidateLimit);
+        } catch (Exception ex) {
+            log.warn("[RAG:FALLBACK] vector_search_failed candidateLimit={} reason={} elapsed_ms={} → keyword-only",
+                    candidateLimit, ex.getMessage(), System.currentTimeMillis() - t1);
             return retrieveByKeywords(keywords, limit, reason);
         }
+        if (vectorResults.isEmpty()) {
+            log.warn("[RAG:FALLBACK] vector_empty candidateLimit={} elapsed_ms={} → keyword-only",
+                    candidateLimit, System.currentTimeMillis() - t1);
+            return retrieveByKeywords(keywords, limit, reason);
+        }
+        log.debug("[RAG] vector_ok hits={} elapsed_ms={}", vectorResults.size(), System.currentTimeMillis() - t1);
 
         // 3. 벡터 점수 정규화 (max → 1.0)
         double maxVecScore = vectorResults.stream()
@@ -387,40 +407,4 @@ public class RagRetrievalService {
         List<ScoredChunk> scored = new ArrayList<>();
         for (int index = 0; index < chunks.size(); index++) {
             String chunk = chunks.get(index);
-            int score = scoreText(chunk, keywords);
-            scored.add(new ScoredChunk(index, chunk, score));
-        }
-        return scored;
-    }
-
-    private int scoreText(String text, List<String> keywords) {
-        if (text == null || text.isBlank()) {
-            return 0;
-        }
-        String normalizedText = normalize(text);
-        int score = 0;
-        for (String keyword : keywords) {
-            if (keyword.length() < MIN_QUERY_LENGTH) {
-                continue;
-            }
-            int occurrences = countOccurrences(normalizedText, keyword);
-            if (occurrences > 0) {
-                score += keyword.contains(" ") ? occurrences * 4 : occurrences * 2;
-            }
-        }
-        return score;
-    }
-
-    private int countOccurrences(String text, String keyword) {
-        int count = 0;
-        int fromIndex = 0;
-        while (fromIndex < text.length()) {
-            int index = text.indexOf(keyword, fromIndex);
-            if (index < 0) break;
-            count++;
-            fromIndex = index + keyword.length();
-        }
-        return count;
-    }
-
-    private boolean containsKeyword(String text, String key
+       
