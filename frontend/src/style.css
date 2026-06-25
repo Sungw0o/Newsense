@@ -297,4 +297,10 @@ html, body, .glass-panel, .glass-card {
   transition: background-color .3s ease, border-color .3s ease, color .3s ease, box-shadow .3s ease;
 }
 
-.g
+.glow-orb,
+.liquid-orb,
+.liquid-orb-primary,
+.liquid-orb-secondary,
+.liquid-orb-accent {
+  display: none;
+}
