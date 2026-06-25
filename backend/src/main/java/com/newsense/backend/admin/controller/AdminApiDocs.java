@@ -1,7 +1,8 @@
 package com.newsense.backend.admin.controller;
 
-import com.newsense.backend.admin.dto.AdminStatsResponse;
 import com.newsense.backend.admin.dto.AdminArticleResponse;
+import com.newsense.backend.admin.dto.AdminStatsResponse;
+import com.newsense.backend.admin.dto.CrawlResultResponse;
 import com.newsense.backend.admin.dto.PostReportResponse;
 import com.newsense.backend.common.response.ApiResponse;
 import com.newsense.backend.user.dto.UserProfileResponse;
@@ -16,6 +17,7 @@ import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
 
 @Tag(name = "Admin", description = "관리자 전용 API")
 @SecurityRequirement(name = "BearerAuth")
@@ -57,7 +59,4 @@ public interface AdminApiDocs {
 
     @Operation(summary = "AI 요약 강제 생성/갱신 (관리자)")
     @PatchMapping("/api/v1/admin/articles/{articleId}/summary")
-    ResponseEntity<ApiResponse<AdminArticleResponse>> refreshArticleSummary(
-            @PathVariable Long articleId
-    );
-}
+    Respon

@@ -2,9 +2,13 @@ package com.newsense.backend.admin.service;
 
 import com.newsense.backend.admin.dto.AdminArticleResponse;
 import com.newsense.backend.admin.dto.AdminStatsResponse;
+import com.newsense.backend.admin.dto.CrawlResultResponse;
 import com.newsense.backend.admin.dto.PostReportResponse;
 import com.newsense.backend.ai.article.ArticleClassificationResult;
 import com.newsense.backend.ai.article.OpenAiArticleClassifierClient;
+import com.newsense.backend.article.crawler.model.CrawlRunResult;
+import com.newsense.backend.article.crawler.service.PortalNewsCrawlerService;
+import com.newsense.backend.article.crawler.service.PublicNewsCrawlerService;
 import com.newsense.backend.article.document.ArticleContent;
 import com.newsense.backend.article.repository.ArticleMetaRepository;
 import com.newsense.backend.article.repository.ArticleContentRepository;
@@ -34,6 +38,8 @@ public class AdminService {
     private final ArticleMetaRepository articleMetaRepository;
     private final ArticleContentRepository articleContentRepository;
     private final OpenAiArticleClassifierClient articleClassifierClient;
+    private final PublicNewsCrawlerService publicNewsCrawlerService;
+    private final PortalNewsCrawlerService portalNewsCrawlerService;
 
     @Transactional(readOnly = true)
     public AdminStatsResponse getStats() {
@@ -90,13 +96,5 @@ public class AdminService {
         return AdminArticleResponse.of(article, articleText == null ? 0 : articleText.length());
     }
 
-    private int getContentLength(ArticleMeta article) {
-        return articleContentRepository.findById(article.getMongoDocumentId())
-                .or(() -> articleContentRepository.findBySourceUrl(article.getSourceUrl()))
-                .map(content -> {
-                    String text = content.getCleanText() == null ? content.getRawText() : content.getCleanText();
-                    return text == null ? 0 : text.length();
-                })
-                .orElse(0);
-    }
-}
+    public CrawlResultResponse triggerCrawl() {
+        CrawlRunResult publ

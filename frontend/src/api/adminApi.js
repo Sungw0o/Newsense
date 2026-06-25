@@ -22,6 +22,5 @@ const adminApi = {
   refreshArticleSummary(articleId) {
     return axiosInstance.patch(`/admin/articles/${articleId}/summary`)
   },
-}
-
-export default adminApi
+  triggerCrawl() {
+    return

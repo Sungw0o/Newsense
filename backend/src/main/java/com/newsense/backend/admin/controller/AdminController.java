@@ -1,7 +1,8 @@
 package com.newsense.backend.admin.controller;
 
-import com.newsense.backend.admin.dto.AdminStatsResponse;
 import com.newsense.backend.admin.dto.AdminArticleResponse;
+import com.newsense.backend.admin.dto.AdminStatsResponse;
+import com.newsense.backend.admin.dto.CrawlResultResponse;
 import com.newsense.backend.admin.dto.PostReportResponse;
 import com.newsense.backend.admin.service.AdminService;
 import com.newsense.backend.common.response.ApiResponse;
@@ -53,6 +54,4 @@ public class AdminController implements AdminApiDocs {
 
     @Override
     public ResponseEntity<ApiResponse<AdminArticleResponse>> refreshArticleSummary(Long articleId) {
-        return ResponseEntity.ok(ApiResponse.success("AI 요약본이 갱신되었습니다.", adminService.refreshArticleSummary(articleId)));
-    }
-}
+        return ResponseEntity.ok(ApiResponse.success("AI 요약본이 갱신되었습니다.", 

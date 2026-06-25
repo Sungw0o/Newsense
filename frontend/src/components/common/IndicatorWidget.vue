@@ -18,11 +18,28 @@ const trendClass = (key) => {
   return ''
 }
 
+// 백엔드 응답: { status, insight, items: [{key, label, value, unit, ...}] }
+// 프론트 접근: data.kospi / data.kosdaq / data.usdKrwRate / data.bokBaseRate
+const parseResponse = (raw) => {
+  if (!raw) return null
+  const map = {}
+  ;(raw.items || []).forEach(item => { map[item.key] = item.value })
+  return {
+    kospi: map['KOSPI'] ?? null,
+    kosdaq: map['KOSDAQ'] ?? null,
+    usdKrwRate: map['USD_KRW'] ?? null,
+    bokBaseRate: map['BOK_RATE'] ?? null,
+    status: raw.status,
+    insight: raw.insight,
+    fetchedAt: raw.fetchedAt,
+  }
+}
+
 const load = async () => {
   try {
     const res = await indicatorApi.getIndicators()
     prev.value = data.value
-    data.value = res.data?.data || res.data
+    data.value = parseResponse(res.data?.data || res.data)
   } catch {
     // silent
   }
@@ -169,19 +186,4 @@ onUnmounted(() => clearInterval(timer))
 }
 
 /* Skeleton */
-.widget-loading { display: flex; flex-direction: column; gap: 10px; }
-.skel-line {
-  display: block;
-  height: 14px;
-  border-radius: 6px;
-  background: linear-gradient(90deg, var(--line) 25%, rgba(0,0,0,0.04) 50%, var(--line) 75%);
-  background-size: 200% 100%;
-  animation: shimmer 1.2s infinite;
-}
-.dark .skel-line {
-  background: linear-gradient(90deg, rgba(255,255,255,0.06) 25%, rgba(255,255,255,0.10) 50%, rgba(255,255,255,0.06) 75%);
-  background-size: 200% 100%;
-}
-.skel-line.short { width: 60%; }
-@keyframes shimmer { 0% { background-position: 200% 0; } 100% { background-position: -200% 0; } }
-</style>
+.widget-loading { display: flex; flex-dire
