@@ -128,6 +128,32 @@ class AuthServiceTest {
     // ─────────────────────────────────────────────
 
     @Nested
+    @DisplayName("중복 확인")
+    class Availability {
+
+        @Test
+        @DisplayName("이메일은 trim 및 소문자 정규화 후 중복 여부를 확인한다")
+        void checkEmail_normalizesEmail() {
+            given(userRepository.existsByEmail("test@example.com")).willReturn(false);
+
+            var response = authService.checkEmail("  Test@EXAMPLE.COM  ");
+
+            assertThat(response.available()).isTrue();
+            then(userRepository).should().existsByEmail("test@example.com");
+        }
+
+        @Test
+        @DisplayName("닉네임은 trim 후 중복 여부를 확인한다")
+        void checkNickname_trimsNickname() {
+            given(userRepository.existsByNickname("tester")).willReturn(true);
+
+            var response = authService.checkNickname("  tester  ");
+
+            assertThat(response.available()).isFalse();
+            then(userRepository).should().existsByNickname("tester");
+        }
+    }
+    @Nested
     @DisplayName("로그인 (login)")
     class Login {
 
