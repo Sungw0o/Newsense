@@ -55,6 +55,16 @@ public class AuthService {
     }
 
     @Transactional(readOnly = true)
+    public UsernameAvailabilityResponse checkEmail(String email) {
+        return new UsernameAvailabilityResponse(!userRepository.existsByEmail(normalizeEmail(email)));
+    }
+
+    @Transactional(readOnly = true)
+    public UsernameAvailabilityResponse checkNickname(String nickname) {
+        return new UsernameAvailabilityResponse(!userRepository.existsByNickname(nickname.trim()));
+    }
+
+    @Transactional(readOnly = true)
     public LoginResult login(LoginRequest request) {
         User user = userRepository.findByEmailAndIsActiveTrue(normalizeEmail(request.email()))
                 .orElseThrow(() -> new CustomException(ErrorCode.INVALID_CREDENTIALS));

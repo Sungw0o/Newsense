@@ -38,6 +38,14 @@ export const authApi = {
   checkUsername(username) {
     return axiosInstance.get('/auth/check-username', { params: { username } })
   },
+
+  checkEmail(email) {
+    return axiosInstance.get('/auth/check-email', { params: { email } })
+  },
+
+  checkNickname(nickname) {
+    return axiosInstance.get('/auth/check-nickname', { params: { nickname } })
+  },
 }
 
 export default authApi

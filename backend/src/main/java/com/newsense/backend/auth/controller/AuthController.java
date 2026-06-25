@@ -52,6 +52,22 @@ public class AuthController implements AuthApiDocs {
     }
 
     @Override
+    public ResponseEntity<ApiResponse<UsernameAvailabilityResponse>> checkEmail(String email) {
+        return ResponseEntity.ok(ApiResponse.success(
+                "이메일 중복 확인이 완료되었습니다.",
+                authService.checkEmail(email)
+        ));
+    }
+
+    @Override
+    public ResponseEntity<ApiResponse<UsernameAvailabilityResponse>> checkNickname(String nickname) {
+        return ResponseEntity.ok(ApiResponse.success(
+                "닉네임 중복 확인이 완료되었습니다.",
+                authService.checkNickname(nickname)
+        ));
+    }
+
+    @Override
     public ResponseEntity<ApiResponse<TokenResponse>> refresh(String refreshToken) {
         RefreshResult result = authService.refresh(refreshToken);
         return ResponseEntity.ok()

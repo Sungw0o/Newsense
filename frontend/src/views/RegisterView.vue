@@ -15,39 +15,53 @@ const isLoading = ref(false)
 const errorMsg = ref('')
 const apiOrigin = (import.meta.env.VITE_API_BASE_URL || 'http://localhost:8080/api/v1').replace('/api/v1', '')
 
-// 'idle' | 'checking' | 'available' | 'taken' | 'error'
 const emailStatus = ref('idle')
+const nicknameStatus = ref('idle')
 
-function debounce(fn, delay) {
-  let timer
-  return (...args) => {
-    clearTimeout(timer)
-    timer = setTimeout(() => fn(...args), delay)
+const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/
+const nicknamePattern = /^[가-힣a-zA-Z0-9_]{2,20}$/
+
+const normalizedEmail = computed(() => email.value.trim().toLowerCase())
+const normalizedNickname = computed(() => nickname.value.trim())
+const isEmailValid = computed(() => emailPattern.test(normalizedEmail.value))
+const isNicknameValid = computed(() => nicknamePattern.test(normalizedNickname.value))
+
+const checkEmailDuplicate = async () => {
+  if (!isEmailValid.value) {
+    emailStatus.value = normalizedEmail.value ? 'invalid' : 'idle'
+    return
+  }
+
+  emailStatus.value = 'checking'
+  try {
+    const res = await authApi.checkEmail(normalizedEmail.value)
+    emailStatus.value = res?.data?.available ? 'available' : 'taken'
+  } catch {
+    emailStatus.value = 'error'
   }
 }
 
-let currentCheckSeq = 0
-
-const checkEmail = debounce(async (val) => {
-  if (!val || !val.includes('@')) {
-    emailStatus.value = 'idle'
+const checkNicknameDuplicate = async () => {
+  if (!isNicknameValid.value) {
+    nicknameStatus.value = normalizedNickname.value ? 'invalid' : 'idle'
     return
   }
-  const seq = ++currentCheckSeq
-  emailStatus.value = 'checking'
-  try {
-    const res = await authApi.checkUsername(val)
-    if (seq !== currentCheckSeq) return // 더 최신 요청이 있으면 무시
-    emailStatus.value = res?.data?.available ? 'available' : 'taken'
-  } catch {
-    if (seq !== currentCheckSeq) return
-    emailStatus.value = 'error'
-  }
-}, 300)
 
-watch(email, (val) => {
+  nicknameStatus.value = 'checking'
+  try {
+    const res = await authApi.checkNickname(normalizedNickname.value)
+    nicknameStatus.value = res?.data?.available ? 'available' : 'taken'
+  } catch {
+    nicknameStatus.value = 'error'
+  }
+}
+
+watch(email, () => {
   emailStatus.value = 'idle'
-  checkEmail(val)
+})
+
+watch(nickname, () => {
+  nicknameStatus.value = 'idle'
 })
 
 const isPasswordTouched = computed(() => password.value.length > 0)
@@ -67,35 +81,53 @@ const passwordConfirmInputClass = computed(() => ({
 }))
 
 const canSubmit = computed(() =>
-  email.value.trim()
-  && nickname.value.trim()
+  isEmailValid.value
+  && isNicknameValid.value
   && emailStatus.value === 'available'
+  && nicknameStatus.value === 'available'
   && isPasswordValid.value
   && !isLoading.value
 )
 
 const handleRegister = async () => {
   if (!email.value || !nickname.value || !password.value || !passwordConfirm.value) {
-    errorMsg.value = '모든 필드를 입력해 주세요.'
+    errorMsg.value = '모든 항목을 입력해 주세요.'
+    return
+  }
+  if (!isEmailValid.value) {
+    errorMsg.value = '올바른 이메일 형식으로 입력해 주세요.'
     return
   }
   if (emailStatus.value !== 'available') {
     errorMsg.value = '이메일 중복 확인을 완료해 주세요.'
     return
   }
-  if (password.value !== passwordConfirm.value) {
+  if (!isNicknameValid.value) {
+    errorMsg.value = '닉네임은 2~20자의 한글, 영문, 숫자, 밑줄만 사용할 수 있습니다.'
+    return
+  }
+  if (nicknameStatus.value !== 'available') {
+    errorMsg.value = '닉네임 중복 확인을 완료해 주세요.'
+    return
+  }
+  if (!isPasswordLengthValid.value) {
+    errorMsg.value = '비밀번호는 8자 이상 72자 이하로 입력해 주세요.'
+    return
+  }
+  if (!isPasswordMatch.value) {
     errorMsg.value = '비밀번호가 일치하지 않습니다.'
     return
   }
-  if (password.value.length < 8) {
-    errorMsg.value = '비밀번호는 최소 8자 이상이어야 합니다.'
-    return
-  }
+
   errorMsg.value = ''
   isLoading.value = true
   try {
-    await userStore.register({ email: email.value, nickname: nickname.value, password: password.value })
-    alert('회원가입이 완료되었습니다! 로그인 해 주세요.')
+    await userStore.register({
+      email: normalizedEmail.value,
+      nickname: normalizedNickname.value,
+      password: password.value,
+    })
+    alert('회원가입이 완료되었습니다. 로그인해 주세요.')
     router.push('/login')
   } catch (err) {
     errorMsg.value = err.response?.data?.message || '회원가입 중 오류가 발생했습니다. 다시 시도해 주세요.'
@@ -111,61 +143,81 @@ const startSocialLogin = (provider) => {
 
 <template>
   <div class="auth-wrap">
-    <!-- Left showcase -->
-    <div class="showcase">
+    <section class="showcase" aria-label="Newsense 소개">
       <router-link to="/" class="brand-mini">
         <span class="brand-mark"></span>
         <span class="brand-name">Newsense</span>
       </router-link>
 
       <h1 class="sc-title">
-        새로운<br>
-        <span class="accent">경제 학습</span>의<br>
-        시작
+        뉴스로 읽고<br>
+        개념으로 남기는<br>
+        경제 학습
       </h1>
       <p class="sc-sub">
-        가입하면 AI 퀴즈, 오답노트, 맞춤 피드 등 모든 기능을 무료로 이용할 수 있습니다.
+        관심 기사와 핵심 용어, 퀴즈 기록을 한 곳에서 관리하며 금융 문해력을 꾸준히 쌓아보세요.
       </p>
 
       <div class="sc-points">
         <div class="sc-point">
-          <span class="ic">📰</span>
+          <span class="point-index">01</span>
           <div>
-            <b>매일 새로운 기사</b>
-            <span>기획재정부·한국은행 경제 기사가 매일 업데이트됩니다</span>
+            <b>경제 기사 큐레이션</b>
+            <span>분야와 난이도에 맞춰 읽을 만한 기사를 빠르게 탐색합니다.</span>
           </div>
         </div>
         <div class="sc-point">
-          <span class="ic">🧠</span>
+          <span class="point-index">02</span>
           <div>
-            <b>AI 퀴즈 자동 생성</b>
-            <span>기사를 읽은 직후 핵심 개념을 점검하는 퀴즈</span>
+            <b>핵심 용어 정리</b>
+            <span>본문 속 경제 용어를 설명과 함께 확인하고 복습 흐름으로 이어갑니다.</span>
           </div>
         </div>
         <div class="sc-point">
-          <span class="ic">📈</span>
+          <span class="point-index">03</span>
           <div>
-            <b>학습 통계 대시보드</b>
-            <span>연속 학습 스트릭과 정답률로 성장 과정을 추적</span>
+            <b>학습 기록 관리</b>
+            <span>퀴즈와 오답 기록을 모아 약한 개념을 다시 찾아볼 수 있습니다.</span>
           </div>
         </div>
       </div>
-    </div>
+    </section>
 
-    <!-- Right form card -->
-    <div class="auth-card">
+    <section class="auth-card" aria-label="회원가입">
       <h2 class="auth-title">회원가입</h2>
-      <p class="auth-desc">무료 계정을 만들어 바로 시작하세요.</p>
+      <p class="auth-desc">이메일과 닉네임은 중복 확인 후 가입할 수 있습니다.</p>
 
       <form @submit.prevent="handleRegister">
         <div class="field">
           <label for="nickname">닉네임</label>
-          <input id="nickname" type="text" v-model="nickname" placeholder="경제왕" autocomplete="nickname" required />
+          <div class="check-row">
+            <input
+              id="nickname"
+              type="text"
+              v-model="nickname"
+              placeholder="경제러너"
+              autocomplete="nickname"
+              required
+              :class="{ 'input-ok': nicknameStatus === 'available', 'input-err': nicknameStatus === 'taken' || nicknameStatus === 'invalid' }"
+            />
+            <button
+              type="button"
+              class="check-btn"
+              :disabled="!isNicknameValid || nicknameStatus === 'checking'"
+              @click="checkNicknameDuplicate"
+            >
+              {{ nicknameStatus === 'checking' ? '확인 중' : '중복확인' }}
+            </button>
+          </div>
+          <p v-if="nicknameStatus === 'available'" class="field-feedback ok">사용 가능한 닉네임입니다.</p>
+          <p v-else-if="nicknameStatus === 'taken'" class="field-feedback err">이미 사용 중인 닉네임입니다.</p>
+          <p v-else-if="nicknameStatus === 'invalid'" class="field-feedback err">닉네임은 2~20자의 한글, 영문, 숫자, 밑줄만 사용할 수 있습니다.</p>
+          <p v-else-if="nicknameStatus === 'error'" class="field-feedback err">확인 중 오류가 발생했습니다.</p>
         </div>
 
         <div class="field">
           <label for="email">이메일</label>
-          <div class="input-wrap">
+          <div class="check-row">
             <input
               id="email"
               type="email"
@@ -173,28 +225,36 @@ const startSocialLogin = (provider) => {
               placeholder="name@example.com"
               autocomplete="email"
               required
-              :class="{ 'input-ok': emailStatus === 'available', 'input-err': emailStatus === 'taken' }"
+              :class="{ 'input-ok': emailStatus === 'available', 'input-err': emailStatus === 'taken' || emailStatus === 'invalid' }"
             />
-            <span v-if="emailStatus === 'checking'" class="input-spinner"></span>
+            <button
+              type="button"
+              class="check-btn"
+              :disabled="!isEmailValid || emailStatus === 'checking'"
+              @click="checkEmailDuplicate"
+            >
+              {{ emailStatus === 'checking' ? '확인 중' : '중복확인' }}
+            </button>
           </div>
           <p v-if="emailStatus === 'available'" class="field-feedback ok">사용 가능한 이메일입니다.</p>
           <p v-else-if="emailStatus === 'taken'" class="field-feedback err">이미 사용 중인 이메일입니다.</p>
+          <p v-else-if="emailStatus === 'invalid'" class="field-feedback err">올바른 이메일 형식으로 입력해 주세요.</p>
           <p v-else-if="emailStatus === 'error'" class="field-feedback err">확인 중 오류가 발생했습니다.</p>
         </div>
 
         <div class="field">
-          <label for="password">비밀번호 <span class="field-hint">(8자 이상)</span></label>
+          <label for="password">비밀번호 <span class="field-hint">8자 이상</span></label>
           <input
             id="password"
             type="password"
             v-model="password"
-            placeholder="••••••••"
+            placeholder="8자 이상 입력"
             autocomplete="new-password"
             required
             :class="passwordInputClass"
           />
           <p v-if="isPasswordTouched && isPasswordLengthValid" class="field-feedback ok">사용 가능한 비밀번호입니다.</p>
-          <p v-else-if="isPasswordTouched" class="field-feedback err">비밀번호는 8자 이상 72자 이하여야 합니다.</p>
+          <p v-else-if="isPasswordTouched" class="field-feedback err">비밀번호는 8자 이상 72자 이하로 입력해 주세요.</p>
         </div>
 
         <div class="field">
@@ -203,7 +263,7 @@ const startSocialLogin = (provider) => {
             id="passwordConfirm"
             type="password"
             v-model="passwordConfirm"
-            placeholder="••••••••"
+            placeholder="비밀번호 재입력"
             autocomplete="new-password"
             required
             :class="passwordConfirmInputClass"
@@ -213,18 +273,17 @@ const startSocialLogin = (provider) => {
         </div>
 
         <div v-if="errorMsg" class="error-msg">
-          <span>⚠</span> {{ errorMsg }}
+          {{ errorMsg }}
         </div>
 
         <button type="submit" class="btn-primary submit-btn" :disabled="!canSubmit">
           <span v-if="isLoading" class="spinner-sm"></span>
-          <span>{{ isLoading ? '가입 중…' : '회원가입' }}</span>
-          <span v-if="!isLoading" class="submit-arrow">→</span>
+          <span>{{ isLoading ? '가입 중' : '회원가입' }}</span>
         </button>
       </form>
 
       <div class="social-login">
-        <div class="social-divider"><span>소셜 계정으로 간편 시작</span></div>
+        <div class="social-divider"><span>소셜 계정으로 시작</span></div>
         <div class="social-buttons">
           <button type="button" class="social-btn kakao" @click="startSocialLogin('kakao')">
             <img class="social-favicon" src="https://www.kakaocorp.com/page/favicon.ico" alt="" />
@@ -245,20 +304,20 @@ const startSocialLogin = (provider) => {
         이미 계정이 있으신가요?
         <router-link to="/login">로그인</router-link>
       </div>
-    </div>
+    </section>
   </div>
 </template>
 
 <style scoped>
 .auth-wrap {
   display: grid;
-  grid-template-columns: 1.1fr 1fr;
-  gap: 60px;
-  max-width: 1100px;
+  grid-template-columns: minmax(0, 1fr) minmax(360px, 430px);
+  gap: 56px;
+  max-width: 1180px;
   margin: 0 auto;
   align-items: center;
-  padding: 40px 0 80px;
-  min-height: 70vh;
+  padding: 42px 20px 80px;
+  min-height: 72vh;
 }
 
 .brand-mini {
@@ -267,185 +326,318 @@ const startSocialLogin = (provider) => {
   gap: 10px;
   text-decoration: none;
   color: var(--ink, #0a0d12);
-  margin-bottom: 32px;
+  margin-bottom: 34px;
 }
+
 .brand-mark {
-  width: 28px; height: 28px;
-  border-radius: 9px;
-  background: radial-gradient(circle at 30% 30%, #9CCBFF 0%, #0084ff 60%, #0a4a99 100%);
-  box-shadow: inset 0 2px 3px rgba(255,255,255,0.6), 0 2px 8px rgba(0,132,255,0.40);
+  width: 28px;
+  height: 28px;
+  border-radius: 8px;
+  background: linear-gradient(135deg, #0a4a99 0%, #0084ff 100%);
 }
+
 .brand-name {
   font-family: 'Fustat', sans-serif;
   font-weight: 800;
   font-size: 20px;
-  letter-spacing: -0.5px;
   color: var(--ink, #0a0d12);
 }
-.dark .brand-name { color: #f4f6fa; }
+
+.dark .brand-name,
+.dark .sc-title,
+.dark .auth-title {
+  color: #f4f6fa;
+}
 
 .sc-title {
   font-family: 'Fustat', sans-serif;
   font-weight: 800;
   font-size: 48px;
-  line-height: 1.08;
-  letter-spacing: -1.5px;
-  margin: 0 0 16px;
+  line-height: 1.12;
+  margin: 0 0 18px;
   color: var(--ink, #0a0d12);
-}
-.dark .sc-title { color: #f4f6fa; }
-
-.accent {
-  background: linear-gradient(95deg, #0084ff 0%, #4FB3FF 60%, #0a4a99 100%);
-  -webkit-background-clip: text;
-  background-clip: text;
-  color: transparent;
-}
-.dark .accent {
-  background: linear-gradient(95deg, #6CB8FF 0%, #B8DAFF 60%, #fff 100%);
-  -webkit-background-clip: text;
-  background-clip: text;
 }
 
 .sc-sub {
+  max-width: 520px;
   font-size: 15px;
   color: var(--ink-2, #4a5161);
-  line-height: 1.55;
-  margin: 0 0 30px;
+  line-height: 1.65;
+  margin: 0 0 32px;
 }
-.dark .sc-sub { color: #a4adbf; }
 
-.sc-points { display: flex; flex-direction: column; gap: 16px; }
-.sc-point { display: flex; align-items: flex-start; gap: 14px; }
-.ic {
-  width: 36px; height: 36px;
-  flex-shrink: 0;
-  border-radius: 10px;
-  background: rgba(255,255,255,0.65);
-  border: 1px solid rgba(0,0,0,0.07);
-  backdrop-filter: blur(20px);
-  display: flex; align-items: center; justify-content: center;
-  font-size: 16px;
-  box-shadow: inset 0 1px 0 rgba(255,255,255,0.6);
+.dark .sc-sub,
+.dark .auth-desc,
+.dark .field label,
+.dark .sc-point span,
+.dark .auth-foot {
+  color: #a4adbf;
 }
-.dark .ic { background: rgba(20,24,34,0.55); border-color: rgba(255,255,255,0.12); }
-.sc-point b { font-family: 'Fustat', sans-serif; font-weight: 700; font-size: 14.5px; color: var(--ink, #0a0d12); display: block; margin-bottom: 2px; }
-.dark .sc-point b { color: #f4f6fa; }
-.sc-point span { font-size: 13px; color: var(--ink-2, #4a5161); line-height: 1.45; }
-.dark .sc-point span { color: #a4adbf; }
+
+.sc-points {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.sc-point {
+  display: flex;
+  align-items: flex-start;
+  gap: 14px;
+}
+
+.point-index {
+  width: 36px;
+  height: 36px;
+  flex: 0 0 36px;
+  border: 1px solid rgba(0, 132, 255, 0.2);
+  border-radius: 8px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: #0a4a99;
+  font-size: 12px;
+  font-weight: 800;
+  background: rgba(232, 242, 255, 0.85);
+}
+
+.dark .point-index {
+  background: rgba(0, 132, 255, 0.14);
+  border-color: rgba(155, 203, 255, 0.28);
+  color: #9BCBFF;
+}
+
+.sc-point b {
+  font-family: 'Fustat', sans-serif;
+  font-weight: 700;
+  font-size: 14.5px;
+  color: var(--ink, #0a0d12);
+  display: block;
+  margin-bottom: 3px;
+}
+
+.dark .sc-point b {
+  color: #f4f6fa;
+}
+
+.sc-point span {
+  font-size: 13px;
+  color: var(--ink-2, #4a5161);
+  line-height: 1.45;
+}
 
 .auth-card {
-  padding: 36px 36px 32px;
-  background: rgba(255,255,255,0.70);
-  border: 1px solid rgba(0,0,0,0.07);
-  border-radius: 24px;
-  backdrop-filter: blur(48px) saturate(180%);
-  -webkit-backdrop-filter: blur(48px) saturate(180%);
-  box-shadow:
-    inset 0 1px 0 0 rgba(255,255,255,0.85),
-    inset 0 4px 8px 0 rgba(255,255,255,0.35),
-    0 30px 80px -22px rgba(20,40,80,0.25);
+  padding: 34px;
+  background: rgba(255, 255, 255, 0.82);
+  border: 1px solid rgba(0, 0, 0, 0.08);
+  border-radius: 16px;
+  box-shadow: 0 24px 64px -34px rgba(20, 40, 80, 0.32);
 }
+
 .dark .auth-card {
-  background: rgba(20,24,34,0.55);
-  border-color: rgba(255,255,255,0.12);
-  box-shadow: inset 0 1px 0 0 rgba(255,255,255,0.10), 0 30px 80px -22px rgba(0,0,0,0.6);
+  background: rgba(20, 24, 34, 0.78);
+  border-color: rgba(255, 255, 255, 0.12);
+  box-shadow: 0 24px 70px -36px rgba(0, 0, 0, 0.72);
 }
 
-.auth-title { font-family: 'Fustat', sans-serif; font-weight: 800; font-size: 26px; letter-spacing: -0.8px; margin: 0 0 6px; color: var(--ink, #0a0d12); }
-.dark .auth-title { color: #f4f6fa; }
-.auth-desc { font-size: 14px; color: var(--ink-2, #4a5161); margin: 0 0 26px; }
-.dark .auth-desc { color: #a4adbf; }
+.auth-title {
+  font-family: 'Fustat', sans-serif;
+  font-weight: 800;
+  font-size: 26px;
+  margin: 0 0 6px;
+  color: var(--ink, #0a0d12);
+}
 
-form { display: flex; flex-direction: column; gap: 14px; }
-.field { display: flex; flex-direction: column; gap: 6px; }
-.field label { font-size: 13px; font-weight: 500; color: var(--ink-2, #4a5161); display: flex; align-items: center; gap: 6px; }
-.dark .field label { color: #a4adbf; }
-.field-hint { font-size: 11.5px; color: var(--ink-3, #8a93a3); font-family: 'Nanum Gothic', monospace; }
+.auth-desc {
+  font-size: 14px;
+  color: var(--ink-2, #4a5161);
+  margin: 0 0 24px;
+}
+
+form {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.field label {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--ink-2, #4a5161);
+}
+
+.field-hint {
+  font-size: 12px;
+  color: var(--ink-3, #8a93a3);
+}
 
 .field input {
   appearance: none;
-  padding: 12px 16px;
-  background: rgba(255,255,255,0.85);
-  border: 1.5px solid rgba(0,0,0,0.08);
-  border-radius: 12px;
+  padding: 12px 14px;
+  background: rgba(255, 255, 255, 0.92);
+  border: 1.5px solid rgba(0, 0, 0, 0.1);
+  border-radius: 10px;
   font: inherit;
   font-size: 14px;
   color: var(--ink, #0a0d12);
   outline: none;
   transition: all .15s;
   width: 100%;
+  min-width: 0;
 }
-.field input:focus { border-color: #0084ff; background: #fff; box-shadow: 0 0 0 4px rgba(0,132,255,0.12); }
-.field input::placeholder { color: var(--ink-3, #8a93a3); }
-.dark .field input { background: rgba(20,24,34,0.70); border-color: rgba(255,255,255,0.12); color: #f4f6fa; }
-.dark .field input:focus { background: rgba(20,24,34,0.90); }
 
-.input-wrap { position: relative; }
-.input-wrap input { width: 100%; }
+.field input:focus {
+  border-color: #0084ff;
+  background: #fff;
+  box-shadow: 0 0 0 4px rgba(0, 132, 255, 0.12);
+}
 
-.input-ok { border-color: #1a9e5c !important; }
-.input-ok:focus { box-shadow: 0 0 0 4px rgba(26,158,92,0.12) !important; }
-.dark .input-ok { border-color: #3ad07b !important; }
+.field input::placeholder {
+  color: var(--ink-3, #8a93a3);
+}
 
-.input-err { border-color: #b02a2a !important; }
-.input-err:focus { box-shadow: 0 0 0 4px rgba(176,42,42,0.12) !important; }
-.dark .input-err { border-color: #ff6a6a !important; }
+.dark .field input {
+  background: rgba(20, 24, 34, 0.82);
+  border-color: rgba(255, 255, 255, 0.14);
+  color: #f4f6fa;
+}
 
-.input-spinner {
-  position: absolute;
-  right: 14px;
-  top: 50%;
-  transform: translateY(-50%);
-  width: 14px; height: 14px;
-  border: 2px solid rgba(0,132,255,0.2);
-  border-top-color: #0084ff;
-  border-radius: 50%;
-  animation: spin .65s linear infinite;
-  pointer-events: none;
+.check-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 94px;
+  gap: 8px;
+  align-items: center;
+}
+
+.check-btn {
+  height: 44px;
+  border-radius: 10px;
+  border: 1px solid rgba(0, 132, 255, 0.22);
+  background: #fff;
+  color: #006fd6;
+  font: inherit;
+  font-size: 13px;
+  font-weight: 800;
+  cursor: pointer;
+  transition: all .15s;
+}
+
+.check-btn:hover:not(:disabled) {
+  border-color: #0084ff;
+  box-shadow: 0 8px 18px -14px rgba(0, 132, 255, 0.55);
+}
+
+.check-btn:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+.dark .check-btn {
+  background: rgba(255, 255, 255, 0.08);
+  border-color: rgba(155, 203, 255, 0.26);
+  color: #9BCBFF;
+}
+
+.input-ok {
+  border-color: #1a9e5c !important;
+}
+
+.input-ok:focus {
+  box-shadow: 0 0 0 4px rgba(26, 158, 92, 0.12) !important;
+}
+
+.dark .input-ok {
+  border-color: #3ad07b !important;
+}
+
+.input-err {
+  border-color: #b02a2a !important;
+}
+
+.input-err:focus {
+  box-shadow: 0 0 0 4px rgba(176, 42, 42, 0.12) !important;
+}
+
+.dark .input-err {
+  border-color: #ff6a6a !important;
 }
 
 .field-feedback {
   font-size: 12px;
   margin: 4px 0 0;
-  font-family: 'Nanum Gothic', monospace;
 }
-.field-feedback.ok { color: #1a9e5c; }
-.field-feedback.err { color: #b02a2a; }
-.dark .field-feedback.ok { color: #3ad07b; }
-.dark .field-feedback.err { color: #ff8a8a; }
+
+.field-feedback.ok {
+  color: #1a9e5c;
+}
+
+.field-feedback.err {
+  color: #b02a2a;
+}
+
+.dark .field-feedback.ok {
+  color: #3ad07b;
+}
+
+.dark .field-feedback.err {
+  color: #ff8a8a;
+}
 
 .error-msg {
-  display: flex; align-items: center; gap: 8px;
-  padding: 12px 14px;
-  background: rgba(255,237,237,0.85);
-  border: 1px solid rgba(176,42,42,0.25);
+  padding: 11px 13px;
+  background: rgba(255, 237, 237, 0.9);
+  border: 1px solid rgba(176, 42, 42, 0.25);
   border-radius: 10px;
   font-size: 13.5px;
   color: #b02a2a;
 }
-.dark .error-msg { background: rgba(255,106,106,0.13); border-color: rgba(255,106,106,0.40); color: #ff8a8a; }
 
-.submit-btn { width: 100%; justify-content: center; padding: 12px 20px; font-size: 14.5px; border-radius: 13px; gap: 8px; }
-.submit-btn:disabled { opacity: 0.65; cursor: default; }
-.submit-arrow { font-size: 14px; }
+.dark .error-msg {
+  background: rgba(255, 106, 106, 0.13);
+  border-color: rgba(255, 106, 106, 0.4);
+  color: #ff8a8a;
+}
+
+.submit-btn {
+  width: 100%;
+  justify-content: center;
+  padding: 12px 20px;
+  font-size: 14.5px;
+  border-radius: 10px;
+  gap: 8px;
+}
+
+.submit-btn:disabled {
+  opacity: 0.65;
+  cursor: default;
+}
 
 .spinner-sm {
-  width: 16px; height: 16px;
-  border: 2.5px solid rgba(255,255,255,0.3);
+  width: 16px;
+  height: 16px;
+  border: 2.5px solid rgba(255, 255, 255, 0.3);
   border-top-color: #fff;
   border-radius: 50%;
   animation: spin .65s linear infinite;
   flex-shrink: 0;
 }
-@keyframes spin { to { transform: rotate(360deg); } }
 
-.auth-foot { margin-top: 22px; padding-top: 18px; border-top: 1px solid rgba(0,0,0,0.07); text-align: center; font-size: 13.5px; color: var(--ink-2, #4a5161); }
-.dark .auth-foot { border-color: rgba(255,255,255,0.10); color: #a4adbf; }
-.auth-foot a { color: #0084ff; font-weight: 600; text-decoration: none; margin-left: 4px; }
-.auth-foot a:hover { text-decoration: underline; }
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
 
-.social-login { margin-top: 18px; }
+.social-login {
+  margin-top: 18px;
+}
+
 .social-divider {
   display: flex;
   align-items: center;
@@ -454,49 +646,124 @@ form { display: flex; flex-direction: column; gap: 14px; }
   font-size: 12px;
   color: var(--ink-3, #8a93a3);
 }
+
 .social-divider::before,
 .social-divider::after {
   content: "";
   flex: 1;
   height: 1px;
-  background: rgba(0,0,0,0.08);
+  background: rgba(0, 0, 0, 0.08);
 }
+
 .dark .social-divider::before,
-.dark .social-divider::after { background: rgba(255,255,255,0.10); }
+.dark .social-divider::after {
+  background: rgba(255, 255, 255, 0.1);
+}
+
 .social-buttons {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
   gap: 8px;
 }
+
 .social-btn {
   display: inline-flex;
   align-items: center;
   justify-content: center;
   gap: 7px;
   min-height: 42px;
-  border-radius: 12px;
-  border: 1px solid rgba(0,0,0,0.08);
+  border-radius: 10px;
+  border: 1px solid rgba(0, 0, 0, 0.08);
   font-size: 13px;
   font-weight: 800;
   cursor: pointer;
-  transition: all .2s;
+  transition: all .15s;
 }
-.social-btn:hover { transform: translateY(-1px); box-shadow: 0 12px 24px -16px rgba(20,40,80,0.25); }
-.social-btn.kakao { background: #FEE500; color: #191600; }
-.social-btn.naver { background: #03C75A; color: #fff; }
-.social-btn.google { background: #fff; color: #1f2937; }
-.dark .social-btn.google { background: rgba(255,255,255,0.08); color: #f4f6fa; border-color: rgba(255,255,255,0.12); }
+
+.social-btn:hover {
+  transform: translateY(-1px);
+}
+
+.social-btn.kakao {
+  background: #FEE500;
+  color: #191600;
+}
+
+.social-btn.naver {
+  background: #03C75A;
+  color: #fff;
+}
+
+.social-btn.google {
+  background: #fff;
+  color: #1f2937;
+}
+
 .social-favicon {
   width: 16px;
   height: 16px;
-  border-radius: 4px;
-  object-fit: cover;
-  flex-shrink: 0;
+  object-fit: contain;
+}
+
+.auth-foot {
+  margin-top: 22px;
+  padding-top: 18px;
+  border-top: 1px solid rgba(0, 0, 0, 0.07);
+  text-align: center;
+  font-size: 13.5px;
+  color: var(--ink-2, #4a5161);
+}
+
+.dark .auth-foot {
+  border-color: rgba(255, 255, 255, 0.1);
+}
+
+.auth-foot a {
+  color: #0084ff;
+  font-weight: 700;
+  text-decoration: none;
+  margin-left: 4px;
+}
+
+.auth-foot a:hover {
+  text-decoration: underline;
 }
 
 @media (max-width: 900px) {
-  .auth-wrap { grid-template-columns: 1fr; gap: 40px; min-height: auto; }
-  .sc-title { font-size: 36px; }
-  .auth-card { padding: 28px 22px; }
+  .auth-wrap {
+    grid-template-columns: 1fr;
+    gap: 32px;
+    padding-top: 24px;
+  }
+
+  .showcase {
+    max-width: 640px;
+  }
+
+  .sc-title {
+    font-size: 38px;
+  }
+
+  .auth-card {
+    width: 100%;
+  }
+}
+
+@media (max-width: 480px) {
+  .auth-wrap {
+    padding-inline: 14px;
+  }
+
+  .auth-card {
+    padding: 24px 18px;
+  }
+
+  .check-row {
+    grid-template-columns: 1fr;
+  }
+
+  .social-buttons {
+    grid-template-columns: 1fr;
+  }
 }
 </style>
