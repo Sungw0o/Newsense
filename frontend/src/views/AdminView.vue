@@ -92,6 +92,24 @@ const handleDeleteReportedPost = async (postId) => {
     alert('삭제에 실패했습니다.')
   }
 }
+
+const isCrawling = ref(false)
+const crawlResult = ref(null)
+
+const handleTriggerCrawl = async () => {
+  if (!confirm('공공기관 + 포털 크롤링을 수동으로 실행합니다. 계속할까요?')) return
+  isCrawling.value = true
+  crawlResult.value = null
+  try {
+    const res = await adminApi.triggerCrawl()
+    crawlResult.value = res?.data?.data ?? res?.data ?? {}
+    await store.fetchStats()
+  } catch {
+    alert('크롤링 실행에 실패했습니다.')
+  } finally {
+    isCrawling.value = false
+  }
+}
 </script>
 
 <template>
@@ -137,6 +155,24 @@ const handleDeleteReportedPost = async (postId) => {
           <span class="stat-icon">📰</span>
           <span class="stat-num">{{ store.stats.totalArticles.toLocaleString() }}</span>
           <span class="stat-label">전체 기사</span>
+        </div>
+      </div>
+
+      <!-- 수동 크롤링 -->
+      <div class="crawl-section">
+        <div class="crawl-header">
+          <span class="crawl-title">수동 크롤링</span>
+          <span class="crawl-desc">공공기관(한국은행·기획재정부) + 포털(네이버·NewsAPI·Google)을 즉시 수집합니다.</span>
+        </div>
+        <button class="crawl-btn" :disabled="isCrawling" @click="handleTriggerCrawl">
+          <span v-if="isCrawling" class="btn-spinner"></span>
+          <span>{{ isCrawling ? '크롤링 중...' : '지금 크롤링 실행' }}</span>
+        </button>
+        <div v-if="crawlResult" class="crawl-result">
+          <span class="cr-item">발견 <strong>{{ crawlResult.discovered }}</strong></span>
+          <span class="cr-item saved">저장 <strong>{{ crawlResult.saved }}</strong></span>
+          <span class="cr-item">건너뜀 <strong>{{ crawlResult.skipped }}</strong></span>
+          <span v-if="crawlResult.failed > 0" class="cr-item failed">실패 <strong>{{ crawlResult.failed }}</strong></span>
         </div>
       </div>
     </section>
@@ -509,6 +545,75 @@ const handleDeleteReportedPost = async (postId) => {
 @keyframes spin { to { transform: rotate(360deg); } }
 
 .empty { padding: 60px 0; }
+
+/* ── 수동 크롤링 섹션 ─────────────────────────────────────── */
+.crawl-section {
+  margin-top: 28px;
+  padding: 20px 22px;
+  background: rgba(0,132,255,0.04);
+  border: 1px solid rgba(0,132,255,0.14);
+  border-radius: 16px;
+}
+.dark .crawl-section {
+  background: rgba(0,132,255,0.06);
+  border-color: rgba(0,132,255,0.22);
+}
+.crawl-header {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+  margin-bottom: 14px;
+  flex-wrap: wrap;
+}
+.crawl-title {
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--ink);
+}
+.dark .crawl-title { color: #f4f6fa; }
+.crawl-desc {
+  font-size: 12.5px;
+  color: var(--ink-3, #8a93a3);
+}
+.crawl-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 9px 20px;
+  background: #0084ff;
+  color: #fff;
+  border: none;
+  border-radius: 10px;
+  font-size: 13.5px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background .15s, opacity .15s;
+}
+.crawl-btn:hover { background: #006fdd; }
+.crawl-btn:disabled { opacity: 0.55; cursor: not-allowed; }
+.btn-spinner {
+  display: inline-block;
+  width: 14px; height: 14px;
+  border: 2px solid rgba(255,255,255,0.35);
+  border-top-color: #fff;
+  border-radius: 50%;
+  animation: spin .65s linear infinite;
+}
+.crawl-result {
+  display: flex;
+  gap: 16px;
+  margin-top: 14px;
+  flex-wrap: wrap;
+}
+.cr-item {
+  font-size: 13px;
+  color: var(--ink-2, #4a5161);
+}
+.dark .cr-item { color: #a4adbf; }
+.cr-item strong { color: var(--ink); font-weight: 700; margin-left: 4px; }
+.dark .cr-item strong { color: #f4f6fa; }
+.cr-item.saved strong { color: #16a34a; }
+.cr-item.failed strong { color: #dc2626; }
 
 @media (max-width: 640px) {
   .admin-shell { padding: 32px 0 60px; }
