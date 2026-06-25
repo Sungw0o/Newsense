@@ -4,7 +4,17 @@ import java.time.LocalDateTime;
 import java.util.List;
 
 /**
- * 금융 지표 응답 DTO.
+ * Financial indicator response DTO.
  *
- * @param status    데이터 신선도 — "OK" (실시간), "STALE" (캐시), "MOCK" (폴백)
- * @param insight   한 문�
+ * @param status    data freshness: "OK" (live), "STALE" (cache), "MOCK" (fallback)
+ * @param insight   one-sentence summary insight
+ * @param items     financial indicator items
+ * @param fetchedAt time the indicators were fetched
+ */
+public record IndicatorResponse(
+        String status,
+        String insight,
+        List<IndicatorItem> items,
+        LocalDateTime fetchedAt
+) {
+}

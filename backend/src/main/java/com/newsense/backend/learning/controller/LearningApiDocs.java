@@ -46,4 +46,12 @@ public interface LearningApiDocs {
     @Operation(summary = "북마크된 기사 목록 조회", description = "사용자가 북마크한 기사 목록을 최신순으로 반환합니다.")
     @GetMapping("/api/v1/learning/bookmarks")
     ResponseEntity<ApiResponse<List<ArticleCardResponse>>> getBookmarks(
-          
+            @AuthenticationPrincipal UserPrincipal userPrincipal
+    );
+
+    @Operation(summary = "취약점 요약 조회", description = "오답 노트를 기반으로 사용자의 취약 용어와 카테고리를 요약합니다.")
+    @GetMapping("/api/v1/learning/weakness-summary")
+    ResponseEntity<ApiResponse<WeaknessSummaryResponse>> getWeaknessSummary(
+            @AuthenticationPrincipal UserPrincipal userPrincipal
+    );
+}

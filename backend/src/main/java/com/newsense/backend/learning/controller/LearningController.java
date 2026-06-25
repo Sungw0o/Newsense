@@ -44,4 +44,17 @@ public class LearningController implements LearningApiDocs {
 
     @Override
     public ResponseEntity<ApiResponse<List<ArticleCardResponse>>> getBookmarks(UserPrincipal userPrincipal) {
-        return ResponseE
+        return ResponseEntity.ok(ApiResponse.success(
+                "북마크된 기사 목록 조회에 성공했습니다.",
+                learningHistoryService.getBookmarks(userPrincipal.id())
+        ));
+    }
+
+    @Override
+    public ResponseEntity<ApiResponse<WeaknessSummaryResponse>> getWeaknessSummary(UserPrincipal userPrincipal) {
+        return ResponseEntity.ok(ApiResponse.success(
+                "취약점 요약 조회에 성공했습니다.",
+                userWeaknessService.getWeaknessSummary(userPrincipal.id())
+        ));
+    }
+}
