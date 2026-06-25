@@ -11,7 +11,8 @@ public record UserProfileResponse(
         String subPlan,
         String profileImageUrl,
         List<String> interests,
-        String level
+        String level,
+        boolean active
 ) {
     public static UserProfileResponse from(User user) {
         return new UserProfileResponse(
@@ -22,7 +23,8 @@ public record UserProfileResponse(
                 user.getSubPlan(),
                 user.getProfileImageUrl(),
                 user.getInterests(),
-                user.getLevel().name()
+                user.getLevel().name(),
+                user.isActive()
         );
     }
 }

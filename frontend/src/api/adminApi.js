@@ -10,6 +10,9 @@ const adminApi = {
   changeUserRole(userId) {
     return axiosInstance.patch(`/admin/users/${userId}/role`)
   },
+  deactivateUser(userId) {
+    return axiosInstance.patch(`/admin/users/${userId}/deactivate`)
+  },
   deletePost(postId) {
     return axiosInstance.delete(`/admin/posts/${postId}`)
   },

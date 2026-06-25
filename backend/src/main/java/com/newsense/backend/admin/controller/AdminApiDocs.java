@@ -43,6 +43,12 @@ public interface AdminApiDocs {
             @PathVariable Long userId
     );
 
+    @Operation(summary = "사용자 탈퇴 처리 (관리자)")
+    @PatchMapping("/api/v1/admin/users/{userId}/deactivate")
+    ResponseEntity<ApiResponse<UserProfileResponse>> deactivateUser(
+            @PathVariable Long userId
+    );
+
     @Operation(summary = "게시글 강제 삭제 (관리자)")
     @DeleteMapping("/api/v1/admin/posts/{postId}")
     ResponseEntity<ApiResponse<Void>> deletePost(

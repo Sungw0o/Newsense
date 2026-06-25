@@ -37,6 +37,11 @@ public class AdminController implements AdminApiDocs {
     }
 
     @Override
+    public ResponseEntity<ApiResponse<UserProfileResponse>> deactivateUser(Long userId) {
+        return ResponseEntity.ok(ApiResponse.success("사용자가 탈퇴 처리되었습니다.", adminService.deactivateUser(userId)));
+    }
+
+    @Override
     public ResponseEntity<ApiResponse<Void>> deletePost(Long postId) {
         adminService.deletePost(postId);
         return ResponseEntity.ok(ApiResponse.success("게시글이 삭제되었습니다.", null));

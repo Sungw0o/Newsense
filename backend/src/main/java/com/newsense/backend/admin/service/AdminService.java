@@ -73,6 +73,14 @@ public class AdminService {
     }
 
     @Transactional
+    public UserProfileResponse deactivateUser(Long userId) {
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new CustomException(ErrorCode.ENTITY_NOT_FOUND));
+        user.deactivate();
+        return UserProfileResponse.from(user);
+    }
+
+    @Transactional
     public void deletePost(Long postId) {
         Post post = postRepository.findById(postId)
                 .orElseThrow(() -> new CustomException(ErrorCode.POST_NOT_FOUND));

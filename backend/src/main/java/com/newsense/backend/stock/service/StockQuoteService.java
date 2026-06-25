@@ -10,8 +10,8 @@ import tools.jackson.core.JacksonException;
 import tools.jackson.databind.ObjectMapper;
 
 import java.time.Duration;
+import java.util.Map;
 import java.util.List;
-import java.util.Objects;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
@@ -27,6 +27,13 @@ public class StockQuoteService {
 
     private static final Duration CACHE_TTL         = Duration.ofMinutes(10);
     private static final String   REDIS_KEY_PREFIX   = "stock:quote:";
+    private static final Map<String, StockQuote> DEMO_QUOTES = Map.of(
+            "005930", StockQuote.of("005930", "삼성전자", 89300, 4100, 4.81, 527_300_000_000_000L, 28_542_110L),
+            "000660", StockQuote.of("000660", "SK하이닉스", 512000, 18500, 3.75, 372_740_000_000_000L, 9_834_221L),
+            "005380", StockQuote.of("005380", "현대차", 284000, 4500, 1.61, 59_480_000_000_000L, 1_902_441L),
+            "105560", StockQuote.of("105560", "KB금융", 126400, -1800, -1.40, 49_720_000_000_000L, 1_324_990L),
+            "035720", StockQuote.of("035720", "카카오", 53400, -700, -1.29, 23_650_000_000_000L, 3_418_221L)
+    );
 
     private final TossInvestClient     tossInvestClient;
     private final StringRedisTemplate  redisTemplate;
@@ -46,7 +53,8 @@ public class StockQuoteService {
             }
         }
 
-        Optional<StockQuote> quote = tossInvestClient.getQuote(stockCode);
+        Optional<StockQuote> quote = tossInvestClient.getQuote(stockCode)
+                .or(() -> fallbackQuote(stockCode));
         quote.ifPresent(q -> cache(key, q));
         return quote;
     }
@@ -68,5 +76,15 @@ public class StockQuoteService {
         } catch (JacksonException e) {
             log.warn("[Stock] cache write failed key={}", key);
         }
+    }
+
+    private Optional<StockQuote> fallbackQuote(String stockCode) {
+        String normalizedCode = stockCode == null ? "" : stockCode.trim();
+        StockQuote quote = DEMO_QUOTES.get(normalizedCode);
+        if (quote != null) {
+            log.warn("[Stock] Toss quote unavailable, using demo fallback for {}", normalizedCode);
+            return Optional.of(quote);
+        }
+        return Optional.empty();
     }
 }

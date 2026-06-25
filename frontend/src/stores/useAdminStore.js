@@ -62,6 +62,19 @@ export const useAdminStore = defineStore('admin', {
       }
     },
 
+    async deactivateUser(userId) {
+      try {
+        const res = await adminApi.deactivateUser(userId)
+        const updated = res?.data ?? res
+        const idx = this.users.findIndex(u => u.id === userId)
+        if (idx !== -1) this.users[idx] = updated
+        return updated
+      } catch (e) {
+        this.error = e?.response?.data?.message ?? '탈퇴 처리에 실패했습니다.'
+        throw e
+      }
+    },
+
     async deletePost(postId) {
       await adminApi.deletePost(postId)
     },

@@ -46,6 +46,16 @@ const handleRoleToggle = async (userId) => {
   } catch { /* stored in store.error */ }
 }
 
+const handleDeactivateUser = async (user) => {
+  if (user.active === false) return
+  if (!confirm(`${user.nickname} 사용자를 탈퇴 처리하시겠습니까?`)) return
+  try {
+    await store.deactivateUser(user.id)
+  } catch {
+    alert(store.error || '탈퇴 처리에 실패했습니다.')
+  }
+}
+
 const loadReports = async () => {
   if (reports.value.length > 0) return
   isLoadingReports.value = true
@@ -396,7 +406,7 @@ const handleTriggerCrawl = async () => {
         <table class="user-table">
           <thead>
             <tr>
-              <th>ID</th><th>닉네임</th><th>이메일</th><th>역할</th><th>레벨</th><th>작업</th>
+              <th>ID</th><th>닉네임</th><th>이메일</th><th>역할</th><th>상태</th><th>레벨</th><th>작업</th>
             </tr>
           </thead>
           <tbody>
@@ -407,10 +417,18 @@ const handleTriggerCrawl = async () => {
               <td>
                 <span class="role-badge" :class="roleClass(user.role)">{{ roleLabel(user.role) }}</span>
               </td>
+              <td>
+                <span class="role-badge" :class="user.active === false ? 'badge-withdrawn' : 'badge-active'">
+                  {{ user.active === false ? '탈퇴' : '활성' }}
+                </span>
+              </td>
               <td>{{ user.level }}</td>
               <td>
-                <button class="action-btn" @click="handleRoleToggle(user.id)">
+                <button class="action-btn" :disabled="user.active === false" @click="handleRoleToggle(user.id)">
                   {{ user.role === 'ADMIN' ? '권한 해제' : '관리자 지정' }}
+                </button>
+                <button class="action-btn danger" :disabled="user.active === false" @click="handleDeactivateUser(user)">
+                  탈퇴 처리
                 </button>
               </td>
             </tr>
@@ -639,8 +657,12 @@ const handleTriggerCrawl = async () => {
 }
 .badge-admin { background: rgba(99,102,241,0.12); color: #6366f1; }
 .badge-user  { background: rgba(0,0,0,0.06);        color: var(--ink-3, #8a93a3); }
+.badge-active { background: rgba(34,197,94,0.12); color: #15803d; }
+.badge-withdrawn { background: rgba(239,68,68,0.10); color: #dc2626; }
 .dark .badge-admin { background: rgba(99,102,241,0.20); color: #a5b4fc; }
 .dark .badge-user  { background: rgba(255,255,255,0.08); }
+.dark .badge-active { background: rgba(34,197,94,0.18); color: #86efac; }
+.dark .badge-withdrawn { background: rgba(239,68,68,0.18); color: #fca5a5; }
 
 .action-btn {
   padding: 6px 12px;
