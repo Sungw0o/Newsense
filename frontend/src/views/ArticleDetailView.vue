@@ -308,3 +308,15 @@ watch(articleId, async (newId) => {
             </div>
 
   
+            <div v-else class="flex flex-col items-center justify-center py-8 text-center gap-3">
+              <span class="text-4xl opacity-30">📖</span>
+              <p class="text-sm text-slate-400 leading-relaxed">
+                본문의 <span class="font-semibold text-amber-600">파란색 용어</span>를 클릭하면<br>해설이 여기에 표시됩니다.
+              </p>
+            </div>
+          </div>
+        </aside>
+      </div>
+    </div>
+  </div>
+</template>
