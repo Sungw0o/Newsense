@@ -51,8 +51,4 @@ public class CustomOAuth2UserService extends DefaultOAuth2UserService {
         while (userRepository.existsByNickname(candidate)) {
             String tail = String.valueOf(suffix++);
             int maxBaseLength = Math.max(1, 30 - tail.length());
-            candidate = base.substring(0, Math.min(base.length(), maxBaseLength)) + tail;
-        }
-        return candidate;
-    }
-}
+            candidate = b

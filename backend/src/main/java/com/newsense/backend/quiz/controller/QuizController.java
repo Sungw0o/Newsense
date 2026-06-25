@@ -20,10 +20,13 @@ public class QuizController implements QuizApiDocs {
     private final QuizService quizService;
 
     @Override
-    public ResponseEntity<ApiResponse<List<QuizResponse>>> getArticleQuizzes(Long articleId) {
+    public ResponseEntity<ApiResponse<List<QuizResponse>>> getArticleQuizzes(
+            Long articleId,
+            UserPrincipal userPrincipal
+    ) {
         return ResponseEntity.ok(ApiResponse.success(
                 "기사 퀴즈 조회에 성공했습니다.",
-                quizService.getArticleQuizzes(articleId)
+                quizService.getArticleQuizzes(articleId, userPrincipal)
         ));
     }
 
@@ -36,6 +39,4 @@ public class QuizController implements QuizApiDocs {
         QuizAnswerResponse response = quizService.submitAnswer(quizId, userPrincipal.id(), request);
         return ResponseEntity
                 .status(HttpStatus.CREATED)
-                .body(ApiResponse.success(HttpStatus.CREATED.value(), "퀴즈 답변 제출이 완료되었습니다.", response));
-    }
-}
+                .body(ApiResponse.success(HttpStatus.CREATED.value

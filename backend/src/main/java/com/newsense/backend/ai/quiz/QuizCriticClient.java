@@ -185,20 +185,4 @@ public class QuizCriticClient {
                 "type", "array",
                 "items", Map.of("type", "string"),
                 "maxItems", 8
-        ));
-        Map<String, Object> schema = new LinkedHashMap<>();
-        schema.put("type", "object");
-        schema.put("additionalProperties", false);
-        schema.put("properties", properties);
-        schema.put("required", List.of("approved", "issues"));
-
-        return Map.of(
-                "type", "json_schema",
-                "json_schema", Map.of(
-                        "name", "quiz_critique",
-                        "strict", true,
-                        "schema", schema
-                )
-        );
-    }
-}
+     

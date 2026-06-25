@@ -22,11 +22,15 @@ const isBookmarked = computed(() => selectedArticle.value?.isBookmarked ?? false
 
 const escapeRegExp = (value) => value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
 
+// 기사당 최대 하이라이트 용어 수 (가독성 보호)
+const MAX_HIGHLIGHT_TERMS = 8
+
 const termPattern = computed(() => {
   const names = selectedArticleTerms.value
     .map(term => term.name)
     .filter(Boolean)
     .sort((left, right) => right.length - left.length)
+    .slice(0, MAX_HIGHLIGHT_TERMS) // 최대 8개 용어만 하이라이트
 
   if (names.length === 0) return null
   return new RegExp(`(${names.map(escapeRegExp).join('|')})`, 'g')
@@ -303,100 +307,4 @@ watch(articleId, async (newId) => {
               </div>
             </div>
 
-            <!-- Default State (no term selected) -->
-            <div v-else class="text-center py-12 text-slate-400">
-              <div class="text-4xl mb-3 opacity-60">💡</div>
-              <p class="text-sm font-light leading-relaxed">
-                본문 속 노란색으로 강조된<br>
-                <strong>[경제 용어]</strong>를 클릭하시면<br>
-                이곳에서 상세한 뜻풀이가 나타납니다.
-              </p>
-            </div>
-
-            <!-- Term Checklist index -->
-            <div class="mt-8 border-t border-slate-200 pt-6">
-              <h4 class="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-3">이 기사의 핵심 용어</h4>
-              <ul class="space-y-2">
-                <li 
-                  v-for="t in selectedArticleTerms" 
-                  :key="t.name"
-                  @click="showTermDefinition(t.name)"
-                  class="text-sm text-slate-600 hover:text-primary-600 cursor-pointer flex items-center justify-between p-2 rounded-lg hover:bg-white border border-transparent hover:border-slate-100 transition-all duration-200"
-                >
-                  <span>{{ t.name }}</span>
-                  <span class="text-xs text-slate-300">&rarr;</span>
-                </li>
-              </ul>
-            </div>
-          </div>
-        </aside>
-      </div>
-    </div>
-  </div>
-</template>
-
-<style scoped>
-@keyframes fadeIn {
-  from { opacity: 0; transform: translateY(8px); }
-  to { opacity: 1; transform: translateY(0); }
-}
-
-.summary-list {
-  display: grid;
-  gap: 10px;
-  margin: 0;
-  padding: 0;
-  list-style: none;
-  color: #78350f;
-  font-size: 14px;
-  line-height: 1.7;
-  word-break: keep-all;
-}
-
-.summary-list li {
-  display: grid;
-  grid-template-columns: 24px minmax(0, 1fr);
-  gap: 8px;
-  align-items: start;
-}
-
-.summary-list li::before {
-  content: counter(list-item);
-  display: inline-flex;
-  width: 24px;
-  height: 24px;
-  align-items: center;
-  justify-content: center;
-  border-radius: 999px;
-  background: #f59e0b;
-  color: #fff7ed;
-  font-size: 12px;
-  font-weight: 800;
-  line-height: 1;
-}
-
-.article-body {
-  max-width: 720px;
-  color: #334155;
-  font-size: 16px;
-  font-weight: 400;
-  line-height: 1.85;
-  word-break: keep-all;
-  overflow-wrap: anywhere;
-}
-
-.article-paragraph {
-  margin: 0;
-}
-
-.article-paragraph + .article-paragraph {
-  margin-top: 26px;
-}
-
-@media (min-width: 768px) {
-  .article-body {
-    font-size: 17px;
-    line-height: 1.9;
-  }
-}
-</style>
+  

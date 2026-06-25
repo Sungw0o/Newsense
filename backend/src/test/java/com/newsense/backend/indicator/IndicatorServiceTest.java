@@ -13,6 +13,7 @@ import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.data.redis.core.ValueOperations;
 
 import java.time.LocalDateTime;
+import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.BDDMockito.given;
@@ -31,26 +32,38 @@ class IndicatorServiceTest {
     @Mock ObjectMapper objectMapper;
     @Mock ValueOperations<String, String> valueOps;
 
+    private static IndicatorResponse sampleResponse() {
+        List<IndicatorItem> items = List.of(
+                IndicatorItem.of("USD_KRW", "달러/원", 1380.0, "원", null, null),
+                IndicatorItem.of("KOSPI", "코스피", 2600.0, "pt", 5.0, 0.19),
+                IndicatorItem.of("KOSDAQ", "코스닥", 860.0, "pt", -1.0, -0.12),
+                IndicatorItem.of("BOK_RATE", "기준금리", 2.75, "%", null, null)
+        );
+        return new IndicatorResponse("OK", "코스피 2600pt · 달러/원 1380원", items, LocalDateTime.now());
+    }
+
     @BeforeEach
     void setUp() {
         given(redisTemplate.opsForValue()).willReturn(valueOps);
     }
 
     @Test
-    void getLatest_cacheHit_returnsDeserializedResponse() throws Exception {
-        String json = "{\"bokBaseRate\":3.5}";
-        IndicatorResponse expected = new IndicatorResponse(1380.0, 3.5, 2600.0, 860.0, LocalDateTime.now());
+    void getLatest_cacheHit_returnsStaleResponse() throws Exception {
+        String json = "{\"status\":\"OK\"}";
+        IndicatorResponse cached = sampleResponse();
         given(valueOps.get("indicator:latest")).willReturn(json);
-        given(objectMapper.readValue(json, IndicatorResponse.class)).willReturn(expected);
+        given(objectMapper.readValue(json, IndicatorResponse.class)).willReturn(cached);
 
         IndicatorResponse result = indicatorService.getLatest();
 
-        assertThat(result).isEqualTo(expected);
+        assertThat(result).isNotNull();
+        assertThat(result.status()).isEqualTo("STALE");
+        assertThat(result.items()).isNotNull();
     }
 
     @Test
     void getLatest_cacheMiss_callsRefresh() {
-        IndicatorResponse mockResp = new IndicatorResponse(1380.0, 3.5, 2600.0, 860.0, LocalDateTime.now());
+        IndicatorResponse mockResp = sampleResponse();
         given(valueOps.get("indicator:latest")).willReturn(null);
         doReturn(mockResp).when(indicatorService).refresh();
 
@@ -62,10 +75,22 @@ class IndicatorServiceTest {
 
     @Test
     void refresh_externalApiFails_returnsMockResponse() {
-        // HTTP calls will fail in test environment (no network) — caught internally
         IndicatorResponse result = indicatorService.refresh();
 
         assertThat(result).isNotNull();
-        assertThat(result.bokBaseRate()).isEqualTo(3.5);
+        assertThat(result.status()).isEqualTo("MOCK");
+        assertThat(result.items()).isNotEmpty();
+        assertThat(result.items()).anyMatch(item -> "BOK_RATE".equals(item.key()));
+    }
+
+    @Test
+    void indicatorItem_trendCalculation() {
+        IndicatorItem up   = IndicatorItem.of("KOSPI", "코스피", 2600.0, "pt", 10.0, 0.38);
+        IndicatorItem down = IndicatorItem.of("KOSPI", "코스피", 2600.0, "pt", -5.0, -0.19);
+        IndicatorItem flat = IndicatorItem.of("BOK_RATE", "기준금리", 2.75, "%", null, null);
+
+        assertThat(up.trend()).isEqualTo("UP");
+        assertThat(down.trend()).isEqualTo("DOWN");
+        assertThat(flat.trend()).isEqualTo("FLAT");
     }
 }

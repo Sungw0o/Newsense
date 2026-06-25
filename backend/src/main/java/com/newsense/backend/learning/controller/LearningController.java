@@ -5,7 +5,9 @@ import com.newsense.backend.auth.security.UserPrincipal;
 import com.newsense.backend.common.response.ApiResponse;
 import com.newsense.backend.learning.dto.LearningHistoryResponse;
 import com.newsense.backend.learning.dto.LearningStatsResponse;
+import com.newsense.backend.learning.dto.WeaknessSummaryResponse;
 import com.newsense.backend.learning.service.LearningHistoryService;
+import com.newsense.backend.learning.service.UserWeaknessService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.RestController;
@@ -18,6 +20,7 @@ import java.util.List;
 public class LearningController implements LearningApiDocs {
 
     private final LearningHistoryService learningHistoryService;
+    private final UserWeaknessService userWeaknessService;
 
     @Override
     public ResponseEntity<ApiResponse<LearningHistoryResponse>> getHistory(
@@ -41,9 +44,4 @@ public class LearningController implements LearningApiDocs {
 
     @Override
     public ResponseEntity<ApiResponse<List<ArticleCardResponse>>> getBookmarks(UserPrincipal userPrincipal) {
-        return ResponseEntity.ok(ApiResponse.success(
-                "북마크 목록 조회에 성공했습니다.",
-                learningHistoryService.getBookmarks(userPrincipal.id())
-        ));
-    }
-}
+        return ResponseE

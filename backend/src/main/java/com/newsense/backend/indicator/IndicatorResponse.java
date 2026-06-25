@@ -1,12 +1,10 @@
 package com.newsense.backend.indicator;
 
 import java.time.LocalDateTime;
+import java.util.List;
 
-public record IndicatorResponse(
-        Double usdKrwRate,
-        Double bokBaseRate,
-        Double kospi,
-        Double kosdaq,
-        LocalDateTime fetchedAt
-) {
-}
+/**
+ * 금융 지표 응답 DTO.
+ *
+ * @param status    데이터 신선도 — "OK" (실시간), "STALE" (캐시), "MOCK" (폴백)
+ * @param insight   한 문�

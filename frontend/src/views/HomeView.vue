@@ -4,6 +4,7 @@ import { useRouter } from 'vue-router'
 import { storeToRefs } from 'pinia'
 import { useArticleStore } from '../stores/useArticleStore'
 import ArticleCard from '../components/article/ArticleCard.vue'
+import HomeSidePanel from '../components/home/HomeSidePanel.vue'
 
 const router = useRouter()
 const articleStore = useArticleStore()
@@ -85,38 +86,46 @@ const clearSearch = () => {
       </div>
     </div>
 
-    <div v-if="isLoading && displayArticles.length === 0" class="loading-state">
-      <div class="spinner"></div>
-      <p class="loading-label">기사를 불러오는 중입니다.</p>
-    </div>
+    <div class="feed-body">
+      <!-- 기사 목록 -->
+      <div class="feed-main">
+        <div v-if="isLoading && displayArticles.length === 0" class="loading-state">
+          <div class="spinner"></div>
+          <p class="loading-label">기사를 불러오는 중입니다.</p>
+        </div>
 
-    <div v-else-if="error" class="empty-state">
-      <p class="empty-title">기사를 불러오지 못했습니다.</p>
-      <p class="empty-desc">{{ error }}</p>
-      <button class="btn-primary" @click="articleStore.fetchArticles()">다시 시도</button>
-    </div>
+        <div v-else-if="error" class="empty-state">
+          <p class="empty-title">기사를 불러오지 못했습니다.</p>
+          <p class="empty-desc">{{ error }}</p>
+          <button class="btn-primary" @click="articleStore.fetchArticles()">다시 시도</button>
+        </div>
 
-    <div v-else-if="!isLoading && displayArticles.length === 0" class="empty-state">
-      <p class="empty-title">표시할 기사가 없습니다.</p>
-      <p class="empty-desc">다른 카테고리를 선택하거나 잠시 후 다시 확인해 주세요.</p>
-    </div>
+        <div v-else-if="!isLoading && displayArticles.length === 0" class="empty-state">
+          <p class="empty-title">표시할 기사가 없습니다.</p>
+          <p class="empty-desc">다른 카테고리를 선택하거나 잠시 후 다시 확인해 주세요.</p>
+        </div>
 
-    <div v-else class="feed-grid">
-      <ArticleCard
-        v-for="(article, index) in displayArticles"
-        :key="article.articleId"
-        :article="article"
-        :featured="index === 0"
-        @click="navigateToDetail"
-      />
-    </div>
+        <div v-else class="feed-grid">
+          <ArticleCard
+            v-for="(article, index) in displayArticles"
+            :key="article.articleId"
+            :article="article"
+            :featured="index === 0"
+            @click="navigateToDetail"
+          />
+        </div>
 
-    <div v-if="hasMore && !isLoading" class="load-more">
-      <button class="btn-primary" @click="handleLoadMore">더 보기</button>
-    </div>
+        <div v-if="hasMore && !isLoading" class="load-more">
+          <button class="btn-primary" @click="handleLoadMore">더 보기</button>
+        </div>
 
-    <div v-if="isLoading && displayArticles.length > 0" class="load-more">
-      <div class="spinner"></div>
+        <div v-if="isLoading && displayArticles.length > 0" class="load-more">
+          <div class="spinner"></div>
+        </div>
+      </div>
+
+      <!-- 사이드 패널 -->
+      <HomeSidePanel class="feed-side" />
     </div>
   </div>
 </template>
@@ -269,9 +278,26 @@ const clearSearch = () => {
   border-color: #f4f6fa;
 }
 
+/* ── 2단 레이아웃: 기사 목록 + 사이드 패널 ── */
+.feed-body {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 280px;
+  gap: 24px;
+  align-items: start;
+}
+
+.feed-main {
+  min-width: 0;
+}
+
+.feed-side {
+  position: sticky;
+  top: 76px; /* navbar 높이 보정 */
+}
+
 .feed-grid {
   display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
+  grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 18px;
 }
 
@@ -325,7 +351,26 @@ const clearSearch = () => {
   }
 }
 
-@media (max-width: 1280px) {
+@media (max-width: 1200px) {
+  .feed-body {
+    grid-template-columns: minmax(0, 1fr) 260px;
+  }
+}
+
+@media (max-width: 1024px) {
+  /* 사이드 패널을 아래로 이동 */
+  .feed-body {
+    grid-template-columns: 1fr;
+  }
+
+  .feed-side {
+    position: static;
+    /* 사이드 패널을 3열 그리드로 표시 */
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 16px;
+  }
+
   .feed-grid {
     grid-template-columns: repeat(3, minmax(0, 1fr));
   }
@@ -358,6 +403,10 @@ const clearSearch = () => {
 @media (max-width: 640px) {
   .feed-shell {
     padding: 12px 0 60px;
+  }
+
+  .feed-side {
+    grid-template-columns: 1fr;
   }
 
   .feed-grid {

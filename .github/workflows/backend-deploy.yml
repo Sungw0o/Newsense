@@ -93,6 +93,17 @@ jobs:
       - name: Build bootJar
         run: ./gradlew bootJar --no-daemon
 
+      # SCP 전에 target 디렉토리 보장 — 없으면 scp가 status 1로 즉시 실패
+      - name: Prepare target directories on EC2
+        uses: appleboy/ssh-action@0ff4204d59e8e51228ff73bce53f80d53301dee2 # v1
+        with:
+          host: ${{ secrets.EC2_HOST }}
+          username: ${{ secrets.EC2_USERNAME }}
+          key: ${{ secrets.EC2_SSH_KEY }}
+          script: |
+            mkdir -p /opt/newsense/backend/build/libs
+            mkdir -p /opt/newsense/infra/nginx
+
       - name: Copy Docker Compose manifests to EC2 via SCP
         uses: appleboy/scp-action@917f8b81dfc1ccd331fef9e2d61bdc6c8be94634 # v0.1.7
         with:
@@ -118,16 +129,4 @@ jobs:
       - name: Restart app via Docker Compose
         uses: appleboy/ssh-action@0ff4204d59e8e51228ff73bce53f80d53301dee2 # v1
         with:
-          host: ${{ secrets.EC2_HOST }}
-          username: ${{ secrets.EC2_USERNAME }}
-          key: ${{ secrets.EC2_SSH_KEY }}
-          script: |
-            set -e
-            cd /opt/newsense
-            mkdir -p backend/build/libs infra/nginx
-            test -f .env
-            chmod 600 .env
-            docker compose build app
-            docker compose up -d mysql mongodb redis app nginx
-            # EBS 8GB 여유 공간 확보 — 미사용 이미지 즉시 정리
-            docker image prune -f
+          host: ${{ secrets.EC2_

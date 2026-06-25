@@ -104,8 +104,4 @@ public class User {
         if (profileImageUrl != null) {
             this.profileImageUrl = profileImageUrl;
         }
-        if (level != null) {
-            this.level = level;
-        }
-    }
-}
+        if (level != nu

@@ -67,6 +67,3 @@ onMounted(async () => {
   }
   .sidebar-right {
     display: none;
-  }
-}
-</style>

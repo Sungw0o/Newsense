@@ -5,6 +5,7 @@ import tools.jackson.databind.JsonNode;
 import tools.jackson.databind.ObjectMapper;
 import com.newsense.backend.ai.config.AiPipelineProperties;
 import com.newsense.backend.ai.config.OpenAiProperties;
+import com.newsense.backend.article.domain.ArticleDifficulty;
 import com.newsense.backend.common.exception.CustomException;
 import com.newsense.backend.common.exception.ErrorCode;
 import com.newsense.backend.quiz.domain.QuizPurpose;
@@ -41,6 +42,27 @@ public class OpenAiQuizClient {
             기사에 근거가 부족하면 추측하지 말고 기사에서 직접 확인 가능한 내용으로 출제하세요.
             """;
 
+    private static final String LEVEL_BASIC = """
+            [난이도: 초급]
+            경제 용어를 처음 접하는 학습자 기준으로 출제하세요.
+            핵심 개념을 쉬운 단어로 풀어서 질문하고, 오답도 상식 수준에서 만드세요.
+            숫자와 이름 등 기사에 직접 나오는 사실을 그대로 묻는 문제를 선호하세요.
+            """;
+
+    private static final String LEVEL_INTERMEDIATE = """
+            [난이도: 중급]
+            기초 경제 지식을 갖춘 학습자 기준으로 출제하세요.
+            원인과 결과(인과관계), 지표 간 연관성 등 한 단계 깊은 이해를 요구하세요.
+            전문 용어를 사용하되 기사에 등장한 표현 범위를 벗어나지 마세요.
+            """;
+
+    private static final String LEVEL_ADVANCED = """
+            [난이도: 고급]
+            거시경제·금융 이론과 정책 메커니즘을 이해하는 학습자 기준으로 출제하세요.
+            복합 추론(두 가지 이상의 경제 변수 연결), 파급 효과, 반론 가능성 등을 다루세요.
+            오답도 전문가 수준의 그럴듯한 내용으로 구성해 변별력을 높이세요.
+            """;
+
     private static final String PURPOSE_INSTRUCTIONS = """
             Each quiz must include a purpose field.
             Question 1 must be purpose=BASIC_CONCEPT and type=OX.
@@ -59,7 +81,7 @@ public class OpenAiQuizClient {
             List<EconomicTermContext> economicTerms,
             List<String> evidenceChunks
     ) {
-        return generate(title, articleText, economicTerms, evidenceChunks, null);
+        return generate(title, articleText, economicTerms, evidenceChunks, null, null);
     }
 
     public List<GeneratedQuiz> generate(
@@ -69,9 +91,23 @@ public class OpenAiQuizClient {
             List<String> evidenceChunks,
             String criticFeedback
     ) {
+        return generate(title, articleText, economicTerms, evidenceChunks, criticFeedback, null);
+    }
+
+    public List<GeneratedQuiz> generate(
+            String title,
+            String articleText,
+            List<EconomicTermContext> economicTerms,
+            List<String> evidenceChunks,
+            String criticFeedback,
+            ArticleDifficulty userLevel
+    ) {
         if (properties.apiKey() == null || properties.apiKey().isBlank()) {
             throw new CustomException(ErrorCode.AI_SERVICE_UNAVAILABLE);
         }
+
+        String systemPrompt = INSTRUCTIONS + "\n" + PURPOSE_INSTRUCTIONS
+                + "\n" + resolveLevelInstructions(userLevel);
 
         String input = "기사 제목: " + title
                 + "\n\n검색된 근거 청크:\n" + formatEvidenceChunks(evidenceChunks)
@@ -81,7 +117,7 @@ public class OpenAiQuizClient {
         Map<String, Object> request = Map.of(
                 "model", pipelineProperties.quizGeneratorModel(),
                 "messages", List.of(
-                        Map.of("role", "developer", "content", INSTRUCTIONS + "\n" + PURPOSE_INSTRUCTIONS),
+                        Map.of("role", "developer", "content", systemPrompt),
                         Map.of("role", "user", "content", input)
                 ),
                 "response_format", createResponseFormat()
@@ -163,73 +199,4 @@ public class OpenAiQuizClient {
                 .orElse("기사에서 매칭된 경제 용어 없음");
     }
 
-    private String formatEvidenceChunks(List<String> evidenceChunks) {
-        if (evidenceChunks == null || evidenceChunks.isEmpty()) {
-            return "검색된 근거 청크 없음";
-        }
-        StringBuilder builder = new StringBuilder();
-        for (int index = 0; index < Math.min(evidenceChunks.size(), MAX_EVIDENCE_CHUNKS); index++) {
-            builder.append(index + 1)
-                    .append(". ")
-                    .append(evidenceChunks.get(index))
-                    .append('\n');
-        }
-        return builder.toString().trim();
-    }
-
-    private String formatCriticFeedback(String criticFeedback) {
-        if (criticFeedback == null || criticFeedback.isBlank()) {
-            return "첫 생성 시도입니다. 피드백 없음";
-        }
-        return criticFeedback;
-    }
-
-    private Map<String, Object> createResponseFormat() {
-        Map<String, Object> quizProperties = new LinkedHashMap<>();
-        quizProperties.put("type", Map.of("type", "string", "enum", List.of("OX", "MULTIPLE")));
-        quizProperties.put("purpose", Map.of(
-                "type", "string",
-                "enum", List.of(
-                        QuizPurpose.BASIC_CONCEPT.name(),
-                        QuizPurpose.FACT_CHECK.name(),
-                        QuizPurpose.CAUSAL_REASONING.name()
-                )
-        ));
-        quizProperties.put("question", Map.of("type", "string"));
-        quizProperties.put("options", Map.of(
-                "type", "array",
-                "items", Map.of("type", "string"),
-                "minItems", 2,
-                "maxItems", 4
-        ));
-        quizProperties.put("correctAnswer", Map.of("type", "string"));
-        quizProperties.put("explanation", Map.of("type", "string"));
-
-        Map<String, Object> quizSchema = Map.of(
-                "type", "object",
-                "additionalProperties", false,
-                "properties", quizProperties,
-                "required", List.of("type", "purpose", "question", "options", "correctAnswer", "explanation")
-        );
-        Map<String, Object> schema = Map.of(
-                "type", "object",
-                "additionalProperties", false,
-                "properties", Map.of("quizzes", Map.of(
-                        "type", "array",
-                        "items", quizSchema,
-                        "minItems", 3,
-                        "maxItems", 3
-                )),
-                "required", List.of("quizzes")
-        );
-
-        return Map.of(
-                "type", "json_schema",
-                "json_schema", Map.of(
-                        "name", "article_quizzes",
-                        "strict", true,
-                        "schema", schema
-                )
-        );
-    }
-}
+    private String formatEvidenceChunks(List<String> evidenc

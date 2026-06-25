@@ -221,11 +221,4 @@ class RagRetrievalServiceTest {
         List<String> matched = ragRetrievalService.retrieveQuizEvidence(
                 "기준금리",
                 content,
-                List.of(new EconomicTermContext("금리", "이자율"))
-        );
-        List<String> fallback = ragRetrievalService.retrieveQuizEvidence("", content, List.of());
-
-        assertThat(matched).contains("기준금리 설명 문장");
-        assertThat(fallback).containsExactly("기준금리 설명 문장");
-    }
-}
+                List.of(new EconomicTermContext("금리"

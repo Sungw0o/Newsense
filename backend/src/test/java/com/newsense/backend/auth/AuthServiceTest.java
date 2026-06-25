@@ -272,26 +272,4 @@ class AuthServiceTest {
             given(userRepository.findById(1L)).willReturn(Optional.of(user));
 
             assertThatThrownBy(() -> authService.refresh("old.refresh"))
-                    .isInstanceOf(CustomException.class)
-                    .satisfies(e -> assertThat(((CustomException) e).getErrorCode())
-                            .isEqualTo(ErrorCode.INVALID_TOKEN));
-        }
-
-        @Test
-        @DisplayName("logout blacklists access token and deletes refresh token")
-        void logout_success() {
-            Claims claims = mock(Claims.class);
-            Date expiresAt = Date.from(Instant.now().plusSeconds(1800));
-
-            given(claims.getSubject()).willReturn("1");
-            given(claims.getId()).willReturn("jwt-id");
-            given(claims.getExpiration()).willReturn(expiresAt);
-            given(jwtTokenProvider.parseAccessToken("access.token")).willReturn(claims);
-
-            authService.logout("access.token");
-
-            then(tokenStore).should().blacklistAccessToken("jwt-id", expiresAt.toInstant());
-            then(tokenStore).should().deleteRefreshToken(1L);
-        }
-    }
-}
+                 

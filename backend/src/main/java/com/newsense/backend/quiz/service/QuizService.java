@@ -7,6 +7,7 @@ import com.newsense.backend.ai.quiz.OpenAiQuizClient;
 import com.newsense.backend.ai.quiz.QuizCriticClient;
 import com.newsense.backend.ai.quiz.QuizCritiqueResult;
 import com.newsense.backend.article.document.ArticleContent;
+import com.newsense.backend.article.domain.ArticleDifficulty;
 import com.newsense.backend.article.domain.ArticleMeta;
 import com.newsense.backend.article.repository.ArticleContentRepository;
 import com.newsense.backend.article.repository.ArticleMetaRepository;
@@ -26,26 +27,36 @@ import com.newsense.backend.rag.service.RagRetrievalService;
 import com.newsense.backend.term.domain.ArticleTerm;
 import com.newsense.backend.term.repository.ArticleTermRepository;
 import com.newsense.backend.term.repository.TermRepository;
+import com.newsense.backend.auth.security.UserPrincipal;
 import com.newsense.backend.user.domain.User;
 import com.newsense.backend.user.repository.UserRepository;
 import com.newsense.backend.wrongnote.service.WrongNoteRecorder;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.data.mongodb.core.MongoTemplate;
 import org.springframework.data.mongodb.core.query.Criteria;
 import org.springframework.data.mongodb.core.query.Query;
+import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import tools.jackson.core.JacksonException;
+import tools.jackson.databind.ObjectMapper;
 
 import java.text.Normalizer;
+import java.time.Duration;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
 import java.util.Optional;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class QuizService {
+
+    private static final Duration QUIZ_CACHE_TTL    = Duration.ofHours(24);
+    private static final String   QUIZ_CACHE_PREFIX = "quiz:level:";
 
     private final QuizRepository quizRepository;
     private final QuizAnswerRepository quizAnswerRepository;
@@ -61,14 +72,47 @@ public class QuizService {
     private final RagRetrievalService ragRetrievalService;
     private final ApplicationEventPublisher eventPublisher;
     private final MongoTemplate mongoTemplate;
+    private final StringRedisTemplate redisTemplate;
+    private final ObjectMapper objectMapper;
 
     @Transactional
     public List<QuizResponse> getArticleQuizzes(Long articleId) {
-        List<Quiz> quizzes = quizRepository.findByArticleIdAndIsActiveTrueOrderByDisplayOrder(articleId);
-        if (quizzes.isEmpty()) {
-            quizzes = generateQuizzes(articleId);
+        return getArticleQuizzes(articleId, ArticleDifficulty.BASIC);
+    }
+
+    @Transactional
+    public List<QuizResponse> getArticleQuizzes(Long articleId, UserPrincipal principal) {
+        ArticleDifficulty level = principal == null ? ArticleDifficulty.BASIC
+                : userRepository.findById(principal.id())
+                        .map(User::getLevel)
+                        .orElse(ArticleDifficulty.BASIC);
+        return getArticleQuizzes(articleId, level);
+    }
+
+    @Transactional
+    public List<QuizResponse> getArticleQuizzes(Long articleId, ArticleDifficulty userLevel) {
+        ArticleDifficulty level = userLevel != null ? userLevel : ArticleDifficulty.BASIC;
+
+        // 1. Redis 캐시 확인
+        String cacheKey = QUIZ_CACHE_PREFIX + articleId + ":" + level.name();
+        List<QuizResponse> cached = loadFromCache(cacheKey);
+        if (cached != null) {
+            return cached;
         }
-        return quizzes.stream().map(QuizResponse::from).toList();
+
+        // 2. DB 조회
+        List<Quiz> quizzes = level == ArticleDifficulty.BASIC
+                ? quizRepository.findByArticleIdAndIsActiveTrueOrderByDisplayOrder(articleId)
+                : quizRepository.findByArticleIdAndUserLevelAndIsActiveTrueOrderByDisplayOrder(articleId, level);
+
+        // 3. 없으면 생성
+        if (quizzes.isEmpty()) {
+            quizzes = generateQuizzes(articleId, level);
+        }
+
+        List<QuizResponse> responses = quizzes.stream().map(QuizResponse::from).toList();
+        saveToCache(cacheKey, responses);
+        return responses;
     }
 
     @Transactional
@@ -112,6 +156,10 @@ public class QuizService {
     }
 
     private List<Quiz> generateQuizzes(Long articleId) {
+        return generateQuizzes(articleId, ArticleDifficulty.BASIC);
+    }
+
+    private List<Quiz> generateQuizzes(Long articleId, ArticleDifficulty userLevel) {
         ArticleMeta article = articleMetaRepository.findById(articleId)
                 .orElseThrow(() -> new CustomException(ErrorCode.ARTICLE_NOT_FOUND));
         ArticleContent content = getArticleContent(article)
@@ -122,8 +170,9 @@ public class QuizService {
                 .filter(term -> articleText.contains(term.getName()))
                 .map(term -> new EconomicTermContext(term.getName(), term.getDefinition()))
                 .toList();
-        List<GeneratedQuiz> generated = generateWithAiOrFallback(article, content, articleText, economicTerms);
+        List<GeneratedQuiz> generated = generateWithAiOrFallback(article, content, articleText, economicTerms, userLevel);
         List<Quiz> quizzes = new ArrayList<>(generated.size());
+        ArticleDifficulty storedLevel = userLevel == ArticleDifficulty.BASIC ? null : userLevel;
         for (int index = 0; index < generated.size(); index++) {
             GeneratedQuiz item = generated.get(index);
             quizzes.add(Quiz.create(
@@ -134,7 +183,8 @@ public class QuizService {
                     item.options(),
                     item.correctAnswer(),
                     item.explanation(),
-                    index + 1
+                    index + 1,
+                    storedLevel
             ));
         }
         return quizRepository.saveAll(quizzes);
@@ -161,11 +211,21 @@ public class QuizService {
             String articleText,
             List<EconomicTermContext> economicTerms
     ) {
+        return generateWithAiOrFallback(article, content, articleText, economicTerms, ArticleDifficulty.BASIC);
+    }
+
+    private List<GeneratedQuiz> generateWithAiOrFallback(
+            ArticleMeta article,
+            ArticleContent content,
+            String articleText,
+            List<EconomicTermContext> economicTerms,
+            ArticleDifficulty userLevel
+    ) {
         try {
             List<String> evidence = content == null
                     ? List.of(article.getSummary())
                     : ragRetrievalService.retrieveQuizEvidence(article.getTitle(), content, economicTerms);
-            return generateAndCritique(article, articleText, economicTerms, evidence);
+            return generateAndCritique(article, articleText, economicTerms, evidence, userLevel);
         } catch (RuntimeException exception) {
             return fallbackQuizzes(article, economicTerms);
         }
@@ -175,7 +235,8 @@ public class QuizService {
             ArticleMeta article,
             String articleText,
             List<EconomicTermContext> economicTerms,
-            List<String> evidence
+            List<String> evidence,
+            ArticleDifficulty userLevel
     ) {
         String criticFeedback = null;
         RuntimeException lastFailure = null;
@@ -186,7 +247,8 @@ public class QuizService {
                         articleText,
                         economicTerms,
                         evidence,
-                        criticFeedback
+                        criticFeedback,
+                        userLevel
                 );
                 QuizCritiqueResult critique = quizCriticClient.critique(
                         article.getTitle(),
@@ -201,62 +263,4 @@ public class QuizService {
             } catch (RuntimeException exception) {
                 lastFailure = exception;
                 criticFeedback = "생성 또는 검증 중 오류가 발생했습니다: " + exception.getMessage();
-            }
-        }
-        if (lastFailure != null) {
-            throw lastFailure;
-        }
-        throw new CustomException(ErrorCode.QUIZ_GENERATION_FAILED);
-    }
-
-    private List<GeneratedQuiz> fallbackQuizzes(
-            ArticleMeta article,
-            List<EconomicTermContext> economicTerms
-    ) {
-        String categoryName = article.getCategory().getDisplayName();
-        String keyword = economicTerms.isEmpty() ? "핵심 경제 개념" : economicTerms.get(0).name();
-        return List.of(
-                new GeneratedQuiz(
-                        QuizType.OX,
-                        QuizPurpose.BASIC_CONCEPT,
-                        "이 기사는 " + categoryName + " 흐름을 이해하는 데 필요한 내용을 다룬다.",
-                        List.of("O", "X"),
-                        "O",
-                        "기사의 분류와 본문 요약을 바탕으로 해당 경제 영역의 주요 흐름을 설명하는 문제입니다."
-                ),
-                new GeneratedQuiz(
-                        QuizType.MULTIPLE,
-                        QuizPurpose.FACT_CHECK,
-                        "기사에서 가장 먼저 확인해야 할 핵심 개념은 무엇인가요?",
-                        List.of(keyword, "운동 경기 결과", "연예 일정", "날씨 예보"),
-                        keyword,
-                        "본문에 포함된 경제 용어와 기사 분류를 기준으로 핵심 개념을 고르는 문제입니다."
-                ),
-                new GeneratedQuiz(
-                        QuizType.MULTIPLE,
-                        QuizPurpose.CAUSAL_REASONING,
-                        "이 기사를 읽을 때 적절한 학습 관점은 무엇인가요?",
-                        List.of("원인과 시장 영향을 함께 파악한다", "제목만 보고 결론을 확정한다", "본문 수치를 모두 무시한다", "기사 출처를 확인하지 않는다"),
-                        "원인과 시장 영향을 함께 파악한다",
-                        "경제 기사는 사건의 원인, 지표 변화, 시장 또는 정책 영향을 연결해서 읽는 것이 중요합니다."
-                )
-        );
-    }
-
-    private boolean isCorrect(String userAnswer, String correctAnswer) {
-        return normalizeAnswer(userAnswer).equals(normalizeAnswer(correctAnswer));
-    }
-
-    private String normalizeAnswer(String answer) {
-        return Normalizer.normalize(answer.trim(), Normalizer.Form.NFKC)
-                .replaceAll("\\s+", " ")
-                .toUpperCase(Locale.ROOT);
-    }
-
-    private List<String> getRelatedTermNames(Long articleId) {
-        return articleTermRepository.findAllByArticleIdWithTerm(articleId).stream()
-                .map(ArticleTerm::getTerm)
-                .map(term -> term.getName())
-                .toList();
-    }
-}
+            

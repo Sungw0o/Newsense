@@ -40,6 +40,15 @@ public class ContentCleaner {
     private static final Pattern BYLINE_EQUAL = Pattern.compile(
             "(?:^|\\s)=\\s*[\uAC00-\uD7A3]{2,5}(?=\\s|$)");
 
+    // \uAE30\uC0AC \uB9D0\uBBF8 \uC778\uC0AC\uB9D0 \u00B7 \uAD11\uACE0\uC131 \uBB38\uAD6C \uD328\uD134
+    private static final Pattern TAIL_GREET = Pattern.compile(
+            "^.{0,80}(?:\uAD6C\uB3C5|\uD314\uB85C\uC6B0|\uC751\uC6D0|\uD074\uB9AD|\uC88B\uC544\uC694|\uACF5\uC720|\uC81C\uBCF4|\uC81C\uBCF4\uCC98|\uC5F0\uB77D\uCC98|\uB3C5\uC790|\uD6C4\uC6D0|\uAD11\uACE0|\uC2A4\uD3F0\uC11C|\uC81C\uACF5|\uBC14\uB85C\uAC00\uAE30|\uB354\uBCF4\uAE30|\uAD00\uB828\uAE30\uC0AC|\uAD00\uB828 \uAE30\uC0AC|[Ss]ubscribe|[Ff]ollow us).{0,80}$",
+            Pattern.MULTILINE);
+
+    // \uC804\uD654\uBC88\uD638 \uD328\uD134 (\uAF2C\uB9AC\uB9D0 \uC5F0\uB77D\uCC98)
+    private static final Pattern PHONE = Pattern.compile(
+            "(?:^|\\s)(?:02|0[3-9][0-9]|010|011|016|017|018|019)[\\s\\-]?\\d{3,4}[\\s\\-]?\\d{4}(?=\\s|$)");
+
     public String clean(String rawText) {
         if (rawText == null || rawText.isBlank()) {
             return "";
@@ -59,21 +68,4 @@ public class ContentCleaner {
         // \uC800\uC791\uAD8C\u00B7\uC7AC\uBC30\uD3EC \uAE08\uC9C0 \uB77C\uC778 \uC81C\uAC70
         text = COPYRIGHT_LINE.matcher(text).replaceAll("");
 
-        // \uAE30\uC790\uBA85/\uBC30\uD3EC\uCC98 \uAD04\uD638 \uD328\uD134 \uC81C\uAC70
-        text = BYLINE_BRACKET.matcher(text).replaceAll("");
-
-        // \uC778\uB77C\uC778 \uAE30\uC790 \uC11C\uBA85 \uC81C\uAC70
-        text = BYLINE_INLINE.matcher(text).replaceAll(" ");
-        text = BYLINE_EQUAL.matcher(text).replaceAll(" ");
-
-        // \uBE48 \uC904 \uC815\uADDC\uD654: 3\uC904 \uC774\uC0C1 \uC5F0\uC18D \uBE48 \uC904 \u2192 \uCD5C\uB300 2\uC904
-        text = text.replaceAll("(\n){3,}", "\n\n");
-
-        // \uAC01 \uC904 \uC55E\uB4A4 \uACF5\uBC31 \uC81C\uAC70 \uD6C4 \uC644\uC804\uD788 \uBE48 \uC904 \uC555\uCD95
-        text = Arrays.stream(text.split("\n"))
-                .map(String::strip)
-                .collect(Collectors.joining("\n"));
-
-        return text.replaceAll("(\n){3,}", "\n\n").strip();
-    }
-}
+        // \uAE30\uC7
