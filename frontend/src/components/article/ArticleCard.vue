@@ -278,3 +278,32 @@ h3 {
 }
 
 .dark .card-foot {
+  border-color: rgba(255, 255, 255, 0.1);
+}
+
+.view-count,
+.pub-date {
+  white-space: nowrap;
+}
+
+@media (max-width: 900px) {
+  .card.featured {
+    grid-column: span 2;
+  }
+}
+
+@media (max-width: 640px) {
+  .card.featured {
+    grid-column: span 1;
+  }
+
+  .card.featured h3,
+  .card.featured .summary {
+    max-width: 100%;
+  }
+
+  .card.featured h3 {
+    font-size: 20px;
+  }
+}
+</style>

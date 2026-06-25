@@ -418,4 +418,14 @@ onMounted(async () => {
   display: flex;
   flex-direction: column;
   align-items: center;
-  padding: 80p
+  padding: 80px 0;
+  gap: 12px;
+  text-align: center;
+}
+
+@media (max-width: 640px) {
+  .qcard { padding: 22px 18px 20px; }
+  .q-text { font-size: 20px; }
+  .quiz-shell { padding: 24px 0 60px; }
+}
+</style>
