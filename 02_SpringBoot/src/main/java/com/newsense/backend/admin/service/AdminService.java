@@ -17,6 +17,7 @@ import com.newsense.backend.common.exception.CustomException;
 import com.newsense.backend.common.exception.ErrorCode;
 import com.newsense.backend.community.domain.Post;
 import com.newsense.backend.community.repository.PostReportRepository;
+import com.newsense.backend.community.repository.PostCommentRepository;
 import com.newsense.backend.community.repository.PostRepository;
 import com.newsense.backend.inquiry.dto.InquiryResponse;
 import com.newsense.backend.inquiry.repository.InquiryRepository;
@@ -38,6 +39,7 @@ import org.springframework.transaction.annotation.Transactional;
 public class AdminService {
 
     private final UserRepository userRepository;
+    private final PostCommentRepository postCommentRepository;
     private final PostRepository postRepository;
     private final PostReportRepository postReportRepository;
     private final ArticleMetaRepository articleMetaRepository;
@@ -84,6 +86,8 @@ public class AdminService {
     public void deletePost(Long postId) {
         Post post = postRepository.findById(postId)
                 .orElseThrow(() -> new CustomException(ErrorCode.POST_NOT_FOUND));
+        postReportRepository.deleteAllByPostId(postId);
+        postCommentRepository.deleteAllByPostId(postId);
         postRepository.delete(post);
     }
 
@@ -94,7 +98,10 @@ public class AdminService {
 
     @Transactional(readOnly = true)
     public Page<AdminArticleResponse> getArticles(Pageable pageable) {
-        return articleMetaRepository.findAll(pageable)
+        Pageable sorted = org.springframework.data.domain.PageRequest.of(
+                pageable.getPageNumber(), pageable.getPageSize(),
+                org.springframework.data.domain.Sort.by(org.springframework.data.domain.Sort.Direction.DESC, "viewCount"));
+        return articleMetaRepository.findAll(sorted)
                 .map(article -> AdminArticleResponse.of(article, getContentLength(article)));
     }
 

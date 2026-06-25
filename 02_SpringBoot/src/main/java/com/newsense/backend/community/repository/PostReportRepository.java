@@ -8,6 +8,8 @@ import org.springframework.data.jpa.repository.Query;
 
 public interface PostReportRepository extends JpaRepository<PostReport, Long> {
 
+    void deleteAllByPostId(Long postId);
+
     boolean existsByPostIdAndReporterId(Long postId, Long reporterId);
 
     @Query("select r from PostReport r join fetch r.post join fetch r.reporter order by r.reportedAt desc")
