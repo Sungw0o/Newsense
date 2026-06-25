@@ -6,6 +6,7 @@ import com.newsense.backend.admin.dto.CrawlResultResponse;
 import com.newsense.backend.admin.dto.PostReportResponse;
 import com.newsense.backend.admin.service.AdminService;
 import com.newsense.backend.common.response.ApiResponse;
+import com.newsense.backend.inquiry.dto.InquiryResponse;
 import com.newsense.backend.user.dto.UserProfileResponse;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
@@ -54,4 +55,21 @@ public class AdminController implements AdminApiDocs {
 
     @Override
     public ResponseEntity<ApiResponse<AdminArticleResponse>> refreshArticleSummary(Long articleId) {
-        return ResponseEntity.ok(ApiResponse.success("AI 요약본이 갱신되었습니다.", 
+        return ResponseEntity.ok(ApiResponse.success("AI 요약본이 갱신되었습니다.", adminService.refreshArticleSummary(articleId)));
+    }
+
+    @Override
+    public ResponseEntity<ApiResponse<CrawlResultResponse>> triggerCrawl(int maxPerSource) {
+        return ResponseEntity.ok(ApiResponse.success("크롤링이 완료되었습니다.", adminService.triggerCrawl(maxPerSource)));
+    }
+
+    @Override
+    public ResponseEntity<ApiResponse<Page<InquiryResponse>>> getInquiries(Pageable pageable) {
+        return ResponseEntity.ok(ApiResponse.success("문의 목록 조회에 성공했습니다.", adminService.getInquiries(pageable)));
+    }
+
+    @Override
+    public ResponseEntity<ApiResponse<InquiryResponse>> resolveInquiry(Long inquiryId) {
+        return ResponseEntity.ok(ApiResponse.success("문의가 처리 완료되었습니다.", adminService.resolveInquiry(inquiryId)));
+    }
+}

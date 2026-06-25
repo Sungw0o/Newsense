@@ -8,7 +8,6 @@ const props = defineProps({
 
 const emit = defineEmits(['click'])
 
-// 카테고리 → 태그 클래스
 const categoryTag = computed(() => {
   const map = {
     '거시경제': 'macro',
@@ -25,7 +24,6 @@ const categoryTag = computed(() => {
   return map[props.article.category] ?? 'default'
 })
 
-// 카테고리별 placeholder 아이콘 + 그라디언트
 const categoryPlaceholder = computed(() => {
   const map = {
     '거시경제':  { emoji: '📈', from: '#e0f2fe', to: '#bae6fd' },
@@ -42,16 +40,23 @@ const categoryPlaceholder = computed(() => {
   return map[props.article.category] ?? { emoji: '📰', from: '#f1f5f9', to: '#e2e8f0' }
 })
 
-const readTime = computed(() => props.article.estimatedMinutes ?? props.article.readTime ?? 3)
-
-const publishedDate = computed(() => {
-  const d = props.article.publishedAt ?? props.article.createdAt
-  if (!d) return ''
-  const date = new Date(d)
-  const year = date.getFullYear()
-  const month = String(date.getMonth() + 1).padStart(2, '0')
-  const day = String(date.getDate()).padStart(2, '0')
-  return `${year}.${month}.${day}`
+// 날짜 + 시간: collectedAt(수집시각) 있으면 우선, 없으면 publishedAt 날짜만
+const publishedDateTime = computed(() => {
+  const col = props.article.collectedAt
+  if (col) {
+    const d = new Date(col)
+    const month = String(d.getMonth() + 1).padStart(2, '0')
+    const day = String(d.getDate()).padStart(2, '0')
+    const hour = String(d.getHours()).padStart(2, '0')
+    const min = String(d.getMinutes()).padStart(2, '0')
+    return `${d.getFullYear()}.${month}.${day} ${hour}:${min}`
+  }
+  const pub = props.article.publishedAt ?? props.article.createdAt
+  if (!pub) return ''
+  const d = new Date(pub)
+  const month = String(d.getMonth() + 1).padStart(2, '0')
+  const day = String(d.getDate()).padStart(2, '0')
+  return `${d.getFullYear()}.${month}.${day}`
 })
 
 const viewCount = computed(() => {
@@ -69,18 +74,15 @@ const viewCount = computed(() => {
     tabindex="0"
     @keydown.enter="emit('click', article.articleId)"
   >
-    <!-- 카테고리 thumbnail placeholder -->
     <div
       class="card-thumb"
-      :style="`background: linear-gradient(135deg, ${categoryPlaceholder.emoji ? categoryPlaceholder.from : '#f1f5f9'} 0%, ${categoryPlaceholder.to} 100%)`"
+      :style="`background: linear-gradient(135deg, ${categoryPlaceholder.from} 0%, ${categoryPlaceholder.to} 100%)`"
     >
       <span class="thumb-emoji">{{ categoryPlaceholder.emoji }}</span>
-      <span v-if="article.difficulty" class="thumb-difficulty">{{ article.difficulty }}</span>
     </div>
 
     <div class="card-top">
       <span class="tag" :class="categoryTag">{{ article.category || '경제' }}</span>
-      <span class="meta-time">{{ readTime }}분 읽기</span>
     </div>
 
     <h3>{{ article.title }}</h3>
@@ -88,7 +90,7 @@ const viewCount = computed(() => {
     <p class="summary">{{ article.summary ?? article.preview }}</p>
 
     <div class="card-foot">
-      <span class="pub-date">{{ publishedDate }}</span>
+      <span class="pub-date">{{ publishedDateTime }}</span>
       <span class="view-count">조회 {{ viewCount }}</span>
     </div>
   </article>
@@ -100,7 +102,7 @@ const viewCount = computed(() => {
   display: flex;
   flex-direction: column;
   overflow: hidden;
-  padding: 0; /* thumbnail이 최상단 차지, 내부 요소에 개별 padding */
+  padding: 0;
   background: rgba(255, 255, 255, 0.88);
   border: 1px solid rgba(0, 0, 0, 0.08);
   border-radius: 12px;
@@ -108,33 +110,22 @@ const viewCount = computed(() => {
   text-decoration: none;
   color: inherit;
   transition: transform .2s ease, box-shadow .2s ease, border-color .2s ease;
-  min-height: 248px;
+  min-height: 228px;
 }
 
-/* 카테고리 placeholder 썸네일 */
 .card-thumb {
-  height: 72px;
+  height: 64px;
   display: flex;
   align-items: center;
-  justify-content: space-between;
+  justify-content: flex-start;
   padding: 0 18px;
   flex-shrink: 0;
 }
 
 .thumb-emoji {
-  font-size: 28px;
+  font-size: 26px;
   line-height: 1;
   user-select: none;
-}
-
-.thumb-difficulty {
-  font-size: 11px;
-  font-weight: 800;
-  padding: 3px 9px;
-  border-radius: 999px;
-  background: rgba(255,255,255,0.65);
-  color: #4a5161;
-  backdrop-filter: blur(4px);
 }
 
 .card .card-top,
@@ -146,8 +137,8 @@ const viewCount = computed(() => {
 }
 
 .card .card-top {
-  padding-top: 14px;
-  margin-bottom: 10px;
+  padding-top: 12px;
+  margin-bottom: 8px;
 }
 
 .card .summary {
@@ -155,16 +146,11 @@ const viewCount = computed(() => {
 }
 
 .card .card-foot {
-  padding-bottom: 16px;
+  padding-bottom: 14px;
 }
 
 .dark .card-thumb {
   filter: brightness(0.75) saturate(0.8);
-}
-
-.dark .thumb-difficulty {
-  background: rgba(0,0,0,0.35);
-  color: #c8d0e0;
 }
 
 .card:hover {
@@ -181,7 +167,7 @@ const viewCount = computed(() => {
 
 .card.featured {
   grid-column: span 2;
-  min-height: 292px;
+  min-height: 270px;
   background: linear-gradient(135deg, rgba(232, 242, 255, 0.98), rgba(255, 255, 255, 0.94));
 }
 
@@ -202,8 +188,7 @@ const viewCount = computed(() => {
 .card-top {
   display: flex;
   align-items: center;
-  justify-content: space-between;
-  margin-bottom: 16px;
+  margin-bottom: 14px;
   gap: 10px;
 }
 
@@ -229,12 +214,6 @@ const viewCount = computed(() => {
 .dark .tag.global { background: rgba(58, 208, 123, 0.18); color: #95EAB8; }
 .dark .tag.policy,
 .dark .tag.default { background: rgba(148, 163, 184, 0.16); color: #CBD5E1; }
-
-.meta-time {
-  font-size: 12px;
-  color: var(--ink-3, #8a93a3);
-  flex-shrink: 0;
-}
 
 h3 {
   font-family: 'Fustat', 'Pretendard', sans-serif;
@@ -271,7 +250,7 @@ h3 {
   align-items: center;
   justify-content: space-between;
   gap: 12px;
-  padding-top: 14px;
+  padding-top: 12px;
   border-top: 1px solid rgba(0, 0, 0, 0.08);
   color: var(--ink-3, #8a93a3);
   font-size: 12px;

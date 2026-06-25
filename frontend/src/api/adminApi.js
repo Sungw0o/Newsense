@@ -22,8 +22,14 @@ const adminApi = {
   refreshArticleSummary(articleId) {
     return axiosInstance.patch(`/admin/articles/${articleId}/summary`)
   },
-  triggerCrawl() {
-    return axiosInstance.post('/admin/crawl')
+  triggerCrawl(maxPerSource = 50) {
+    return axiosInstance.post('/admin/crawl', null, { params: { maxPerSource } })
+  },
+  getInquiries(params = {}) {
+    return axiosInstance.get('/admin/inquiries', { params })
+  },
+  resolveInquiry(inquiryId) {
+    return axiosInstance.patch(`/admin/inquiries/${inquiryId}/resolve`)
   },
 }
 

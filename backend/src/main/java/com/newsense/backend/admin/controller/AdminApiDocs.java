@@ -5,10 +5,13 @@ import com.newsense.backend.admin.dto.AdminStatsResponse;
 import com.newsense.backend.admin.dto.CrawlResultResponse;
 import com.newsense.backend.admin.dto.PostReportResponse;
 import com.newsense.backend.common.response.ApiResponse;
+import com.newsense.backend.inquiry.dto.InquiryResponse;
 import com.newsense.backend.user.dto.UserProfileResponse;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.validation.constraints.Max;
+import jakarta.validation.constraints.Min;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.web.PageableDefault;
@@ -18,6 +21,7 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 
 @Tag(name = "Admin", description = "관리자 전용 API")
 @SecurityRequirement(name = "BearerAuth")
@@ -59,4 +63,26 @@ public interface AdminApiDocs {
 
     @Operation(summary = "AI 요약 강제 생성/갱신 (관리자)")
     @PatchMapping("/api/v1/admin/articles/{articleId}/summary")
-    Respon
+    ResponseEntity<ApiResponse<AdminArticleResponse>> refreshArticleSummary(
+            @PathVariable Long articleId
+    );
+
+    @Operation(summary = "수동 크롤링 트리거 (공공기관 + 포털)",
+               description = "maxPerSource: 소스당 최대 수집 기사 수 (기본 50, 최대 200)")
+    @PostMapping("/api/v1/admin/crawl")
+    ResponseEntity<ApiResponse<CrawlResultResponse>> triggerCrawl(
+            @RequestParam(defaultValue = "50") @Min(1) @Max(200) int maxPerSource
+    );
+
+    @Operation(summary = "전체 문의 목록 조회 (관리자)")
+    @GetMapping("/api/v1/admin/inquiries")
+    ResponseEntity<ApiResponse<Page<InquiryResponse>>> getInquiries(
+            @PageableDefault(size = 20) Pageable pageable
+    );
+
+    @Operation(summary = "문의 처리 완료 (관리자)")
+    @PatchMapping("/api/v1/admin/inquiries/{inquiryId}/resolve")
+    ResponseEntity<ApiResponse<InquiryResponse>> resolveInquiry(
+            @PathVariable Long inquiryId
+    );
+}

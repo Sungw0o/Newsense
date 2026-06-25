@@ -11,11 +11,16 @@ const articleStore = useArticleStore()
 const { articles, isLoading, hasMore, filters, error } = storeToRefs(articleStore)
 
 const categories = ['전체', '거시경제', '금융/투자', '정책/제도', '기업/산업', '글로벌경제']
+const sortOptions = [
+  { value: 'LATEST', label: '최신순' },
+  { value: 'MOST_VIEWED', label: '조회순' },
+]
 const searchInput = ref('')
 let searchDebounce = null
 
 const displayArticles = computed(() => articles.value)
 const activeCategory = computed(() => filters.value.category || '전체')
+const activeSort = computed(() => filters.value.sort || 'LATEST')
 const hasKeyword = computed(() => !!filters.value.keyword)
 
 const todayLabel = computed(() => {
@@ -29,6 +34,11 @@ onMounted(() => {
 
 const filterByCategory = async (category) => {
   await articleStore.setCategory(category === '전체' ? '' : category)
+}
+
+const changeSort = async (sort) => {
+  if (activeSort.value === sort) return
+  await articleStore.setSort(sort)
 }
 
 const navigateToDetail = (id) => router.push(`/articles/${id}`)
@@ -83,8 +93,19 @@ const clearSearch = () => {
       </div>
     </div>
 
+    <div class="sort-row">
+      <button
+        v-for="opt in sortOptions"
+        :key="opt.value"
+        class="sort-btn"
+        :class="{ active: activeSort === opt.value }"
+        @click="changeSort(opt.value)"
+      >
+        {{ opt.label }}
+      </button>
+    </div>
+
     <div class="feed-body">
-      <!-- 기사 목록 -->
       <div class="feed-main">
         <div v-if="isLoading && displayArticles.length === 0" class="loading-state">
           <div class="spinner"></div>
@@ -121,7 +142,6 @@ const clearSearch = () => {
         </div>
       </div>
 
-      <!-- 사이드 패널 -->
       <HomeSidePanel class="feed-side" />
     </div>
   </div>
@@ -149,18 +169,6 @@ const clearSearch = () => {
   color: #006fd6;
 }
 
-.feed-header h1 {
-  max-width: 760px;
-  margin: 0;
-  font-size: clamp(30px, 3vw, 44px);
-  line-height: 1.18;
-  color: var(--ink, #0a0d12);
-}
-
-.dark .feed-header h1 {
-  color: #f4f6fa;
-}
-
 .feed-meta {
   margin: 0;
   font-size: 13px;
@@ -177,7 +185,7 @@ const clearSearch = () => {
   align-items: flex-start;
   justify-content: space-between;
   gap: 18px;
-  margin-bottom: 26px;
+  margin-bottom: 14px;
 }
 
 .search-wrap {
@@ -275,7 +283,48 @@ const clearSearch = () => {
   border-color: #f4f6fa;
 }
 
-/* ── 2단 레이아웃: 기사 목록 + 사이드 패널 ── */
+/* 정렬 버튼 */
+.sort-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-bottom: 20px;
+}
+
+.sort-btn {
+  padding: 5px 14px;
+  background: none;
+  border: 1px solid rgba(0, 0, 0, 0.10);
+  border-radius: 999px;
+  font-size: 12.5px;
+  font-weight: 600;
+  color: var(--ink-3, #8a93a3);
+  cursor: pointer;
+  transition: all .13s;
+}
+
+.sort-btn:hover {
+  color: var(--ink, #0a0d12);
+  border-color: rgba(0, 0, 0, 0.22);
+}
+
+.sort-btn.active {
+  background: #0084ff;
+  color: #fff;
+  border-color: #0084ff;
+}
+
+.dark .sort-btn {
+  border-color: rgba(255, 255, 255, 0.12);
+  color: #8a93a3;
+}
+
+.dark .sort-btn.active {
+  background: #0084ff;
+  color: #fff;
+  border-color: #0084ff;
+}
+
 .feed-body {
   display: grid;
   grid-template-columns: minmax(0, 1fr) 280px;
@@ -289,7 +338,7 @@ const clearSearch = () => {
 
 .feed-side {
   position: sticky;
-  top: 76px; /* navbar 높이 보정 */
+  top: 76px;
 }
 
 .feed-grid {
@@ -343,9 +392,7 @@ const clearSearch = () => {
 }
 
 @keyframes spin {
-  to {
-    transform: rotate(360deg);
-  }
+  to { transform: rotate(360deg); }
 }
 
 @media (max-width: 1200px) {
@@ -355,17 +402,12 @@ const clearSearch = () => {
 }
 
 @media (max-width: 1024px) {
-  /* 사이드 패널을 아래로 이동 */
   .feed-body {
     grid-template-columns: 1fr;
   }
 
   .feed-side {
     position: static;
-    /* 사이드 패널을 3열 그리드로 표시 */
-    display: grid;
-    grid-template-columns: repeat(3, 1fr);
-    gap: 16px;
   }
 
   .feed-grid {
@@ -402,13 +444,8 @@ const clearSearch = () => {
     padding: 12px 0 60px;
   }
 
-  .feed-side {
-    grid-template-columns: 1fr;
-  }
-
   .feed-grid {
     grid-template-columns: 1fr;
   }
 }
 </style>
-                                                                                                                          

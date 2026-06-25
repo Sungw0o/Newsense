@@ -6,6 +6,10 @@ public enum ArticleFeedSort {
     LATEST(Sort.by(
             Sort.Order.desc("publishedAt").nullsLast(),
             Sort.Order.desc("id")
+    )),
+    MOST_VIEWED(Sort.by(
+            Sort.Order.desc("viewCount"),
+            Sort.Order.desc("publishedAt").nullsLast()
     ));
 
     private final Sort sort;

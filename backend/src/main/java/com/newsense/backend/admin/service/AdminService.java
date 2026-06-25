@@ -18,6 +18,9 @@ import com.newsense.backend.common.exception.ErrorCode;
 import com.newsense.backend.community.domain.Post;
 import com.newsense.backend.community.repository.PostReportRepository;
 import com.newsense.backend.community.repository.PostRepository;
+import com.newsense.backend.inquiry.dto.InquiryResponse;
+import com.newsense.backend.inquiry.repository.InquiryRepository;
+import com.newsense.backend.inquiry.service.InquiryService;
 import com.newsense.backend.user.domain.User;
 import com.newsense.backend.user.domain.UserRole;
 import com.newsense.backend.user.dto.UserProfileResponse;
@@ -40,6 +43,7 @@ public class AdminService {
     private final OpenAiArticleClassifierClient articleClassifierClient;
     private final PublicNewsCrawlerService publicNewsCrawlerService;
     private final PortalNewsCrawlerService portalNewsCrawlerService;
+    private final InquiryService inquiryService;
 
     @Transactional(readOnly = true)
     public AdminStatsResponse getStats() {
@@ -96,5 +100,35 @@ public class AdminService {
         return AdminArticleResponse.of(article, articleText == null ? 0 : articleText.length());
     }
 
-    public CrawlResultResponse triggerCrawl() {
-        CrawlRunResult publ
+    public CrawlResultResponse triggerCrawl(int maxPerSource) {
+        CrawlRunResult publicResult = publicNewsCrawlerService.collectAll(maxPerSource);
+        CrawlRunResult portalResult = portalNewsCrawlerService.collectAll();
+        int totalDiscovered = publicResult.discovered() + portalResult.discovered();
+        int totalSaved = publicResult.saved() + portalResult.saved();
+        int totalSkipped = publicResult.skipped() + portalResult.skipped();
+        int totalFailed = publicResult.failed() + portalResult.failed();
+        return new CrawlResultResponse(totalDiscovered, totalSaved, totalSkipped, totalFailed);
+    }
+
+    @Transactional(readOnly = true)
+    public Page<InquiryResponse> getInquiries(Pageable pageable) {
+        return inquiryService.getAllInquiries(pageable);
+    }
+
+    @Transactional
+    public InquiryResponse resolveInquiry(Long inquiryId) {
+        return inquiryService.resolve(inquiryId);
+    }
+
+    private int getContentLength(ArticleMeta article) {
+        return articleContentRepository.findById(article.getMongoDocumentId())
+                .or(() -> articleContentRepository.findBySourceUrl(article.getSourceUrl()))
+                .map(c -> {
+                    if (c.getCleanText() != null && !c.getCleanText().isBlank()) {
+                        return c.getCleanText().length();
+                    }
+                    return c.getRawText() != null ? c.getRawText().length() : 0;
+                })
+                .orElse(0);
+    }
+}

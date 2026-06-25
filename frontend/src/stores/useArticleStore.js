@@ -11,6 +11,7 @@ export const useArticleStore = defineStore('article', {
       category: '',
       difficulty: '',
       keyword: '',
+      sort: 'LATEST',
       page: 0,
       size: 20,
     },
@@ -23,6 +24,7 @@ export const useArticleStore = defineStore('article', {
       this.filters.category = ''
       this.filters.difficulty = ''
       this.filters.keyword = ''
+      this.filters.sort = 'LATEST'
       this.filters.page = 0
       this.articles = []
       this.hasMore = true
@@ -56,6 +58,15 @@ export const useArticleStore = defineStore('article', {
       return this.fetchArticles()
     },
 
+    setSort(sort) {
+      this.filters.sort = sort
+      this.filters.page = 0
+      this.articles = []
+      this.hasMore = true
+      this.error = null
+      return this.fetchArticles()
+    },
+
     async fetchArticles() {
       if (this.isLoading || !this.hasMore) return
       this.isLoading = true
@@ -63,13 +74,20 @@ export const useArticleStore = defineStore('article', {
       const requestId = ++this.currentRequestId
 
       try {
-        const { category, difficulty, keyword, page, size } = this.filters
-        const response = await articleApi.getArticles({ category, difficulty, keyword: keyword || undefined, page, size })
+        const { category, difficulty, keyword, sort, page, size } = this.filters
+        const response = await articleApi.getArticles({
+          category,
+          difficulty,
+          keyword: keyword || undefined,
+          sort,
+          page,
+          size,
+        })
 
         if (requestId !== this.currentRequestId) return
 
-        const data = response.data || response
-        const content = data.content || []
+        const data = response.data?.data ?? response.data
+        const content = data.content ?? []
 
         if (page === 0) {
           this.articles = content
@@ -78,13 +96,10 @@ export const useArticleStore = defineStore('article', {
         }
 
         this.hasMore = !data.last && content.length > 0
-        if (this.hasMore) {
-          this.filters.page += 1
-        }
-      } catch (error) {
-        console.error('Fetch articles error:', error)
+        this.filters.page = page + 1
+      } catch (err) {
         if (requestId === this.currentRequestId) {
-          this.error = error?.response?.data?.message ?? '기사를 불러오지 못했습니다.'
+          this.error = err?.response?.data?.message ?? '기사를 불러오는 데 실패했습니다.'
         }
       } finally {
         if (requestId === this.currentRequestId) {
@@ -94,16 +109,15 @@ export const useArticleStore = defineStore('article', {
     },
 
     async fetchArticleDetail(articleId) {
-      this.selectedArticle = null
-      this.selectedArticleTerms = []
       this.isLoading = true
+      this.error = null
       try {
         const response = await articleApi.getArticleDetail(articleId)
-        this.selectedArticle = response.data || response
-        await this.fetchArticleTerms(articleId)
-      } catch (error) {
-        console.error('Fetch article detail error:', error)
-        throw error
+        const data = response.data?.data ?? response.data
+        this.selectedArticle = data
+      } catch (err) {
+        this.error = err?.response?.data?.message ?? '기사를 불러오는 데 실패했습니다.'
+        this.selectedArticle = null
       } finally {
         this.isLoading = false
       }
@@ -112,37 +126,30 @@ export const useArticleStore = defineStore('article', {
     async fetchArticleTerms(articleId) {
       try {
         const response = await articleApi.getArticleTerms(articleId)
-        this.selectedArticleTerms = response.data || response
-      } catch (error) {
-        console.error('Fetch article terms error:', error)
+        this.selectedArticleTerms = response.data?.data ?? response.data ?? []
+      } catch {
         this.selectedArticleTerms = []
-        throw error
       }
     },
 
     async markArticleAsRead(articleId) {
       try {
-        return await articleApi.markAsRead(articleId)
-      } catch (error) {
-        console.error('Mark article as read error:', error)
-        throw error
+        await articleApi.markAsRead(articleId)
+      } catch {
+        // 읽음 처리 실패는 무시
       }
     },
 
     async toggleBookmark(articleId) {
       try {
         const response = await articleApi.toggleBookmark(articleId)
-        const data = response.data || response
-        if (this.selectedArticle && String(this.selectedArticle.id) === String(articleId)) {
+        const data = response.data?.data ?? response.data
+        if (this.selectedArticle) {
           this.selectedArticle.isBookmarked = data.isBookmarked
         }
-        return response
-      } catch (error) {
-        console.error('Toggle bookmark error:', error)
-        throw error
+      } catch (err) {
+        throw err
       }
-    }
-  }
+    },
+  },
 })
-
-export default useArticleStore

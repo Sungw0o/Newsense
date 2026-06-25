@@ -18,7 +18,6 @@ import java.util.regex.Pattern;
 @RequiredArgsConstructor
 public class PublicNewsCrawlerService {
 
-    // 한국은행 공공 채널에서 기사가 아닌 게시물 제목 키워드 (공고, 채용, 입찰 등)
     private static final Set<String> BOK_NON_ARTICLE_KEYWORDS = Set.of(
             "공고", "채용", "입찰", "구인", "인사발령", "인사 발령",
             "정정", "취소", "설명회", "행사 안내", "행사안내",
@@ -26,7 +25,6 @@ public class PublicNewsCrawlerService {
             "결과 공고", "선정", "공모"
     );
 
-    // "[공고]", "[채용]" 등 제목 앞 대괄호 태그
     private static final Pattern BOK_BRACKET_TAG = Pattern.compile("^\\s*[\\[（（【]");
 
     private final CrawlerProperties properties;
@@ -34,12 +32,16 @@ public class PublicNewsCrawlerService {
     private final ArticlePersistenceService persistenceService;
 
     public CrawlRunResult collectAll() {
+        return collectAll(Integer.MAX_VALUE);
+    }
+
+    public CrawlRunResult collectAll(int maxPerSource) {
         CrawlRunResult total = CrawlRunResult.empty();
         for (CrawlerProperties.Source source : properties.sources()) {
             if (!source.enabled()) {
                 continue;
             }
-            total = total.add(collectSource(source));
+            total = total.add(collectSource(source, maxPerSource));
         }
         log.info(
                 "News crawl completed: discovered={}, saved={}, skipped={}, failed={}",
@@ -51,9 +53,12 @@ public class PublicNewsCrawlerService {
         return total;
     }
 
-    private CrawlRunResult collectSource(CrawlerProperties.Source source) {
+    private CrawlRunResult collectSource(CrawlerProperties.Source source, int maxPerSource) {
         try {
             List<ArticleCandidate> candidates = crawlerClient.fetchCandidates(source);
+            if (maxPerSource < Integer.MAX_VALUE) {
+                candidates = candidates.stream().limit(maxPerSource).toList();
+            }
             int saved = 0;
             int skipped = 0;
             int failed = 0;
@@ -101,13 +106,10 @@ public class PublicNewsCrawlerService {
         if (title == null || title.isBlank()) {
             return true;
         }
-        // 대괄호 태그로 시작하는 경우 (예: [공고], [채용])
         if (BOK_BRACKET_TAG.matcher(title).find()) {
             return true;
         }
-        // 비기사 키워드 포함 여부
-        String lower = title;
-        return BOK_NON_ARTICLE_KEYWORDS.stream().anyMatch(lower::contains);
+        return BOK_NON_ARTICLE_KEYWORDS.stream().anyMatch(title::contains);
     }
 
     private void pauseBetweenRequests() {

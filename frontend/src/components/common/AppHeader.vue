@@ -64,6 +64,7 @@ const handleMobileNav = (path) => {
             <p class="drop-email">{{ userInfo?.email }}</p>
           </div>
           <router-link to="/mypage" @click="showDropdown = false" class="drop-item">마이페이지</router-link>
+          <router-link to="/inquiry" @click="showDropdown = false" class="drop-item">문의하기</router-link>
           <router-link v-if="userInfo?.role === 'ADMIN'" to="/admin" @click="showDropdown = false" class="drop-item drop-admin">관리자 페이지</router-link>
           <button @click="handleLogout" class="drop-item drop-logout">로그아웃</button>
         </div>
@@ -98,6 +99,7 @@ const handleMobileNav = (path) => {
       <div class="mobile-divider"></div>
       <template v-if="isAuthenticated">
         <button class="mobile-link" @click="handleMobileNav('/mypage')">마이페이지</button>
+        <button class="mobile-link" @click="handleMobileNav('/inquiry')">문의하기</button>
         <button v-if="userInfo?.role === 'ADMIN'" class="mobile-link" @click="handleMobileNav('/admin')">관리자 페이지</button>
         <button class="mobile-link mobile-logout" @click="handleLogout">로그아웃</button>
       </template>

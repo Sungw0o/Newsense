@@ -93,6 +93,12 @@ const routes = [
     meta: { title: '게시글 - Newsense', requiresAuth: true }
   },
   {
+    path: '/inquiry',
+    name: 'Inquiry',
+    component: () => import('../views/InquiryView.vue'),
+    meta: { title: '문의하기 - Newsense', requiresAuth: true }
+  },
+  {
     path: '/admin',
     name: 'Admin',
     component: () => import('../views/AdminView.vue'),

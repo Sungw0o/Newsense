@@ -16,6 +16,8 @@ if (userStore.userInfo?.role !== 'ADMIN') {
 const activeTab = ref('stats')
 const reports = ref([])
 const isLoadingReports = ref(false)
+const inquiries = ref([])
+const isLoadingInquiries = ref(false)
 
 onMounted(async () => {
   await store.fetchStats()
@@ -23,21 +25,20 @@ onMounted(async () => {
 })
 
 const tabs = [
-  { key: 'stats', label: '통계' },
-  { key: 'articles', label: '기사 관리' },
-  { key: 'users', label: '사용자 관리' },
-  { key: 'reports', label: '신고 목록' },
+  { key: 'stats',     label: '통계' },
+  { key: 'articles',  label: '기사 관리' },
+  { key: 'users',     label: '사용자 관리' },
+  { key: 'reports',   label: '신고 목록' },
+  { key: 'inquiries', label: '문의' },
 ]
 
 const roleLabel = (role) => role === 'ADMIN' ? '관리자' : '일반 사용자'
-const roleClass = (role) => role === 'ADMIN' ? 'badge-admin' : 'badge-user'
+const roleClass  = (role) => role === 'ADMIN' ? 'badge-admin' : 'badge-user'
 
 const handleRoleToggle = async (userId) => {
   try {
     await store.changeUserRole(userId)
-  } catch {
-    // error already stored in store.error
-  }
+  } catch { /* stored in store.error */ }
 }
 
 const loadReports = async () => {
@@ -54,9 +55,34 @@ const loadReports = async () => {
   }
 }
 
+const loadInquiries = async (force = false) => {
+  if (!force && inquiries.value.length > 0) return
+  isLoadingInquiries.value = true
+  try {
+    const res = await adminApi.getInquiries({ size: 50 })
+    const data = res?.data?.data ?? res?.data ?? {}
+    inquiries.value = data.content ?? []
+  } catch {
+    inquiries.value = []
+  } finally {
+    isLoadingInquiries.value = false
+  }
+}
+
+const handleResolveInquiry = async (inquiryId) => {
+  try {
+    await adminApi.resolveInquiry(inquiryId)
+    const idx = inquiries.value.findIndex(i => i.id === inquiryId)
+    if (idx !== -1) inquiries.value[idx].resolved = true
+  } catch {
+    alert('처리에 실패했습니다.')
+  }
+}
+
 const handleTabChange = (key) => {
   activeTab.value = key
-  if (key === 'reports') loadReports()
+  if (key === 'reports')   loadReports()
+  if (key === 'inquiries') loadInquiries()
   if (key === 'articles' && store.articles.length === 0) store.fetchArticles({ size: 50, sort: 'collectedAt,desc' })
 }
 
@@ -66,7 +92,6 @@ const formatArticleDate = (value) => {
 }
 
 const formatLength = (length) => `${Number(length ?? 0).toLocaleString()}자`
-
 const canRequestSummary = (article) => !article.hasAiSummary
 
 const handleRefreshSummary = async (articleId) => {
@@ -93,15 +118,17 @@ const handleDeleteReportedPost = async (postId) => {
   }
 }
 
-const isCrawling = ref(false)
-const crawlResult = ref(null)
+// ── 크롤링 ──────────────────────────────────────────────────────────────
+const isCrawling   = ref(false)
+const crawlResult  = ref(null)
+const maxPerSource = ref(50)
 
 const handleTriggerCrawl = async () => {
-  if (!confirm('공공기관 + 포털 크롤링을 수동으로 실행합니다. 계속할까요?')) return
-  isCrawling.value = true
+  if (!confirm(`소스당 최대 ${maxPerSource.value}건 기준으로 크롤링을 실행합니다. 계속할까요?`)) return
+  isCrawling.value  = true
   crawlResult.value = null
   try {
-    const res = await adminApi.triggerCrawl()
+    const res = await adminApi.triggerCrawl(maxPerSource.value)
     crawlResult.value = res?.data?.data ?? res?.data ?? {}
     await store.fetchStats()
   } catch {
@@ -121,7 +148,6 @@ const handleTriggerCrawl = async () => {
       </div>
     </header>
 
-    <!-- Tabs -->
     <div class="tab-row">
       <button
         v-for="tab in tabs"
@@ -132,7 +158,6 @@ const handleTriggerCrawl = async () => {
       >{{ tab.label }}</button>
     </div>
 
-    <!-- Error banner -->
     <div v-if="store.error" class="error-banner">{{ store.error }}</div>
 
     <!-- Stats tab -->
@@ -158,16 +183,29 @@ const handleTriggerCrawl = async () => {
         </div>
       </div>
 
-      <!-- 수동 크롤링 -->
       <div class="crawl-section">
         <div class="crawl-header">
           <span class="crawl-title">수동 크롤링</span>
           <span class="crawl-desc">공공기관(한국은행·기획재정부) + 포털(네이버·NewsAPI·Google)을 즉시 수집합니다.</span>
         </div>
-        <button class="crawl-btn" :disabled="isCrawling" @click="handleTriggerCrawl">
-          <span v-if="isCrawling" class="btn-spinner"></span>
-          <span>{{ isCrawling ? '크롤링 중...' : '지금 크롤링 실행' }}</span>
-        </button>
+        <div class="crawl-controls">
+          <div class="crawl-limit-wrap">
+            <label class="crawl-limit-label" for="max-per-source">소스당 최대</label>
+            <input
+              id="max-per-source"
+              v-model.number="maxPerSource"
+              type="number"
+              class="crawl-limit-input"
+              min="1"
+              max="200"
+            />
+            <span class="crawl-limit-unit">건</span>
+          </div>
+          <button class="crawl-btn" :disabled="isCrawling" @click="handleTriggerCrawl">
+            <span v-if="isCrawling" class="btn-spinner"></span>
+            <span>{{ isCrawling ? '크롤링 중...' : '지금 크롤링 실행' }}</span>
+          </button>
+        </div>
         <div v-if="crawlResult" class="crawl-result">
           <span class="cr-item">발견 <strong>{{ crawlResult.discovered }}</strong></span>
           <span class="cr-item saved">저장 <strong>{{ crawlResult.saved }}</strong></span>
@@ -185,12 +223,7 @@ const handleTriggerCrawl = async () => {
         <table class="user-table">
           <thead>
             <tr>
-              <th>신고 ID</th>
-              <th>게시글 제목</th>
-              <th>신고자</th>
-              <th>사유</th>
-              <th>일시</th>
-              <th>작업</th>
+              <th>신고 ID</th><th>게시글 제목</th><th>신고자</th><th>사유</th><th>일시</th><th>작업</th>
             </tr>
           </thead>
           <tbody>
@@ -209,27 +242,64 @@ const handleTriggerCrawl = async () => {
       </div>
     </section>
 
+    <!-- Inquiries tab -->
+    <section v-if="activeTab === 'inquiries'" class="tab-content">
+      <div class="section-toolbar">
+        <p class="section-help">사용자가 남긴 문의를 확인하고 처리 완료 표시를 할 수 있습니다.</p>
+        <button class="action-btn" :disabled="isLoadingInquiries" @click="loadInquiries(true)">새로고침</button>
+      </div>
+      <div v-if="isLoadingInquiries" class="loading-state"><div class="spinner"></div></div>
+      <div v-else-if="inquiries.length === 0" class="empty">
+        <p class="eyebrow" style="text-align:center;">접수된 문의가 없습니다</p>
+      </div>
+      <div v-else class="user-table-wrap">
+        <table class="user-table">
+          <thead>
+            <tr>
+              <th>ID</th><th>작성자</th><th>제목</th><th>내용</th><th>접수일</th><th>처리 여부</th><th>작업</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr v-for="inq in inquiries" :key="inq.id">
+              <td class="td-id">{{ inq.id }}</td>
+              <td class="td-nick">{{ inq.authorName }}</td>
+              <td class="td-article" style="max-width:180px;">
+                <strong style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis;display:block;">{{ inq.title }}</strong>
+              </td>
+              <td style="max-width:240px;font-size:12.5px;color:var(--ink-2,#4a5161);">
+                <span style="display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;">{{ inq.content }}</span>
+              </td>
+              <td class="td-email">{{ formatDate(inq.createdAt) }}</td>
+              <td>
+                <span class="role-badge" :class="inq.resolved ? 'badge-admin' : 'badge-user'">
+                  {{ inq.resolved ? '처리 완료' : '미처리' }}
+                </span>
+              </td>
+              <td>
+                <button
+                  class="action-btn"
+                  :disabled="inq.resolved"
+                  @click="handleResolveInquiry(inq.id)"
+                >처리 완료</button>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
     <!-- Articles tab -->
     <section v-if="activeTab === 'articles'" class="tab-content">
       <div class="section-toolbar">
         <p class="section-help">본문 길이와 AI 요약본 저장 상태를 확인하고, 누락된 요약을 수동으로 생성할 수 있습니다.</p>
-        <button class="action-btn" :disabled="store.isLoadingArticles" @click="store.fetchArticles({ size: 50, sort: 'collectedAt,desc' })">
-          새로고침
-        </button>
+        <button class="action-btn" :disabled="store.isLoadingArticles" @click="store.fetchArticles({ size: 50, sort: 'collectedAt,desc' })">새로고침</button>
       </div>
       <div v-if="store.isLoadingArticles" class="loading-state"><div class="spinner"></div></div>
       <div v-else class="user-table-wrap">
         <table class="user-table">
           <thead>
             <tr>
-              <th>ID</th>
-              <th>기사</th>
-              <th>출처</th>
-              <th>작성일</th>
-              <th>본문 길이</th>
-              <th>AI 요약</th>
-              <th>조회수</th>
-              <th>작업</th>
+              <th>ID</th><th>기사</th><th>출처</th><th>수집일</th><th>본문 길이</th><th>AI 요약</th><th>조회수</th><th>작업</th>
             </tr>
           </thead>
           <tbody>
@@ -268,19 +338,12 @@ const handleTriggerCrawl = async () => {
 
     <!-- Users tab -->
     <section v-if="activeTab === 'users'" class="tab-content">
-      <div v-if="store.isLoadingUsers" class="loading-state">
-        <div class="spinner"></div>
-      </div>
+      <div v-if="store.isLoadingUsers" class="loading-state"><div class="spinner"></div></div>
       <div v-else class="user-table-wrap">
         <table class="user-table">
           <thead>
             <tr>
-              <th>ID</th>
-              <th>닉네임</th>
-              <th>이메일</th>
-              <th>역할</th>
-              <th>레벨</th>
-              <th>작업</th>
+              <th>ID</th><th>닉네임</th><th>이메일</th><th>역할</th><th>레벨</th><th>작업</th>
             </tr>
           </thead>
           <tbody>
@@ -325,9 +388,7 @@ const handleTriggerCrawl = async () => {
   display: block;
 }
 
-.admin-head {
-  margin-bottom: 28px;
-}
+.admin-head { margin-bottom: 28px; }
 
 .admin-title {
   font-family: 'Fustat', sans-serif;
@@ -344,7 +405,7 @@ const handleTriggerCrawl = async () => {
   gap: 8px;
   margin-bottom: 24px;
   border-bottom: 1px solid rgba(0,0,0,0.08);
-  padding-bottom: 0;
+  flex-wrap: wrap;
 }
 .dark .tab-row { border-color: rgba(255,255,255,0.10); }
 
@@ -383,8 +444,8 @@ const handleTriggerCrawl = async () => {
 
 .error-banner {
   padding: 12px 16px;
-  background: rgba(239, 68, 68, 0.08);
-  border: 1px solid rgba(239, 68, 68, 0.20);
+  background: rgba(239,68,68,0.08);
+  border: 1px solid rgba(239,68,68,0.20);
   border-radius: 10px;
   color: #dc2626;
   font-size: 13.5px;
@@ -397,9 +458,7 @@ const handleTriggerCrawl = async () => {
   grid-template-columns: repeat(3, 1fr);
   gap: 16px;
 }
-@media (max-width: 640px) {
-  .stats-grid { grid-template-columns: 1fr; }
-}
+@media (max-width: 640px) { .stats-grid { grid-template-columns: 1fr; } }
 
 .stat-card {
   display: flex;
@@ -418,7 +477,6 @@ const handleTriggerCrawl = async () => {
 .dark .stat-card {
   background: rgba(20,24,34,0.55);
   border-color: rgba(255,255,255,0.10);
-  box-shadow: inset 0 1px 0 rgba(255,255,255,0.10), 0 4px 20px -8px rgba(0,0,0,0.4);
 }
 
 .stat-icon { font-size: 28px; }
@@ -430,11 +488,7 @@ const handleTriggerCrawl = async () => {
   letter-spacing: -1px;
 }
 .dark .stat-num { color: #f4f6fa; }
-.stat-label {
-  font-size: 13px;
-  color: var(--ink-3, #8a93a3);
-  font-weight: 500;
-}
+.stat-label { font-size: 13px; color: var(--ink-3, #8a93a3); font-weight: 500; }
 
 .user-table-wrap {
   overflow-x: auto;
@@ -448,7 +502,6 @@ const handleTriggerCrawl = async () => {
 .dark .user-table-wrap {
   background: rgba(20,24,34,0.55);
   border-color: rgba(255,255,255,0.10);
-  box-shadow: inset 0 1px 0 rgba(255,255,255,0.10), 0 4px 20px -8px rgba(0,0,0,0.4);
 }
 
 .user-table {
@@ -483,9 +536,7 @@ const handleTriggerCrawl = async () => {
 .td-email { color: var(--ink-2, #4a5161); font-size: 13px; }
 .dark .td-email { color: #a4adbf; }
 
-.td-article {
-  max-width: 320px;
-}
+.td-article { max-width: 320px; }
 .td-article strong {
   display: block;
   font-size: 13.5px;
@@ -511,9 +562,9 @@ const handleTriggerCrawl = async () => {
   font-family: 'Nanum Gothic', monospace;
 }
 .badge-admin { background: rgba(99,102,241,0.12); color: #6366f1; }
-.badge-user { background: rgba(0,0,0,0.06); color: var(--ink-3, #8a93a3); }
+.badge-user  { background: rgba(0,0,0,0.06);        color: var(--ink-3, #8a93a3); }
 .dark .badge-admin { background: rgba(99,102,241,0.20); color: #a5b4fc; }
-.dark .badge-user { background: rgba(255,255,255,0.08); }
+.dark .badge-user  { background: rgba(255,255,255,0.08); }
 
 .action-btn {
   padding: 6px 12px;
@@ -546,7 +597,7 @@ const handleTriggerCrawl = async () => {
 
 .empty { padding: 60px 0; }
 
-/* ── 수동 크롤링 섹션 ─────────────────────────────────────── */
+/* ── 수동 크롤링 섹션 ─────────────────────────────── */
 .crawl-section {
   margin-top: 28px;
   padding: 20px 22px;
@@ -565,16 +616,40 @@ const handleTriggerCrawl = async () => {
   margin-bottom: 14px;
   flex-wrap: wrap;
 }
-.crawl-title {
+.crawl-title { font-size: 14px; font-weight: 700; color: var(--ink); }
+.dark .crawl-title { color: #f4f6fa; }
+.crawl-desc { font-size: 12.5px; color: var(--ink-3, #8a93a3); }
+
+.crawl-controls {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.crawl-limit-wrap {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.crawl-limit-label { font-size: 13px; color: var(--ink-2, #4a5161); font-weight: 600; }
+.dark .crawl-limit-label { color: #a4adbf; }
+.crawl-limit-input {
+  width: 68px;
+  padding: 6px 10px;
+  border: 1px solid rgba(0,0,0,0.14);
+  border-radius: 8px;
   font-size: 14px;
   font-weight: 700;
+  text-align: center;
+  background: rgba(255,255,255,0.9);
   color: var(--ink);
+  outline: none;
 }
-.dark .crawl-title { color: #f4f6fa; }
-.crawl-desc {
-  font-size: 12.5px;
-  color: var(--ink-3, #8a93a3);
-}
+.crawl-limit-input:focus { border-color: #0084ff; box-shadow: 0 0 0 2px rgba(0,132,255,0.14); }
+.dark .crawl-limit-input { background: rgba(20,24,34,0.6); border-color: rgba(255,255,255,0.15); color: #f4f6fa; }
+.crawl-limit-unit { font-size: 13px; color: var(--ink-3); }
+
 .crawl-btn {
   display: inline-flex;
   align-items: center;
@@ -605,14 +680,11 @@ const handleTriggerCrawl = async () => {
   margin-top: 14px;
   flex-wrap: wrap;
 }
-.cr-item {
-  font-size: 13px;
-  color: var(--ink-2, #4a5161);
-}
+.cr-item { font-size: 13px; color: var(--ink-2, #4a5161); }
 .dark .cr-item { color: #a4adbf; }
 .cr-item strong { color: var(--ink); font-weight: 700; margin-left: 4px; }
 .dark .cr-item strong { color: #f4f6fa; }
-.cr-item.saved strong { color: #16a34a; }
+.cr-item.saved strong  { color: #16a34a; }
 .cr-item.failed strong { color: #dc2626; }
 
 @media (max-width: 640px) {
