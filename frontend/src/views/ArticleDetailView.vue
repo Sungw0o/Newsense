@@ -261,13 +261,45 @@ watch(articleId, async (newId) => {
                 :href="`https://finance.naver.com/item/main.naver?code=${stock.stockCode}`"
                 target="_blank"
                 rel="noopener noreferrer"
-                class="flex flex-col gap-1 px-4 py-3 bg-slate-50 border border-slate-200 hover:border-primary-300 hover:bg-primary-50 rounded-xl transition-all duration-200 cursor-pointer"
+                class="flex flex-col gap-1.5 px-4 py-3 bg-slate-50 border border-slate-200 hover:border-primary-300 hover:bg-primary-50 rounded-xl transition-all duration-200 cursor-pointer min-w-[160px]"
               >
+                <!-- 종목명 + 코드 -->
                 <div class="flex items-center gap-2">
                   <span class="text-xs font-bold text-slate-800">{{ stock.stockName }}</span>
                   <span class="text-xs font-mono text-slate-400 bg-slate-100 px-1.5 py-0.5 rounded">{{ stock.stockCode }}</span>
-                  <span class="text-xs text-slate-400">↗</span>
+                  <span class="text-xs text-slate-400 ml-auto">↗</span>
                 </div>
+                <!-- 시세 정보 (API 활성화 시) -->
+                <div v-if="stock.price != null" class="flex items-center gap-2">
+                  <span class="text-sm font-bold text-slate-900">{{ stock.price.toLocaleString() }}원</span>
+                  <span
+                    class="text-xs font-semibold px-1.5 py-0.5 rounded"
+                    :class="{
+                      'text-red-600 bg-red-50':   stock.trend === 'UP',
+                      'text-blue-600 bg-blue-50':  stock.trend === 'DOWN',
+                      'text-slate-500 bg-slate-100': stock.trend === 'FLAT'
+                    }"
+                  >
+                    {{ stock.trend === 'UP' ? '▲' : stock.trend === 'DOWN' ? '▼' : '━' }}
+                    {{ stock.changePct != null ? Math.abs(stock.changePct).toFixed(2) + '%' : '' }}
+                  </span>
+                  <span
+                    v-if="stock.marketReaction"
+                    class="text-xs px-1.5 py-0.5 rounded font-medium"
+                    :class="{
+                      'text-red-700 bg-red-100':    stock.marketReaction === '급등',
+                      'text-orange-700 bg-orange-100': stock.marketReaction === '상승',
+                      'text-slate-600 bg-slate-100':  stock.marketReaction === '보합',
+                      'text-blue-700 bg-blue-100':  stock.marketReaction === '하락',
+                      'text-indigo-700 bg-indigo-100': stock.marketReaction === '급락'
+                    }"
+                  >{{ stock.marketReaction }}</span>
+                </div>
+                <!-- 거래량 -->
+                <div v-if="stock.volume != null" class="text-xs text-slate-400">
+                  거래량 {{ stock.volume.toLocaleString() }}
+                </div>
+                <!-- 연관 이유 -->
                 <p v-if="stock.relationReason" class="text-xs text-slate-500 leading-relaxed">{{ stock.relationReason }}</p>
               </a>
             </div>
@@ -326,88 +358,4 @@ watch(articleId, async (newId) => {
 
             <!-- Term Checklist index -->
             <div class="mt-8 border-t border-slate-200 pt-6">
-              <h4 class="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-3">이 기사의 핵심 용어</h4>
-              <ul class="space-y-2">
-                <li 
-                  v-for="t in selectedArticleTerms" 
-                  :key="t.name"
-                  @click="showTermDefinition(t.name)"
-                  class="text-sm text-slate-600 hover:text-primary-600 cursor-pointer flex items-center justify-between p-2 rounded-lg hover:bg-white border border-transparent hover:border-slate-100 transition-all duration-200"
-                >
-                  <span>{{ t.name }}</span>
-                  <span class="text-xs text-slate-300">&rarr;</span>
-                </li>
-              </ul>
-            </div>
-          </div>
-        </aside>
-      </div>
-    </div>
-  </div>
-</template>
-
-<style scoped>
-@keyframes fadeIn {
-  from { opacity: 0; transform: translateY(8px); }
-  to { opacity: 1; transform: translateY(0); }
-}
-
-.summary-list {
-  display: grid;
-  gap: 10px;
-  margin: 0;
-  padding: 0;
-  list-style: none;
-  color: #78350f;
-  font-size: 14px;
-  line-height: 1.7;
-  word-break: keep-all;
-}
-
-.summary-list li {
-  display: grid;
-  grid-template-columns: 24px minmax(0, 1fr);
-  gap: 8px;
-  align-items: start;
-}
-
-.summary-list li::before {
-  content: counter(list-item);
-  display: inline-flex;
-  width: 24px;
-  height: 24px;
-  align-items: center;
-  justify-content: center;
-  border-radius: 999px;
-  background: #f59e0b;
-  color: #fff7ed;
-  font-size: 12px;
-  font-weight: 800;
-  line-height: 1;
-}
-
-.article-body {
-  max-width: 720px;
-  color: #334155;
-  font-size: 16px;
-  font-weight: 400;
-  line-height: 1.85;
-  word-break: keep-all;
-  overflow-wrap: anywhere;
-}
-
-.article-paragraph {
-  margin: 0;
-}
-
-.article-paragraph + .article-paragraph {
-  margin-top: 26px;
-}
-
-@media (min-width: 768px) {
-  .article-body {
-    font-size: 17px;
-    line-height: 1.9;
-  }
-}
-</style>
+              <h4 class="text-

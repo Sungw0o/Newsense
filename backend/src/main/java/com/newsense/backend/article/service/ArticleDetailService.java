@@ -3,6 +3,7 @@ package com.newsense.backend.article.service;
 import com.newsense.backend.article.document.ArticleContent;
 import com.newsense.backend.article.domain.ArticleMeta;
 import com.newsense.backend.article.domain.ArticleRead;
+import com.newsense.backend.article.domain.ArticleRelatedStock;
 import com.newsense.backend.article.dto.ArticleDetailResponse;
 import com.newsense.backend.article.dto.ArticleReadResponse;
 import com.newsense.backend.article.dto.ArticleTermResponse;
@@ -17,12 +18,17 @@ import com.newsense.backend.bookmark.domain.Bookmark;
 import com.newsense.backend.bookmark.repository.BookmarkRepository;
 import com.newsense.backend.common.exception.CustomException;
 import com.newsense.backend.common.exception.ErrorCode;
+import com.newsense.backend.stock.dto.StockQuote;
+import com.newsense.backend.stock.service.StockMarketReactionService;
+import com.newsense.backend.stock.service.StockQuoteService;
+import com.newsense.backend.stock.service.StockValidationService;
 import com.newsense.backend.term.domain.ArticleTerm;
 import com.newsense.backend.term.repository.ArticleTermRepository;
 import com.newsense.backend.term.repository.TermRepository;
 import com.newsense.backend.user.domain.User;
 import com.newsense.backend.user.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.data.mongodb.core.MongoTemplate;
 import org.springframework.data.mongodb.core.query.Criteria;
@@ -32,40 +38,64 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 import java.util.Optional;
-import java.util.stream.Collectors;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class ArticleDetailService {
 
-    private final ArticleMetaRepository articleMetaRepository;
-    private final ArticleContentRepository articleContentRepository;
-    private final ArticleTermRepository articleTermRepository;
-    private final TermRepository termRepository;
-    private final ArticleReadRepository articleReadRepository;
-    private final BookmarkRepository bookmarkRepository;
-    private final UserRepository userRepository;
-    private final ApplicationEventPublisher eventPublisher;
-    private final MongoTemplate mongoTemplate;
-    private final ArticleRelatedStockRepository articleRelatedStockRepository;
+    private final ArticleMetaRepository          articleMetaRepository;
+    private final ArticleContentRepository       articleContentRepository;
+    private final ArticleTermRepository          articleTermRepository;
+    private final TermRepository                 termRepository;
+    private final ArticleReadRepository          articleReadRepository;
+    private final BookmarkRepository             bookmarkRepository;
+    private final UserRepository                 userRepository;
+    private final ApplicationEventPublisher      eventPublisher;
+    private final MongoTemplate                  mongoTemplate;
+    private final ArticleRelatedStockRepository  articleRelatedStockRepository;
+    private final StockQuoteService              stockQuoteService;
+    private final StockValidationService         stockValidationService;
+    private final StockMarketReactionService     stockMarketReactionService;
 
     @Transactional
     public ArticleDetailResponse getArticleDetail(Long articleId, Long userId) {
         ArticleMeta article = getArticle(articleId);
         article.incrementViewCount();
+
         String content = getArticleContent(article)
                 .map(ArticleContent::getCleanText)
                 .orElse(article.getSummary());
 
-        boolean isRead = userId != null && articleReadRepository.existsByUserIdAndArticleId(userId, articleId);
+        boolean isRead       = userId != null && articleReadRepository.existsByUserIdAndArticleId(userId, articleId);
         boolean isBookmarked = userId != null && bookmarkRepository.existsByUserIdAndArticleId(userId, articleId);
 
-        List<RelatedStockResponse> relatedStocks = articleRelatedStockRepository.findAllByArticleMetaId(articleId)
-                .stream()
-                .map(RelatedStockResponse::from)
-                .collect(Collectors.toList());
+        List<ArticleRelatedStock> rawStocks = articleRelatedStockRepository.findAllByArticleMetaId(articleId);
+        List<RelatedStockResponse> relatedStocks = enrichWithQuotes(rawStocks);
 
         return ArticleDetailResponse.of(article, content, isRead, isBookmarked, relatedStocks);
+    }
+
+    /**
+     * 관련 종목 목록에 시세 정보를 병합합니다.
+     *
+     * <p>유효하지 않은 종목 코드이거나 Toss API가 비활성화된 경우 시세 없이 반환합니다.
+     */
+    private List<RelatedStockResponse> enrichWithQuotes(List<ArticleRelatedStock> stocks) {
+        return stocks.stream()
+                .map(stock -> {
+                    if (!stockValidationService.isValid(stock.getStockCode())) {
+                        log.debug("[Stock] invalid code skipped: {}", stock.getStockCode());
+                        return RelatedStockResponse.from(stock);
+                    }
+                    Optional<StockQuote> quote = stockQuoteService.getQuote(stock.getStockCode());
+                    if (quote.isEmpty()) {
+                        return RelatedStockResponse.from(stock);
+                    }
+                    String reaction = stockMarketReactionService.assess(quote.get().changePct());
+                    return RelatedStockResponse.withQuote(stock, quote.get(), reaction);
+                })
+                .toList();
     }
 
     @Transactional

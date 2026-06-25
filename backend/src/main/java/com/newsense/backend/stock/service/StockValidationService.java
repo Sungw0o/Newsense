@@ -1,0 +1,39 @@
+package com.newsense.backend.stock.service;
+
+import org.springframework.stereotype.Service;
+
+import java.util.List;
+import java.util.regex.Pattern;
+
+/**
+ * 종목 코드 유효성 검증 서비스.
+ *
+ * <p>한국 주식 종목 코드는 6자리 숫자입니다.
+ */
+@Service
+public class StockValidationService {
+
+    private static final Pattern VALID_CODE_PATTERN = Pattern.compile("^[0-9]{6}$");
+
+    /**
+     * 단일 종목 코드 유효성 검증.
+     */
+    public boolean isValid(String stockCode) {
+        if (stockCode == null || stockCode.isBlank()) {
+            return false;
+        }
+        return VALID_CODE_PATTERN.matcher(stockCode.trim()).matches();
+    }
+
+    /**
+     * 유효한 코드만 필터링.
+     */
+    public List<String> filterValid(List<String> codes) {
+        if (codes == null) {
+            return List.of();
+        }
+        return codes.stream()
+                .filter(this::isValid)
+                .toList();
+    }
+}
