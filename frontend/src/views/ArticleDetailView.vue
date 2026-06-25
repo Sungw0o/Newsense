@@ -119,6 +119,10 @@ const writeReview = () => {
   router.push(`/articles/${articleId.value}/review`)
 }
 
+const goToQuiz = () => {
+  router.push(`/articles/${articleId.value}/quiz`)
+}
+
 const articleMetaText = computed(() => {
   if (!selectedArticle.value) return ''
   const published = selectedArticle.value.publishedAt
@@ -314,6 +318,13 @@ watch(articleId, async (newId) => {
           <!-- Call to Action Buttons -->
           <div class="border-t border-slate-100 mt-12 pt-8 flex flex-col sm:flex-row gap-4 justify-end">
             <BaseButton
+              @click="goToQuiz"
+              variant="outline"
+              class="py-3 px-6 rounded-xl font-bold"
+            >
+              🧠 퀴즈 풀기
+            </BaseButton>
+            <BaseButton
               @click="writeReview"
               class="py-3 px-6 rounded-xl font-bold"
             >
@@ -407,25 +418,4 @@ watch(articleId, async (newId) => {
 
 .stock-price {
   font-weight: 800;
-  color: #0f172a;
-}
-
-.stock-change {
-  font-weight: 800;
-  color: #64748b;
-}
-
-.stock-change.up { color: #e03b3b; }
-.stock-change.down { color: #1d7fd4; }
-
-.stock-volume {
-  color: #94a3b8;
-}
-
-@media (max-width: 640px) {
-  .summary-list li {
-    grid-template-columns: 1fr;
-    gap: 2px;
-  }
-}
-</style>
+  color: 
