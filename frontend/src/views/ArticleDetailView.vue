@@ -276,6 +276,13 @@ watch(articleId, async (newId) => {
 
           <!-- Call to Action Buttons -->
           <div class="border-t border-slate-100 mt-12 pt-8 flex flex-col sm:flex-row gap-4 justify-end">
+            <BaseButton
+              @click="goToQuiz"
+              variant="outline"
+              class="py-3 px-6 rounded-xl font-bold"
+            >
+              🧠 퀴즈 풀기
+            </BaseButton>
             <BaseButton 
               @click="writeReview"
               class="py-3 px-6 rounded-xl font-bold"
