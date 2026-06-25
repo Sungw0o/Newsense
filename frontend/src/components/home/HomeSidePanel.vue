@@ -11,9 +11,10 @@ const termsLoading = ref(true)
 async function loadTerms() {
   try {
     const res = await ragApi.getRecommendations(4)
-    terms.value = (res.data?.data ?? res.data ?? []).slice(0, 4)
+    const payload = res?.data ?? res ?? {}
+    terms.value = Array.isArray(payload.weaknessTerms) ? payload.weaknessTerms.slice(0, 4) : []
   } catch {
-    // 무시
+    terms.value = []
   } finally {
     termsLoading.value = false
   }
@@ -34,11 +35,11 @@ onMounted(() => {
       <ul class="term-list">
         <li
           v-for="term in terms"
-          :key="term.name ?? term.term"
+          :key="term.name ?? term.term ?? term"
           class="term-row"
           @click="router.push('/')"
         >
-          <span class="term-name">{{ term.name ?? term.term }}</span>
+          <span class="term-name">{{ term.name ?? term.term ?? term }}</span>
           <span class="term-arrow">→</span>
         </li>
       </ul>

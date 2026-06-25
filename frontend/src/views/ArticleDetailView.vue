@@ -7,6 +7,7 @@ import BaseButton from '../components/common/BaseButton.vue'
 import BaseBadge from '../components/common/BaseBadge.vue'
 import LoadingSpinner from '../components/common/LoadingSpinner.vue'
 import { splitArticleParagraphs, splitSummaryItems } from '../utils/articleText'
+import stockApi from '../api/stockApi'
 
 const route = useRoute()
 const router = useRouter()
@@ -15,6 +16,7 @@ const articleStore = useArticleStore()
 const articleId = computed(() => route.params.id)
 const selectedTerm = ref(null)
 const isArticleExpanded = ref(false)
+const stockQuotes = ref({})
 
 const { selectedArticle, selectedArticleTerms, isLoading } = storeToRefs(articleStore)
 
@@ -35,6 +37,13 @@ const termPattern = computed(() => {
 const summaryItems = computed(() => splitSummaryItems(selectedArticle.value?.summary))
 const articleParagraphTexts = computed(() => splitArticleParagraphs(selectedArticle.value?.content))
 const canExpandArticle = computed(() => articleParagraphTexts.value.length > 5)
+const relatedStocks = computed(() => {
+  const stocks = selectedArticle.value?.relatedStocks ?? []
+  return stocks.map(stock => ({
+    ...stock,
+    ...(stockQuotes.value[stock.stockCode] ?? {})
+  }))
+})
 const visibleArticleParagraphs = computed(() => {
   if (isArticleExpanded.value || !canExpandArticle.value) {
     return articleParagraphTexts.value
@@ -116,6 +125,26 @@ const goToQuiz = () => {
   router.push(`/articles/${articleId.value}/quiz`)
 }
 
+const loadStockQuotes = async () => {
+  const stocks = selectedArticle.value?.relatedStocks ?? []
+  stockQuotes.value = {}
+  await Promise.all(stocks.map(async (stock) => {
+    if (!stock.stockCode || stock.price != null) return
+    try {
+      const res = await stockApi.getQuote(stock.stockCode)
+      const quote = res?.data ?? res
+      if (quote) {
+        stockQuotes.value = {
+          ...stockQuotes.value,
+          [stock.stockCode]: quote
+        }
+      }
+    } catch {
+      // 기존 관련 기업 카드 표시를 유지한다.
+    }
+  }))
+}
+
 const articleMetaText = computed(() => {
   if (!selectedArticle.value) return ''
   const published = selectedArticle.value.publishedAt
@@ -131,6 +160,7 @@ watch(articleId, async (newId) => {
   isArticleExpanded.value = false
   try {
     await articleStore.fetchArticleDetail(newId)
+    await loadStockQuotes()
     // 기사 읽음 완료 처리 API 호출
     await articleStore.markArticleAsRead(newId)
   } catch (err) {
@@ -249,14 +279,14 @@ watch(articleId, async (newId) => {
           </div>
 
           <!-- Related Listed Companies -->
-          <div v-if="selectedArticle.relatedStocks?.length" class="mt-10 pt-8 border-t border-slate-100">
+          <div v-if="relatedStocks.length" class="mt-10 pt-8 border-t border-slate-100">
             <div class="flex items-center gap-2 mb-4">
               <span class="text-base">🏢</span>
               <span class="text-sm font-bold text-slate-700">뉴스 연관 기업 정보</span>
             </div>
             <div class="flex flex-wrap gap-3">
               <a
-                v-for="stock in selectedArticle.relatedStocks"
+                v-for="stock in relatedStocks"
                 :key="stock.stockCode"
                 :href="`https://finance.naver.com/item/main.naver?code=${stock.stockCode}`"
                 target="_blank"

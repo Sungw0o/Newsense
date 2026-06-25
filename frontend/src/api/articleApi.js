@@ -26,6 +26,14 @@ export const articleApi = {
 
   toggleBookmark(articleId) {
     return axiosInstance.post(`/articles/${articleId}/bookmark`)
+  },
+
+  getCategories() {
+    return axiosInstance.get('/categories')
+  },
+
+  getRecommendations(limit = 4) {
+    return axiosInstance.get('/articles/recommendations', { params: { limit } })
   }
 }
 

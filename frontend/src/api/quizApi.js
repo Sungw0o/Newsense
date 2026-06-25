@@ -16,14 +16,6 @@ export const quizApi = {
    */
   submitAnswer(quizId, payload) {
     return axiosInstance.post(`/quiz/${quizId}/answer`, payload)
-  },
-
-  /**
-   * 퀴즈 결과 조회
-   * @param {number|string} quizId
-   */
-  getQuizResult(quizId) {
-    return axiosInstance.get(`/quiz/${quizId}/result`)
   }
 }
 

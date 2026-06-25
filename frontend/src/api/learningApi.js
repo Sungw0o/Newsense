@@ -30,6 +30,10 @@ export const learningApi = {
     return axiosInstance.get('/learning/weakness')
   },
 
+  getWeaknessSummary() {
+    return axiosInstance.get('/learning/weakness-summary')
+  },
+
   deleteHistory(historyId) {
     return axiosInstance.delete(`/learning/history/${historyId}`)
   }

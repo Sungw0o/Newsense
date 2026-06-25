@@ -267,7 +267,7 @@ const confirmDeleteHistory = async () => {
     </section>
 
     <!-- AI-based personalized recommendations -->
-    <section v-if="recommendations && (recommendations.articles?.length || recommendations.results?.length)" class="section-card ai-rec">
+    <section v-if="recommendations && recommendations.recommendations?.length" class="section-card ai-rec">
       <div class="section-head-row">
         <div>
           <h2 class="section-title">🤖 AI 맞춤 추천 기사</h2>
@@ -285,7 +285,7 @@ const confirmDeleteHistory = async () => {
 
       <div v-if="isSectionOpen('recommendations')" class="rec-list">
         <div
-          v-for="item in (recommendations.articles || recommendations.results || []).slice(0, 6)"
+          v-for="item in recommendations.recommendations.slice(0, 6)"
           :key="item.article?.articleId || item.articleId"
           class="rec-item"
           @click="navigate(`/articles/${item.article?.articleId || item.articleId}`)"

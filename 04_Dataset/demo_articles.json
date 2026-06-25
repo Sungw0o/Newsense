@@ -1,0 +1,36 @@
+[
+  {
+    "title": "기준금리 동결에 대출금리 상승세 둔화",
+    "source": "Newsense Demo",
+    "sourceUrl": "https://new5ense.site/demo/articles/base-rate",
+    "category": "거시경제",
+    "difficulty": "BEGINNER",
+    "publishedAt": "2026-06-25",
+    "summary": "한국은행 기준금리가 3.50%로 동결되며 시장금리 변동 폭이 줄었다.\n가계대출 금리는 은행채 금리 안정 영향으로 상승세가 둔화됐다.\n전문가들은 물가와 환율 흐름에 따라 하반기 인하 시점이 결정될 것으로 본다.",
+    "content": "한국은행 기준금리가 3.50%로 유지되면서 시중은행 대출금리의 추가 상승 압력이 완화되고 있다. 은행채 금리가 안정되자 주택담보대출과 신용대출 금리의 변동 폭도 줄었다. 다만 원/달러 환율과 소비자물가 상승률이 다시 높아지면 통화정책 완화 시점은 늦어질 수 있다.",
+    "relatedStocks": [
+      {
+        "stockName": "KB금융",
+        "stockCode": "105560",
+        "relationReason": "금리 변화는 은행 순이자마진과 대출 수요에 영향을 준다."
+      }
+    ]
+  },
+  {
+    "title": "환율 1540원대 진입에 수입물가 부담 확대",
+    "source": "Newsense Demo",
+    "sourceUrl": "https://new5ense.site/demo/articles/exchange-rate",
+    "category": "글로벌경제",
+    "difficulty": "INTERMEDIATE",
+    "publishedAt": "2026-06-25",
+    "summary": "원/달러 환율이 1540원대에 머물며 수입 원가 부담이 커졌다.\n에너지와 원자재 결제 비용이 늘어 기업 마진 압박이 예상된다.\n환율 안정 여부는 물가와 통화정책 판단의 핵심 변수로 남았다.",
+    "content": "원/달러 환율이 높은 수준을 유지하면서 수입 원자재와 에너지 가격 부담이 커지고 있다. 환율 상승은 수입 기업의 원가를 높이고 소비자물가에도 시차를 두고 반영될 수 있다. 반면 수출 기업은 원화 약세가 매출 환산액을 높이는 효과를 얻을 수 있다.",
+    "relatedStocks": [
+      {
+        "stockName": "현대차",
+        "stockCode": "005380",
+        "relationReason": "원화 약세는 수출 기업의 원화 환산 매출에 영향을 줄 수 있다."
+      }
+    ]
+  }
+]
