@@ -96,7 +96,9 @@ export const useArticleStore = defineStore('article', {
         }
 
         this.hasMore = !data.last && content.length > 0
-        this.filters.page = page + 1
+        if (content.length > 0) {
+          this.filters.page = page + 1
+        }
       } catch (err) {
         if (requestId === this.currentRequestId) {
           this.error = err?.response?.data?.message ?? '기사를 불러오는 데 실패했습니다.'
@@ -112,12 +114,20 @@ export const useArticleStore = defineStore('article', {
       this.isLoading = true
       this.error = null
       try {
-        const response = await articleApi.getArticleDetail(articleId)
-        const data = response.data?.data ?? response.data
+        const [detailRes, termsRes] = await Promise.all([
+          articleApi.getArticleDetail(articleId),
+          articleApi.getArticleTerms(articleId).catch(() => null),
+        ])
+        const data = detailRes.data?.data ?? detailRes.data
         this.selectedArticle = data
+        this.selectedArticleTerms = termsRes
+          ? (termsRes.data?.data ?? termsRes.data ?? [])
+          : []
       } catch (err) {
         this.error = err?.response?.data?.message ?? '기사를 불러오는 데 실패했습니다.'
         this.selectedArticle = null
+        this.selectedArticleTerms = []
+        throw err
       } finally {
         this.isLoading = false
       }
@@ -140,16 +150,4 @@ export const useArticleStore = defineStore('article', {
       }
     },
 
-    async toggleBookmark(articleId) {
-      try {
-        const response = await articleApi.toggleBookmark(articleId)
-        const data = response.data?.data ?? response.data
-        if (this.selectedArticle) {
-          this.selectedArticle.isBookmarked = data.isBookmarked
-        }
-      } catch (err) {
-        throw err
-      }
-    },
-  },
-})
+    async t
