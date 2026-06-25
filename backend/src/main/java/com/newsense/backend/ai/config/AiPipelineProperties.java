@@ -21,7 +21,7 @@ public record AiPipelineProperties(
     }
 
     public String factExtractorModel() {
-        return models.valueOrDefault(models.factExtractor(), "gemini-2.5-flash-lite");
+        return models.valueOrDefault(models.factExtractor(), "gpt-4o");
     }
 
     public String articleClassifierModel(String fallback) {
@@ -29,7 +29,7 @@ public record AiPipelineProperties(
     }
 
     public String quizGeneratorModel() {
-        return models.valueOrDefault(models.quizGenerator(), "o3-mini");
+        return models.valueOrDefault(models.quizGenerator(), "gpt-5");
     }
 
     public String quizCriticModel(String fallback) {

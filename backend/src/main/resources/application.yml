@@ -55,17 +55,17 @@ server:
 openai:
   api-key: ${GMS_KEY:${OPENAI_API_KEY:}}
   base-url: ${GMS_BASE_URL:${OPENAI_BASE_URL:https://gms.ssafy.io/gmsapi/api.openai.com/v1}}
-  model: ${GMS_MODEL:${OPENAI_MODEL:gpt-4o-mini}}
+  model: ${GMS_MODEL:${OPENAI_MODEL:gpt-5}}
 
 ai:
   pipeline:
     max-quiz-retries: ${AI_PIPELINE_MAX_QUIZ_RETRIES:2}
     models:
       embedding: ${AI_EMBEDDING_MODEL:text-embedding-3-large}
-      fact-extractor: ${AI_FACT_EXTRACTOR_MODEL:gemini-2.5-flash-lite}
-      article-classifier: ${AI_ARTICLE_CLASSIFIER_MODEL:gpt-4o-mini}
-      quiz-generator: ${AI_QUIZ_GENERATOR_MODEL:o3-mini}
-      quiz-critic: ${AI_QUIZ_CRITIC_MODEL:gpt-4o-mini}
+      fact-extractor: ${AI_FACT_EXTRACTOR_MODEL:gpt-4o}
+      article-classifier: ${AI_ARTICLE_CLASSIFIER_MODEL:gpt-5}
+      quiz-generator: ${AI_QUIZ_GENERATOR_MODEL:gpt-5}
+      quiz-critic: ${AI_QUIZ_CRITIC_MODEL:gpt-5}
 
 crawler:
   pdf-min-text-length: ${CRAWLER_PDF_MIN_TEXT_LENGTH:500}
