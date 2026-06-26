@@ -5,20 +5,17 @@ import ragApi from '../../api/ragApi'
 
 const router = useRouter()
 
-const terms = ref([])
 const recommendations = ref([])
 const termsLoading = ref(true)
 
-async function loadTerms() {
+async function loadRecommendations() {
   try {
     const res = await ragApi.getRecommendations(4)
     const payload = res?.data ?? res ?? {}
-    terms.value = Array.isArray(payload.weaknessTerms) ? payload.weaknessTerms.slice(0, 4) : []
     recommendations.value = Array.isArray(payload.recommendations)
       ? payload.recommendations.slice(0, 3)
       : []
   } catch {
-    terms.value = []
     recommendations.value = []
   } finally {
     termsLoading.value = false
@@ -36,29 +33,12 @@ function openArticle(item) {
 }
 
 onMounted(() => {
-  loadTerms()
+  loadRecommendations()
 })
 </script>
 
 <template>
   <aside class="side-panel">
-    <section class="panel-section" v-if="!termsLoading && terms.length">
-      <div class="section-head">
-        <h3 class="section-title">오늘의 경제 용어</h3>
-      </div>
-      <ul class="term-list">
-        <li
-          v-for="term in terms"
-          :key="term.name ?? term.term ?? term"
-          class="term-row"
-          @click="router.push('/')"
-        >
-          <span class="term-name">{{ term.name ?? term.term ?? term }}</span>
-          <span class="term-arrow">→</span>
-        </li>
-      </ul>
-    </section>
-
     <section class="panel-section recommend-section" v-if="!termsLoading && recommendations.length">
       <div class="section-head">
         <h3 class="section-title">AI 맞춤 기사</h3>
@@ -113,48 +93,6 @@ onMounted(() => {
 
 .dark .section-title {
   color: #f4f6fa;
-}
-
-.term-list {
-  list-style: none;
-  margin: 0;
-  padding: 0;
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
-}
-
-.term-row {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 9px 10px;
-  border-radius: 8px;
-  cursor: pointer;
-  transition: background .12s;
-}
-
-.term-row:hover {
-  background: rgba(0, 132, 255, 0.06);
-}
-
-.dark .term-row:hover {
-  background: rgba(0, 132, 255, 0.12);
-}
-
-.term-name {
-  font-size: 13px;
-  font-weight: 600;
-  color: var(--ink, #0a0d12);
-}
-
-.dark .term-name {
-  color: #e2e8f0;
-}
-
-.term-arrow {
-  font-size: 12px;
-  color: var(--ink-3);
 }
 
 .recommend-section {

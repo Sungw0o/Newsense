@@ -10,6 +10,7 @@ import com.newsense.backend.common.exception.CustomException;
 import com.newsense.backend.community.domain.Post;
 import com.newsense.backend.community.domain.PostType;
 import com.newsense.backend.community.repository.PostCommentRepository;
+import com.newsense.backend.community.repository.PostReactionRepository;
 import com.newsense.backend.community.repository.PostReportRepository;
 import com.newsense.backend.community.repository.PostRepository;
 import com.newsense.backend.support.TestFixtures;
@@ -45,6 +46,7 @@ class AdminServiceTest {
 
     @Mock UserRepository userRepository;
     @Mock PostCommentRepository postCommentRepository;
+    @Mock PostReactionRepository postReactionRepository;
     @Mock PostRepository postRepository;
     @Mock PostReportRepository postReportRepository;
     @Mock ArticleMetaRepository articleMetaRepository;
@@ -105,6 +107,7 @@ class AdminServiceTest {
         adminService.deletePost(1L);
 
         verify(postReportRepository).deleteAllByPostId(1L);
+        verify(postReactionRepository).deleteAllByPostId(1L);
         verify(postCommentRepository).deleteAllByPostId(1L);
         verify(postRepository).delete(post);
     }

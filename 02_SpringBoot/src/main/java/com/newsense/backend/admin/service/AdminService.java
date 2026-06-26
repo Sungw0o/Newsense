@@ -18,6 +18,7 @@ import com.newsense.backend.common.exception.ErrorCode;
 import com.newsense.backend.community.domain.Post;
 import com.newsense.backend.community.repository.PostReportRepository;
 import com.newsense.backend.community.repository.PostCommentRepository;
+import com.newsense.backend.community.repository.PostReactionRepository;
 import com.newsense.backend.community.repository.PostRepository;
 import com.newsense.backend.inquiry.dto.InquiryResponse;
 import com.newsense.backend.inquiry.repository.InquiryRepository;
@@ -40,6 +41,7 @@ public class AdminService {
 
     private final UserRepository userRepository;
     private final PostCommentRepository postCommentRepository;
+    private final PostReactionRepository postReactionRepository;
     private final PostRepository postRepository;
     private final PostReportRepository postReportRepository;
     private final ArticleMetaRepository articleMetaRepository;
@@ -87,6 +89,7 @@ public class AdminService {
         Post post = postRepository.findById(postId)
                 .orElseThrow(() -> new CustomException(ErrorCode.POST_NOT_FOUND));
         postReportRepository.deleteAllByPostId(postId);
+        postReactionRepository.deleteAllByPostId(postId);
         postCommentRepository.deleteAllByPostId(postId);
         postRepository.delete(post);
     }
