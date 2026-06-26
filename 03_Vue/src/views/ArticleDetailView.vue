@@ -18,6 +18,11 @@ const selectedTerm = ref(null)
 const isArticleExpanded = ref(false)
 const stockQuotes = ref({})
 
+const TOSS_US_STOCK_IDS = {
+  MU: 'US19890516001',
+  NVDA: 'US19990122001'
+}
+
 const { selectedArticle, selectedArticleTerms, isLoading } = storeToRefs(articleStore)
 
 const isBookmarked = computed(() => selectedArticle.value?.isBookmarked ?? false)
@@ -151,6 +156,18 @@ const formatStockChange = (stock) => {
   if (stock.change == null) return null
   const sign = stock.change > 0 ? '+' : ''
   return `${sign}${Number(stock.change).toLocaleString()}`
+}
+
+const tossInvestUrl = (stock) => {
+  const code = String(stock.stockCode ?? '').trim().toUpperCase()
+  if (/^\d{6}$/.test(code)) {
+    return `https://www.tossinvest.com/stocks/A${code}/order`
+  }
+  const tossStockId = stock.tossStockId ?? stock.tossSymbol ?? TOSS_US_STOCK_IDS[code]
+  if (tossStockId) {
+    return `https://www.tossinvest.com/stocks/${tossStockId}/order`
+  }
+  return `https://www.tossinvest.com/`
 }
 
 const articleMetaText = computed(() => {
@@ -296,7 +313,7 @@ watch(articleId, async (newId) => {
               <a
                 v-for="stock in relatedStocks"
                 :key="stock.stockCode"
-                :href="`https://finance.naver.com/item/main.naver?code=${stock.stockCode}`"
+                :href="tossInvestUrl(stock)"
                 target="_blank"
                 rel="noopener noreferrer"
                 class="flex flex-col gap-1.5 px-4 py-3 bg-slate-50 border border-slate-200 hover:border-primary-300 hover:bg-primary-50 rounded-xl transition-all duration-200 cursor-pointer min-w-[160px]"

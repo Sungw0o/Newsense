@@ -15,16 +15,23 @@ const fmt = (item) => {
   return item.value.toLocaleString('ko-KR', { maximumFractionDigits: 2 })
 }
 
+const changeSign = (item) => {
+  if (item.change == null) return null
+  return item.change > 0 ? '+' : item.change < 0 ? '-' : ''
+}
+
 const fmtChange = (item) => {
   if (item.change == null) return null
-  const sign = item.change > 0 ? '+' : item.change < 0 ? '-' : ''
-  if (item.key === 'BOK_RATE') return `${sign}${item.change.toFixed(2)}%`
+  const sign = changeSign(item)
   if (item.key === 'USD_KRW') {
-    const rate = item.changePct == null ? '' : ` (${sign}${Math.abs(item.changePct).toFixed(2)}%)`
-    return `${sign}${Math.abs(item.change).toFixed(2)}원${rate}`
+    return `${sign}${Math.abs(item.change).toFixed(2)}원`
   }
-  const rate = item.changePct == null ? '' : ` (${sign}${Math.abs(item.changePct).toFixed(2)}%)`
-  return `${sign}${Math.abs(item.change).toFixed(2)}${rate}`
+  return `${sign}${Math.abs(item.change).toFixed(2)}`
+}
+
+const fmtChangePct = (item) => {
+  if (item.changePct == null) return null
+  return `${changeSign(item)}${Math.abs(item.changePct).toFixed(2)}%`
 }
 
 const load = async (manual = false) => {
@@ -73,6 +80,11 @@ onMounted(() => {
     </div>
 
     <table v-else-if="items.length" class="ind-table">
+      <colgroup>
+        <col class="col-label">
+        <col class="col-value">
+        <col class="col-change">
+      </colgroup>
       <thead>
         <tr>
           <th>지표</th>
@@ -89,8 +101,13 @@ onMounted(() => {
             :class="item.trend === 'UP' ? 'up' : item.trend === 'DOWN' ? 'down' : ''"
           >
             <template v-if="fmtChange(item)">
-              {{ item.trend === 'UP' ? '▲' : item.trend === 'DOWN' ? '▼' : '' }}
-              {{ fmtChange(item) }}
+              <span class="chg-line">
+                <span class="trend-mark">{{ item.trend === 'UP' ? '▲' : item.trend === 'DOWN' ? '▼' : '' }}</span>
+                <span>{{ fmtChange(item) }}</span>
+              </span>
+              <span v-if="fmtChangePct(item)" class="chg-pct">
+                {{ fmtChangePct(item) }}
+              </span>
             </template>
             <span v-else class="flat">—</span>
           </td>
@@ -163,8 +180,12 @@ onMounted(() => {
 .ind-table {
   width: 100%;
   border-collapse: collapse;
+  table-layout: fixed;
   font-size: 12.5px;
 }
+.ind-table .col-label { width: 54px; }
+.ind-table .col-value { width: 66px; }
+.ind-table .col-change { width: auto; }
 .ind-table thead th {
   padding: 0 4px 6px;
   font-size: 10.5px;
@@ -178,24 +199,51 @@ onMounted(() => {
 .ind-table tbody tr:hover td { background: rgba(0,0,0,0.025); }
 .dark .ind-table tbody tr:hover td { background: rgba(255,255,255,0.04); }
 .ind-table tbody td {
-  padding: 6px 4px;
+  padding: 8px 4px;
   border-bottom: 1px solid rgba(0,0,0,0.04);
   color: var(--ink, #0a0d12);
   vertical-align: middle;
 }
 .dark .ind-table tbody td { border-color: rgba(255,255,255,0.06); color: #e0e4ef; }
 .ind-table tbody tr:last-child td { border-bottom: none; }
-.ind-table td.label { font-weight: 600; color: var(--ink-2, #4a5161); }
+.ind-table td.label {
+  font-weight: 600;
+  color: var(--ink-2, #4a5161);
+  white-space: nowrap;
+  word-break: keep-all;
+}
 .dark .ind-table td.label { color: #a4adbf; }
-.ind-table td.num { text-align: right; font-variant-numeric: tabular-nums; }
+.ind-table td.num {
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
 .ind-table td.val { font-weight: 700; }
 .ind-table td.val.up   { color: #e03b3b; }
 .ind-table td.val.down { color: #1d7fd4; }
 .ind-table td.chg {
-  font-size: 11px;
+  font-size: 10.5px;
   font-weight: 700;
   color: var(--ink-3, #8a93a3);
+  line-height: 1.2;
+}
+.chg-line,
+.chg-pct {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 3px;
   white-space: nowrap;
+}
+.chg-pct {
+  margin-top: 2px;
+  opacity: .9;
+}
+.trend-mark {
+  display: inline-flex;
+  width: 8px;
+  justify-content: center;
+  font-size: 9px;
 }
 .ind-table td.chg.up   { color: #e03b3b; }
 .ind-table td.chg.down { color: #1d7fd4; }

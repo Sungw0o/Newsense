@@ -31,6 +31,7 @@ public class TossInvestClient {
 
     private final RestClient       tossInvestRestClient;
     private final TossInvestProperties properties;
+    private final RestClient       yahooRestClient = RestClient.create();
 
     private volatile String accessToken;
     private volatile Instant accessTokenExpiresAt = Instant.EPOCH;
@@ -75,12 +76,66 @@ public class TossInvestClient {
             Long  marketCap  = nullableLongValue(data, "marketCap", "market_cap");
             Long  volume     = nullableLongValue(data, "volume", "accTradeVolume", "tradingVolume");
 
+            if (change == 0L && changePct == 0.0) {
+                Optional<ChangeSnapshot> snapshot = fetchYahooChange(stockCode, price);
+                if (snapshot.isPresent()) {
+                    change = snapshot.get().change();
+                    changePct = snapshot.get().changePct();
+                }
+            }
+
             return Optional.of(StockQuote.of(stockCode, name, price, change, changePct, marketCap, volume));
 
         } catch (Exception ex) {
             log.warn("[Toss] quote fetch failed stockCode={} reason={}", stockCode, ex.getMessage());
             return Optional.empty();
         }
+    }
+
+    private Optional<ChangeSnapshot> fetchYahooChange(String stockCode, long tossPrice) {
+        for (String symbol : yahooSymbols(stockCode)) {
+            try {
+                String url = "https://query1.finance.yahoo.com/v8/finance/chart/"
+                        + java.net.URLEncoder.encode(symbol, java.nio.charset.StandardCharsets.UTF_8)
+                        + "?range=1d&interval=1d";
+                JsonNode root = yahooRestClient.get()
+                        .uri(java.net.URI.create(url))
+                        .header("User-Agent", "Mozilla/5.0")
+                        .retrieve()
+                        .body(JsonNode.class);
+
+                JsonNode meta = root == null ? null : root.path("chart").path("result").path(0).path("meta");
+                if (meta == null || meta.isMissingNode() || meta.isNull()) {
+                    continue;
+                }
+
+                Double changePct = nullableDoubleValue(meta, "regularMarketChangePercent");
+                Double previous = nullableDoubleValue(meta, "chartPreviousClose", "previousClose");
+                Double marketPrice = nullableDoubleValue(meta, "regularMarketPrice");
+                if (changePct == null && previous != null && previous > 0 && marketPrice != null) {
+                    changePct = ((marketPrice - previous) / previous) * 100.0;
+                }
+                if (changePct == null) {
+                    continue;
+                }
+
+                long change = BigDecimal.valueOf(tossPrice * (changePct / 100.0))
+                        .setScale(0, RoundingMode.HALF_UP)
+                        .longValue();
+                return Optional.of(new ChangeSnapshot(change, changePct));
+            } catch (Exception e) {
+                log.debug("[Toss] Yahoo change fallback failed stockCode={} symbol={} reason={}", stockCode, symbol, e.getMessage());
+            }
+        }
+        return Optional.empty();
+    }
+
+    private String[] yahooSymbols(String stockCode) {
+        String normalized = stockCode == null ? "" : stockCode.trim().toUpperCase();
+        if (normalized.matches("\\d{6}")) {
+            return new String[] { normalized + ".KS", normalized + ".KQ" };
+        }
+        return new String[] { normalized };
     }
 
     private String getAccessToken() {
@@ -169,12 +224,25 @@ public class TossInvestClient {
     }
 
     private double doubleValue(JsonNode node, String... fields) {
+        Double value = nullableDoubleValue(node, fields);
+        return value == null ? 0.0 : value;
+    }
+
+    private Double nullableDoubleValue(JsonNode node, String... fields) {
         for (String field : fields) {
             JsonNode value = node.path(field);
             if (!value.isMissingNode() && !value.isNull()) {
-                return value.asDouble();
+                if (value.isNumber()) {
+                    return value.asDouble();
+                }
+                String text = value.asText("");
+                if (!text.isBlank()) {
+                    return Double.parseDouble(text);
+                }
             }
         }
-        return 0.0;
+        return null;
     }
+
+    private record ChangeSnapshot(long change, double changePct) {}
 }
