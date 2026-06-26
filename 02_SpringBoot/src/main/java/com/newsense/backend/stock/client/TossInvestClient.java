@@ -64,10 +64,13 @@ public class TossInvestClient {
                 log.warn("[Toss] empty response for stockCode={}", stockCode);
                 return Optional.empty();
             }
+            log.debug("[Toss] raw payload for {}: {}", stockCode, data);
 
             long  price      = longValue(data, "currentPrice", "current_price", "price", "lastPrice", "close");
-            long  change     = longValue(data, "priceChange", "price_change", "change", "changePrice", "signedChangePrice");
-            double changePct = doubleValue(data, "priceChangeRate", "price_change_rate", "changeRate", "changePct", "signedChangeRate");
+            long  change     = longValue(data, "changeAmount", "change_amount", "priceChange", "price_change",
+                    "change", "changePrice", "signedChangePrice", "priceChangeAmount", "signedChangeAmount");
+            double changePct = doubleValue(data, "changeRate", "changeRatio", "change_ratio",
+                    "priceChangeRate", "price_change_rate", "changePct", "signedChangeRate", "changePercent");
             String name      = textValue(data, stockCode, "name", "stockName", "stock_name", "koreanName", "shortName", "symbol");
             Long  marketCap  = nullableLongValue(data, "marketCap", "market_cap");
             Long  volume     = nullableLongValue(data, "volume", "accTradeVolume", "tradingVolume");

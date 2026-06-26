@@ -44,19 +44,24 @@ public class IndicatorService {
         return refresh();
     }
 
+    /** Yahoo 시세 (가격 + 변동) */
+    record YahooQuote(Double price, Double change, Double changePct) {}
+
     public IndicatorResponse refresh() {
         try {
             RestClient client = createClient();
-            Double kospi  = fetchYahooPrice(client, "^KS11");
-            Double kosdaq = fetchYahooPrice(client, "^KQ11");
+            YahooQuote kospi  = fetchYahooQuote(client, "^KS11");
+            YahooQuote kosdaq = fetchYahooQuote(client, "^KQ11");
             Double usdKrw = fetchUsdKrw(client);
             if (kospi == null && kosdaq == null && usdKrw == null) {
                 return mockResponse();
             }
 
             List<IndicatorItem> items = buildItems(usdKrw, kospi, kosdaq);
+            Double kospiPrice  = kospi  != null ? kospi.price()  : null;
+            Double kosdaqPrice = kosdaq != null ? kosdaq.price() : null;
             IndicatorResponse response = new IndicatorResponse(
-                    "OK", buildInsight(usdKrw, kospi, kosdaq), items, LocalDateTime.now());
+                    "OK", buildInsight(usdKrw, kospiPrice, kosdaqPrice), items, LocalDateTime.now());
             cacheResponse(response);
             return response;
         } catch (Exception e) {
@@ -69,7 +74,7 @@ public class IndicatorService {
         return RestClient.create();
     }
 
-    private Double fetchYahooPrice(RestClient client, String symbol) {
+    private YahooQuote fetchYahooQuote(RestClient client, String symbol) {
         try {
             String url = "https://query1.finance.yahoo.com/v8/finance/chart/"
                     + java.net.URLEncoder.encode(symbol, java.nio.charset.StandardCharsets.UTF_8)
@@ -83,7 +88,14 @@ public class IndicatorService {
             if (root == null) return null;
             JsonNode meta = root.path("chart").path("result").path(0).path("meta");
             double price = meta.path("regularMarketPrice").asDouble(0.0);
-            return price > 0 ? price : null;
+            if (price <= 0) return null;
+
+            JsonNode changeNode    = meta.path("regularMarketChange");
+            JsonNode changePctNode = meta.path("regularMarketChangePercent");
+            Double change    = changeNode.isMissingNode()    || changeNode.isNull()    ? null : changeNode.asDouble();
+            Double changePct = changePctNode.isMissingNode() || changePctNode.isNull() ? null : changePctNode.asDouble();
+
+            return new YahooQuote(price, change, changePct);
         } catch (RestClientException e) {
             log.debug("Yahoo Finance fetch failed for {}: {}", symbol, e.getMessage());
             return null;
@@ -116,16 +128,20 @@ public class IndicatorService {
     }
 
     private IndicatorResponse mockResponse() {
-        List<IndicatorItem> items = buildItems(1380.0, 2600.0, 860.0);
+        List<IndicatorItem> items = buildItems(1380.0, new YahooQuote(2600.0, 12.5, 0.48), new YahooQuote(860.0, -3.2, -0.37));
         return new IndicatorResponse("MOCK", buildInsight(1380.0, 2600.0, 860.0), items, LocalDateTime.now());
     }
 
-    private List<IndicatorItem> buildItems(Double usdKrw, Double kospi, Double kosdaq) {
+    private List<IndicatorItem> buildItems(Double usdKrw, YahooQuote kospi, YahooQuote kosdaq) {
         return List.of(
-                IndicatorItem.of("USD_KRW", "달러/원",  usdKrw,       "원", null, null),
-                IndicatorItem.of("BOK_RATE", "기준금리", BOK_BASE_RATE, "%",  null, null),
-                IndicatorItem.of("KOSPI",    "코스피",   kospi,         "pt", null, null),
-                IndicatorItem.of("KOSDAQ",   "코스닥",   kosdaq,        "pt", null, null)
+                IndicatorItem.of("USD_KRW",  "달러/원",  usdKrw,                       "원", null, null),
+                IndicatorItem.of("BOK_RATE", "기준금리", BOK_BASE_RATE,                 "%",  null, null),
+                IndicatorItem.of("KOSPI",    "코스피",   kospi  != null ? kospi.price()  : null, "pt",
+                        kospi  != null ? kospi.change()  : null,
+                        kospi  != null ? kospi.changePct() : null),
+                IndicatorItem.of("KOSDAQ",   "코스닥",   kosdaq != null ? kosdaq.price() : null, "pt",
+                        kosdaq != null ? kosdaq.change() : null,
+                        kosdaq != null ? kosdaq.changePct() : null)
         );
     }
 
