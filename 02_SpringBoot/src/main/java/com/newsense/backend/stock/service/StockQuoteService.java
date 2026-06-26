@@ -51,7 +51,7 @@ public class StockQuoteService {
      */
     public Optional<StockQuote> getQuote(String stockCode) {
         String key = REDIS_KEY_PREFIX + stockCode;
-        String cached = redisTemplate.opsForValue().get(key);
+        String cached = getCachedQuote(key);
         if (cached != null) {
             try {
                 return Optional.of(objectMapper.readValue(cached, StockQuote.class));
@@ -64,6 +64,15 @@ public class StockQuoteService {
                 .or(() -> fallbackQuote(stockCode));
         quote.ifPresent(q -> cache(key, q));
         return quote;
+    }
+
+    private String getCachedQuote(String key) {
+        try {
+            return redisTemplate.opsForValue().get(key);
+        } catch (RuntimeException e) {
+            log.warn("[Stock] cache read failed key={}", key);
+            return null;
+        }
     }
 
     /**
@@ -80,7 +89,7 @@ public class StockQuoteService {
     private void cache(String key, StockQuote quote) {
         try {
             redisTemplate.opsForValue().set(key, objectMapper.writeValueAsString(quote), CACHE_TTL);
-        } catch (JacksonException e) {
+        } catch (RuntimeException e) {
             log.warn("[Stock] cache write failed key={}", key);
         }
     }

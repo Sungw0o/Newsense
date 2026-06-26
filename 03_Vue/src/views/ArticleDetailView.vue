@@ -145,6 +145,14 @@ const loadStockQuotes = async () => {
   }))
 }
 
+const stockChangeRate = (stock) => stock.changeRate ?? stock.changePct
+
+const formatStockChange = (stock) => {
+  if (stock.change == null) return null
+  const sign = stock.change > 0 ? '+' : ''
+  return `${sign}${Number(stock.change).toLocaleString()}`
+}
+
 const articleMetaText = computed(() => {
   if (!selectedArticle.value) return ''
   const published = selectedArticle.value.publishedAt
@@ -308,7 +316,18 @@ watch(articleId, async (newId) => {
                       'text-slate-500 bg-slate-100': stock.trend === 'FLAT'
                     }"
                   >{{ stock.trend === 'UP' ? '▲' : stock.trend === 'DOWN' ? '▼' : '━' }}
-                  {{ stock.changePct != null ? Math.abs(stock.changePct).toFixed(2) + '%' : '' }}</span>
+                  {{ stockChangeRate(stock) != null ? Math.abs(stockChangeRate(stock)).toFixed(2) + '%' : '' }}</span>
+                  <span
+                    v-if="formatStockChange(stock)"
+                    class="text-xs font-semibold"
+                    :class="{
+                      'text-red-600': stock.trend === 'UP',
+                      'text-blue-600': stock.trend === 'DOWN',
+                      'text-slate-500': stock.trend === 'FLAT'
+                    }"
+                  >
+                    {{ formatStockChange(stock) }}
+                  </span>
                   <span
                     v-if="stock.marketReaction"
                     class="text-xs px-1.5 py-0.5 rounded font-medium"

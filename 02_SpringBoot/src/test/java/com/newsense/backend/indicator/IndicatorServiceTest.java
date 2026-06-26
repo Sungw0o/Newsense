@@ -34,10 +34,9 @@ class IndicatorServiceTest {
 
     private static IndicatorResponse sampleResponse() {
         List<IndicatorItem> items = List.of(
-                IndicatorItem.of("USD_KRW", "달러/원", 1380.0, "원", null, null),
+                IndicatorItem.of("USD_KRW", "달러/원", 1380.0, "원", 2.5, 0.18),
                 IndicatorItem.of("KOSPI", "코스피", 2600.0, "pt", 5.0, 0.19),
-                IndicatorItem.of("KOSDAQ", "코스닥", 860.0, "pt", -1.0, -0.12),
-                IndicatorItem.of("BOK_RATE", "기준금리", 2.75, "%", null, null)
+                IndicatorItem.of("KOSDAQ", "코스닥", 860.0, "pt", -1.0, -0.12)
         );
         return new IndicatorResponse("OK", "코스피 2600pt · 달러/원 1380원", items, LocalDateTime.now());
     }
@@ -79,17 +78,20 @@ class IndicatorServiceTest {
         assertThat(result).isNotNull();
         assertThat(result.status()).isEqualTo("MOCK");
         assertThat(result.items()).isNotEmpty();
-        assertThat(result.items()).anyMatch(item -> "BOK_RATE".equals(item.key()));
+        assertThat(result.items()).anyMatch(item -> "USD_KRW".equals(item.key()) && item.change() != null);
+        assertThat(result.items()).noneMatch(item -> "BOK_RATE".equals(item.key()));
     }
 
     @Test
     void indicatorItem_trendCalculation() {
         IndicatorItem up   = IndicatorItem.of("KOSPI", "코스피", 2600.0, "pt", 10.0, 0.38);
         IndicatorItem down = IndicatorItem.of("KOSPI", "코스피", 2600.0, "pt", -5.0, -0.19);
-        IndicatorItem flat = IndicatorItem.of("BOK_RATE", "기준금리", 2.75, "%", null, null);
+        IndicatorItem flat = IndicatorItem.of("USD_KRW", "달러/원", 1380.0, "원", null, null);
+        IndicatorItem exchange = IndicatorItem.of("USD_KRW", "달러/원", 1380.0, "원", 2.5, 0.18);
 
         assertThat(up.trend()).isEqualTo("UP");
         assertThat(down.trend()).isEqualTo("DOWN");
         assertThat(flat.trend()).isEqualTo("FLAT");
+        assertThat(exchange.trend()).isEqualTo("UP");
     }
 }

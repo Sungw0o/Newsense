@@ -3,6 +3,7 @@ package com.newsense.backend.article;
 import com.newsense.backend.article.document.ArticleContent;
 import com.newsense.backend.article.domain.ArticleMeta;
 import com.newsense.backend.article.domain.ArticleRead;
+import com.newsense.backend.article.domain.ArticleRelatedStock;
 import com.newsense.backend.article.dto.ArticleDetailResponse;
 import com.newsense.backend.article.dto.ArticleReadResponse;
 import com.newsense.backend.article.dto.ArticleTermResponse;
@@ -14,6 +15,10 @@ import com.newsense.backend.article.repository.ArticleRelatedStockRepository;
 import com.newsense.backend.article.service.ArticleDetailService;
 import com.newsense.backend.bookmark.domain.Bookmark;
 import com.newsense.backend.bookmark.repository.BookmarkRepository;
+import com.newsense.backend.stock.dto.StockQuote;
+import com.newsense.backend.stock.service.StockMarketReactionService;
+import com.newsense.backend.stock.service.StockQuoteService;
+import com.newsense.backend.stock.service.StockValidationService;
 import com.newsense.backend.support.TestFixtures;
 import com.newsense.backend.term.domain.Term;
 import com.newsense.backend.term.repository.ArticleTermRepository;
@@ -72,6 +77,15 @@ class ArticleDetailServiceTest {
     ArticleRelatedStockRepository articleRelatedStockRepository;
 
     @Mock
+    StockQuoteService stockQuoteService;
+
+    @Mock
+    StockValidationService stockValidationService;
+
+    @Mock
+    StockMarketReactionService stockMarketReactionService;
+
+    @Mock
     MongoTemplate mongoTemplate;
 
     @Test
@@ -89,6 +103,52 @@ class ArticleDetailServiceTest {
         assertThat(response.id()).isEqualTo(1L);
         assertThat(response.isRead()).isTrue();
         assertThat(response.isBookmarked()).isTrue();
+    }
+
+    @Test
+    void getArticleDetail_attachesStockQuoteWhenAvailable() {
+        ArticleMeta article = TestFixtures.article(1L);
+        ArticleContent content = TestFixtures.content("mongo-1", "삼성전자 실적 기사");
+        ArticleRelatedStock stock = ArticleRelatedStock.create(article, "삼성전자", "005930", "기사에 언급된 반도체 기업");
+        StockQuote quote = StockQuote.of("005930", "삼성전자", 75000L, 1200L, 1.62, 450000000000000L, 12345678L);
+        given(articleMetaRepository.findById(1L)).willReturn(Optional.of(article));
+        given(articleContentRepository.findById("mongo-1")).willReturn(Optional.of(content));
+        given(articleRelatedStockRepository.findAllByArticleMetaId(1L)).willReturn(List.of(stock));
+        given(stockValidationService.isValid("005930")).willReturn(true);
+        given(stockQuoteService.getQuote("005930")).willReturn(Optional.of(quote));
+        given(stockMarketReactionService.assess(1.62)).willReturn("상승");
+
+        ArticleDetailResponse response = articleDetailService.getArticleDetail(1L, null);
+
+        assertThat(response.relatedStocks()).hasSize(1);
+        assertThat(response.relatedStocks().getFirst().stockCode()).isEqualTo("005930");
+        assertThat(response.relatedStocks().getFirst().price()).isEqualTo(75000L);
+        assertThat(response.relatedStocks().getFirst().change()).isEqualTo(1200L);
+        assertThat(response.relatedStocks().getFirst().changeRate()).isEqualTo(1.62);
+        assertThat(response.relatedStocks().getFirst().volume()).isEqualTo(12345678L);
+        assertThat(response.relatedStocks().getFirst().marketReaction()).isEqualTo("상승");
+    }
+
+    @Test
+    void getArticleDetail_keepsRelatedStockWhenQuoteFetchFails() {
+        ArticleMeta article = TestFixtures.article(1L);
+        ArticleContent content = TestFixtures.content("mongo-1", "삼성전자 실적 기사");
+        ArticleRelatedStock stock = ArticleRelatedStock.create(article, "삼성전자", "005930", "기사에 언급된 반도체 기업");
+        given(articleMetaRepository.findById(1L)).willReturn(Optional.of(article));
+        given(articleContentRepository.findById("mongo-1")).willReturn(Optional.of(content));
+        given(articleRelatedStockRepository.findAllByArticleMetaId(1L)).willReturn(List.of(stock));
+        given(stockValidationService.isValid("005930")).willReturn(true);
+        given(stockQuoteService.getQuote("005930")).willThrow(new RuntimeException("toss unavailable"));
+
+        ArticleDetailResponse response = articleDetailService.getArticleDetail(1L, null);
+
+        assertThat(response.relatedStocks()).hasSize(1);
+        assertThat(response.relatedStocks().getFirst().stockName()).isEqualTo("삼성전자");
+        assertThat(response.relatedStocks().getFirst().stockCode()).isEqualTo("005930");
+        assertThat(response.relatedStocks().getFirst().relationReason()).isEqualTo("기사에 언급된 반도체 기업");
+        assertThat(response.relatedStocks().getFirst().price()).isNull();
+        assertThat(response.relatedStocks().getFirst().changeRate()).isNull();
+        assertThat(response.relatedStocks().getFirst().volume()).isNull();
     }
 
     @Test

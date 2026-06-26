@@ -88,14 +88,24 @@ public class ArticleDetailService {
                         log.debug("[Stock] invalid code skipped: {}", stock.getStockCode());
                         return RelatedStockResponse.from(stock);
                     }
-                    Optional<StockQuote> quote = stockQuoteService.getQuote(stock.getStockCode());
+                    Optional<StockQuote> quote = getQuoteSafely(stock.getStockCode());
                     if (quote.isEmpty()) {
                         return RelatedStockResponse.from(stock);
                     }
-                    String reaction = stockMarketReactionService.assess(quote.get().changePct());
-                    return RelatedStockResponse.withQuote(stock, quote.get(), reaction);
+                    StockQuote stockQuote = quote.get();
+                    String reaction = stockMarketReactionService.assess(stockQuote.changePct());
+                    return RelatedStockResponse.withQuote(stock, stockQuote, reaction);
                 })
                 .toList();
+    }
+
+    private Optional<StockQuote> getQuoteSafely(String stockCode) {
+        try {
+            return stockQuoteService.getQuote(stockCode);
+        } catch (RuntimeException exception) {
+            log.warn("[Stock] quote fallback without price stockCode={} reason={}", stockCode, exception.getMessage());
+            return Optional.empty();
+        }
     }
 
     @Transactional

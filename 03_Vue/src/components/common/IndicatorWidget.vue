@@ -17,10 +17,14 @@ const fmt = (item) => {
 
 const fmtChange = (item) => {
   if (item.change == null) return null
-  const sign = item.change >= 0 ? '+' : ''
+  const sign = item.change > 0 ? '+' : item.change < 0 ? '-' : ''
   if (item.key === 'BOK_RATE') return `${sign}${item.change.toFixed(2)}%`
-  if (item.key === 'USD_KRW') return `${sign}${Math.round(item.change)}`
-  return `${sign}${item.change.toFixed(2)}`
+  if (item.key === 'USD_KRW') {
+    const rate = item.changePct == null ? '' : ` (${sign}${Math.abs(item.changePct).toFixed(2)}%)`
+    return `${sign}${Math.abs(item.change).toFixed(2)}원${rate}`
+  }
+  const rate = item.changePct == null ? '' : ` (${sign}${Math.abs(item.changePct).toFixed(2)}%)`
+  return `${sign}${Math.abs(item.change).toFixed(2)}${rate}`
 }
 
 const load = async (manual = false) => {
@@ -65,7 +69,7 @@ onMounted(() => {
     </div>
 
     <div v-if="loading" class="skel-wrap">
-      <div v-for="n in 4" :key="n" class="skel-row"></div>
+      <div v-for="n in 3" :key="n" class="skel-row"></div>
     </div>
 
     <table v-else-if="items.length" class="ind-table">

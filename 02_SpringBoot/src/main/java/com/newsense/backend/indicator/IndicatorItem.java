@@ -3,7 +3,7 @@ package com.newsense.backend.indicator;
 /**
  * 개별 금융 지표 항목.
  *
- * @param key       식별자 (예: "USD_KRW", "KOSPI", "KOSDAQ", "BOK_RATE")
+ * @param key       식별자 (예: "USD_KRW", "KOSPI", "KOSDAQ")
  * @param label     화면 표시 레이블 (예: "달러/원", "코스피")
  * @param value     현재 값
  * @param unit      단위 (예: "원", "pt", "%")

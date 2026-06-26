@@ -16,6 +16,7 @@ public record RelatedStockResponse(
         Long   price,
         Long   change,
         Double changePct,
+        Double changeRate,
         String trend,
         Long   volume,
         String marketReaction
@@ -26,7 +27,7 @@ public record RelatedStockResponse(
                 stock.getStockName(),
                 stock.getStockCode(),
                 stock.getRelationReason(),
-                null, null, null, null, null, null
+                null, null, null, null, null, null, null
         );
     }
 
@@ -42,6 +43,7 @@ public record RelatedStockResponse(
                 stock.getRelationReason(),
                 quote.price(),
                 quote.change(),
+                quote.changePct(),
                 quote.changePct(),
                 quote.trend(),
                 quote.volume(),

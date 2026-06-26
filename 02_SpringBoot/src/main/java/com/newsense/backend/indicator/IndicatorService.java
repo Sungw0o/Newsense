@@ -21,7 +21,6 @@ public class IndicatorService {
 
     private static final String REDIS_KEY  = "indicator:latest";
     private static final Duration CACHE_TTL = Duration.ofMinutes(10);
-    private static final double BOK_BASE_RATE = 3.5;
     private static final String EXCHANGE_RATE_URL = "https://open.er-api.com/v6/latest/USD";
 
     private final StringRedisTemplate redisTemplate;
@@ -50,18 +49,23 @@ public class IndicatorService {
     public IndicatorResponse refresh() {
         try {
             RestClient client = createClient();
+            YahooQuote usdKrw = fetchYahooQuote(client, "KRW=X");
             YahooQuote kospi  = fetchYahooQuote(client, "^KS11");
             YahooQuote kosdaq = fetchYahooQuote(client, "^KQ11");
-            Double usdKrw = fetchUsdKrw(client);
+            if (usdKrw == null) {
+                Double exchangeRate = fetchUsdKrw(client);
+                usdKrw = exchangeRate == null ? null : new YahooQuote(exchangeRate, null, null);
+            }
             if (kospi == null && kosdaq == null && usdKrw == null) {
                 return mockResponse();
             }
 
             List<IndicatorItem> items = buildItems(usdKrw, kospi, kosdaq);
+            Double usdKrwPrice = usdKrw != null ? usdKrw.price() : null;
             Double kospiPrice  = kospi  != null ? kospi.price()  : null;
             Double kosdaqPrice = kosdaq != null ? kosdaq.price() : null;
             IndicatorResponse response = new IndicatorResponse(
-                    "OK", buildInsight(usdKrw, kospiPrice, kosdaqPrice), items, LocalDateTime.now());
+                    "OK", buildInsight(usdKrwPrice, kospiPrice, kosdaqPrice), items, LocalDateTime.now());
             cacheResponse(response);
             return response;
         } catch (Exception e) {
@@ -140,14 +144,19 @@ public class IndicatorService {
     }
 
     private IndicatorResponse mockResponse() {
-        List<IndicatorItem> items = buildItems(1380.0, new YahooQuote(2600.0, 12.5, 0.48), new YahooQuote(860.0, -3.2, -0.37));
+        List<IndicatorItem> items = buildItems(
+                new YahooQuote(1380.0, 2.5, 0.18),
+                new YahooQuote(2600.0, 12.5, 0.48),
+                new YahooQuote(860.0, -3.2, -0.37)
+        );
         return new IndicatorResponse("MOCK", buildInsight(1380.0, 2600.0, 860.0), items, LocalDateTime.now());
     }
 
-    private List<IndicatorItem> buildItems(Double usdKrw, YahooQuote kospi, YahooQuote kosdaq) {
+    private List<IndicatorItem> buildItems(YahooQuote usdKrw, YahooQuote kospi, YahooQuote kosdaq) {
         return List.of(
-                IndicatorItem.of("USD_KRW",  "달러/원",  usdKrw,                       "원", null, null),
-                IndicatorItem.of("BOK_RATE", "기준금리", BOK_BASE_RATE,                 "%",  null, null),
+                IndicatorItem.of("USD_KRW",  "달러/원",  usdKrw != null ? usdKrw.price() : null, "원",
+                        usdKrw != null ? usdKrw.change() : null,
+                        usdKrw != null ? usdKrw.changePct() : null),
                 IndicatorItem.of("KOSPI",    "코스피",   kospi  != null ? kospi.price()  : null, "pt",
                         kospi  != null ? kospi.change()  : null,
                         kospi  != null ? kospi.changePct() : null),
