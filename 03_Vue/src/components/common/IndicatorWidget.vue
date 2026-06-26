@@ -79,7 +79,7 @@ onMounted(() => {
       <tbody>
         <tr v-for="item in items" :key="item.key">
           <td class="label">{{ item.label }}</td>
-          <td class="num val">{{ fmt(item) }}</td>
+          <td class="num val" :class="item.trend === 'UP' ? 'up' : item.trend === 'DOWN' ? 'down' : ''">{{ fmt(item) }}</td>
           <td
             class="num chg"
             :class="item.trend === 'UP' ? 'up' : item.trend === 'DOWN' ? 'down' : ''"
@@ -185,6 +185,8 @@ onMounted(() => {
 .dark .ind-table td.label { color: #a4adbf; }
 .ind-table td.num { text-align: right; font-variant-numeric: tabular-nums; }
 .ind-table td.val { font-weight: 700; }
+.ind-table td.val.up   { color: #e03b3b; }
+.ind-table td.val.down { color: #1d7fd4; }
 .ind-table td.chg {
   font-size: 11px;
   font-weight: 700;
