@@ -90,10 +90,22 @@ public class IndicatorService {
             double price = meta.path("regularMarketPrice").asDouble(0.0);
             if (price <= 0) return null;
 
+            // regularMarketChange가 없으면 chartPreviousClose로 직접 계산
             JsonNode changeNode    = meta.path("regularMarketChange");
             JsonNode changePctNode = meta.path("regularMarketChangePercent");
-            Double change    = changeNode.isMissingNode()    || changeNode.isNull()    ? null : changeNode.asDouble();
-            Double changePct = changePctNode.isMissingNode() || changePctNode.isNull() ? null : changePctNode.asDouble();
+            Double change    = (!changeNode.isMissingNode()    && !changeNode.isNull())    ? changeNode.asDouble()    : null;
+            Double changePct = (!changePctNode.isMissingNode() && !changePctNode.isNull()) ? changePctNode.asDouble() : null;
+
+            if (change == null) {
+                JsonNode prevNode = meta.path("chartPreviousClose");
+                if (!prevNode.isMissingNode() && !prevNode.isNull()) {
+                    double prev = prevNode.asDouble();
+                    if (prev > 0) {
+                        change    = price - prev;
+                        changePct = (change / prev) * 100.0;
+                    }
+                }
+            }
 
             return new YahooQuote(price, change, changePct);
         } catch (RestClientException e) {
